@@ -1,0 +1,20 @@
+{
+  "name": "election-ops-platform",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "plugins/*/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @eops/web",
+    "dev:web": "npm run dev -w @eops/web",
+    "dev:api": "npm run start:dev -w @eops/api",
+    "build": "npm run build -w @eops/web",
+    "count:loc": "node scripts/count-loc.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

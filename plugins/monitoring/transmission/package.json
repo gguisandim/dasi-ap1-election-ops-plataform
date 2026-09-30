@@ -1,0 +1,11 @@
+{
+  "name": "@eops/plugin-transmission",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@eops/plugin-sdk": "0.1.0",
+    "react": "latest"
+  }
+}

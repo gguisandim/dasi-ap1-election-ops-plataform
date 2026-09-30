@@ -1,0 +1,28 @@
+{
+  "name": "@eops/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@eops/plugin-sdk": "0.1.0",
+    "@eops/plugin-elections": "0.1.0",
+    "@eops/plugin-polling-places": "0.1.0",
+    "@eops/plugin-routes": "0.1.0",
+    "@eops/plugin-inventory": "0.1.0",
+    "@eops/plugin-incidents": "0.1.0",
+    "@eops/plugin-transmission": "0.1.0",
+    "@eops/plugin-reports": "0.1.0",
+    "@eops/plugin-audit": "0.1.0",
+    "@vitejs/plugin-react": "latest",
+    "vite": "latest",
+    "typescript": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {}
+}
