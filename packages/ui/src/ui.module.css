@@ -1,0 +1,144 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #3776b6;
+  border-radius: 8px;
+  padding: 9px 14px;
+  background: #28669f;
+  color: white;
+  cursor: pointer;
+  text-decoration: none;
+  font: inherit;
+}
+.button:hover {
+  background: #3277b6;
+}
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.secondary {
+  background: transparent;
+  border-color: #314760;
+  color: #c3d0df;
+}
+.input {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid #2a4059;
+  border-radius: 8px;
+  background: #091525;
+  color: #e9eef7;
+  padding: 9px 11px;
+  font: inherit;
+}
+.input:focus {
+  outline: 2px solid #28669f;
+  outline-offset: 1px;
+}
+.field {
+  display: grid;
+  gap: 6px;
+  color: #9fb0c4;
+  font-size: 13px;
+}
+.field small {
+  color: #ff9797;
+}
+.badge {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: #26384b;
+  color: #c8d4e2;
+  font-size: 11px;
+  font-weight: 700;
+}
+.success {
+  background: #123c32;
+  color: #7be0b8;
+}
+.warning {
+  background: #493b18;
+  color: #ffd77d;
+}
+.danger {
+  background: #4b2229;
+  color: #ff9ba8;
+}
+.neutral {
+  background: #24364b;
+  color: #b7c9db;
+}
+.card {
+  background: #0d1a2b;
+  border: 1px solid #1a2a41;
+  border-radius: 12px;
+  padding: 20px;
+}
+.state {
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px;
+  text-align: center;
+  color: #869bb3;
+}
+.state strong {
+  color: #dbe6f2;
+}
+.state p {
+  margin: 0;
+  max-width: 520px;
+}
+.error {
+  border: 1px solid #5b2932;
+  border-radius: 10px;
+  background: #25151c;
+}
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #29415c;
+  border-top-color: #65b8ff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #8297ae;
+  font-size: 13px;
+  margin-bottom: 18px;
+}
+.breadcrumb span {
+  display: flex;
+  gap: 8px;
+}
+.breadcrumb a {
+  color: #8fc6f4;
+  text-decoration: none;
+}
+.breadcrumb b {
+  color: #41566d;
+}
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  margin-top: 18px;
+  color: #90a3b8;
+  font-size: 13px;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

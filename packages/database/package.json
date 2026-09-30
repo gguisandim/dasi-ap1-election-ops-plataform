@@ -1,0 +1,10 @@
+{
+  "name": "@eops/database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.ts",
+  "dependencies": {
+    "@nestjs/common": "latest",
+    "@prisma/client": "^6.16.3"
+  }
+}

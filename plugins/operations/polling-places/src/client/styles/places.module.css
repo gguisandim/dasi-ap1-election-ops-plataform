@@ -1,0 +1,129 @@
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+.header h1 {
+  margin: 7px 0;
+}
+.header p {
+  color: #8398af;
+}
+.header > div > span:first-child {
+  color: #72aee6;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+.table {
+  overflow-x: auto;
+  margin-top: 18px;
+  background: #0d1a2b;
+  border: 1px solid #1a2a41;
+  border-radius: 12px;
+}
+.table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th,
+.table td {
+  text-align: left;
+  padding: 13px 14px;
+  border-bottom: 1px solid #1d3046;
+}
+.table th {
+  color: #788da5;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+.table a,
+.sections a {
+  color: #8fc6f4;
+  text-decoration: none;
+}
+.table small {
+  display: block;
+  margin-top: 4px;
+  color: #758ba4;
+}
+.actions {
+  white-space: nowrap;
+}
+.actions a {
+  margin-right: 8px;
+}
+.actions button {
+  padding: 5px 8px;
+  background: transparent;
+  border-color: #593039;
+  color: #ff9ba7;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.metrics span {
+  color: #8195ad;
+  font-size: 12px;
+}
+.metrics strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 22px;
+}
+.coordinates {
+  font-size: 14px !important;
+}
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.sections {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.sections li {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: center;
+  padding: 11px;
+  border: 1px solid #20344b;
+  border-radius: 8px;
+}
+.sections span {
+  color: #8499b0;
+}
+.form {
+  max-width: 900px;
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  background: #0d1a2b;
+  border: 1px solid #1a2a41;
+  border-radius: 12px;
+}
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+@media (max-width: 850px) {
+  .header {
+    flex-direction: column;
+  }
+  .metrics,
+  .formGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

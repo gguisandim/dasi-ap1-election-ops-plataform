@@ -1,0 +1,118 @@
+.page {
+  max-width: 1220px;
+  margin: 0 auto;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+.header h1 {
+  margin: 6px 0;
+}
+.header p {
+  color: #8398af;
+}
+.header > div > span:first-child {
+  color: #72aee6;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 15px;
+  margin-top: 18px;
+}
+.grid article {
+  padding: 18px;
+  background: #0d1a2b;
+  border: 1px solid #1a2a41;
+  border-radius: 12px;
+}
+.grid h2 {
+  margin: 14px 0 4px;
+  font-size: 19px;
+}
+.grid p,
+.grid small {
+  color: #8297ae;
+}
+.cardHead,
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.grid dl {
+  display: flex;
+  gap: 30px;
+}
+.grid dt {
+  color: #778ca4;
+  font-size: 11px;
+}
+.grid dd {
+  margin: 4px 0;
+  font-size: 20px;
+}
+.grid footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #203249;
+  padding-top: 13px;
+}
+.grid a,
+.list a {
+  color: #8fc6f4;
+  text-decoration: none;
+}
+.grid button {
+  padding: 5px 8px;
+  background: transparent;
+  border-color: #5b3037;
+  color: #ff9da8;
+}
+.list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.list li {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid #21354c;
+  border-radius: 8px;
+}
+.list span {
+  color: #8297ae;
+  font-size: 13px;
+}
+.form {
+  max-width: 800px;
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  background: #0d1a2b;
+  border: 1px solid #1a2a41;
+  border-radius: 12px;
+}
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+@media (max-width: 750px) {
+  .header {
+    flex-direction: column;
+  }
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}

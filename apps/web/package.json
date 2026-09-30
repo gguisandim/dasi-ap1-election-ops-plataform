@@ -6,12 +6,20 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "lint": "eslint src ../../plugins/*/*/src/client ../../packages/ui/src ../../packages/api-client/src",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@eops/api-client": "0.1.0",
     "@eops/plugin-sdk": "0.1.0",
+    "@eops/shared": "0.1.0",
+    "@eops/ui": "0.1.0",
     "@eops/plugin-elections": "0.1.0",
+    "@eops/plugin-electoral-zones": "0.1.0",
     "@eops/plugin-polling-places": "0.1.0",
+    "@eops/plugin-polling-sections": "0.1.0",
+    "@eops/plugin-operational-map": "0.1.0",
     "@eops/plugin-routes": "0.1.0",
     "@eops/plugin-inventory": "0.1.0",
     "@eops/plugin-incidents": "0.1.0",
@@ -22,7 +30,11 @@
     "vite": "latest",
     "typescript": "latest",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "react-router-dom": "latest"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/react": "latest",
+    "@types/react-dom": "latest"
+  }
 }

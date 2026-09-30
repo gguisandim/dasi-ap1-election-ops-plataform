@@ -24,7 +24,11 @@ export interface PluginManifest {
 
 export interface PlatformPlugin {
   manifest: PluginManifest;
-  View: ComponentType;
+  View?: ComponentType;
+  routes?: Array<{
+    path: string;
+    Component: ComponentType;
+  }>;
 }
 
 export const CATEGORY_LABELS: Record<PluginCategory, string> = {

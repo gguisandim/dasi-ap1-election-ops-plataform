@@ -1,11 +1,15 @@
 # Database
 
-Pasta reservada para a camada PostgreSQL/Prisma.
+Camada PostgreSQL compartilhada da Election Ops Platform. O schema Prisma modela pleitos, turnos, zonas, locais e seções; a migration inicial fica versionada em `prisma/migrations`.
 
-Próximos passos sugeridos:
+Na raiz do repositório:
 
-- schema Prisma;
-- migrations;
-- seeds de demonstração;
-- importação de dados públicos;
-- estratégia multi-pleito.
+```bash
+docker compose up -d
+cp .env.example .env
+npm run db:generate
+npm run db:migrate
+npm run db:seed
+```
+
+O PostgreSQL de desenvolvimento usa a porta `5432`, banco `election_ops`, usuário `eops` e uma senha exclusivamente local documentada no compose. Nunca use essas credenciais fora do desenvolvimento.

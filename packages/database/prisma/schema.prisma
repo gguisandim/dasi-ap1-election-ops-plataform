@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ElectionStatus {
+  PLANNING
+  PREPARATION
+  IN_PROGRESS
+  FINISHED
+  ARCHIVED
+}
+
+enum ElectionType {
+  GENERAL
+  MUNICIPAL
+  SUPPLEMENTARY
+  REFERENDUM
+}
+
+enum RoundStatus {
+  SCHEDULED
+  IN_PROGRESS
+  FINISHED
+  CANCELLED
+}
+
+enum ResourceStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum MonitoringStatus {
+  NORMAL
+  ATTENTION
+  CRITICAL
+  OFFLINE
+}
+
+model Election {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  year        Int
+  type        ElectionType
+  status      ElectionStatus  @default(PLANNING)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  rounds      ElectionRound[]
+  zones       ElectoralZone[]
+
+  @@index([year, status])
+}
+
+model ElectionRound {
+  id          String      @id @default(cuid())
+  electionId  String
+  roundNumber Int
+  date        DateTime
+  status      RoundStatus @default(SCHEDULED)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  election    Election    @relation(fields: [electionId], references: [id], onDelete: Cascade)
+
+  @@unique([electionId, roundNumber])
+  @@index([date, status])
+}
+
+model ElectoralZone {
+  id            String         @id @default(cuid())
+  electionId    String
+  number        Int
+  name          String
+  municipality  String
+  state         String         @db.Char(2)
+  status        ResourceStatus @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  election      Election       @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  pollingPlaces PollingPlace[]
+
+  @@unique([electionId, number])
+  @@index([municipality, state])
+}
+
+model PollingPlace {
+  id               String           @id @default(cuid())
+  electoralZoneId  String
+  name             String
+  address          String
+  district         String
+  city             String
+  state            String           @db.Char(2)
+  latitude         Decimal?         @db.Decimal(9, 6)
+  longitude        Decimal?         @db.Decimal(9, 6)
+  status           ResourceStatus   @default(ACTIVE)
+  monitoringStatus MonitoringStatus @default(NORMAL)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  electoralZone    ElectoralZone    @relation(fields: [electoralZoneId], references: [id], onDelete: Cascade)
+  sections         PollingSection[]
+
+  @@index([city, state])
+  @@index([electoralZoneId, monitoringStatus])
+}
+
+model PollingSection {
+  id               String         @id @default(cuid())
+  pollingPlaceId   String
+  number           Int
+  registeredVoters Int
+  status           ResourceStatus @default(ACTIVE)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  pollingPlace     PollingPlace   @relation(fields: [pollingPlaceId], references: [id], onDelete: Cascade)
+
+  @@unique([pollingPlaceId, number])
+  @@index([status])
+}

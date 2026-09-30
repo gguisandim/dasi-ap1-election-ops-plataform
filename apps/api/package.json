@@ -4,17 +4,26 @@
   "private": true,
   "scripts": {
     "start:dev": "nest start --watch",
-    "build": "nest build"
+    "start:prod": "node dist/apps/api/src/main.js",
+    "build": "nest build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src ../../plugins/*/*/src/server ../../packages/database/src"
   },
   "dependencies": {
+    "@eops/database": "0.1.0",
     "@nestjs/common": "latest",
     "@nestjs/core": "latest",
+    "@nestjs/mapped-types": "latest",
     "@nestjs/platform-express": "latest",
+    "class-transformer": "latest",
+    "class-validator": "latest",
     "reflect-metadata": "latest",
     "rxjs": "latest"
   },
   "devDependencies": {
     "@nestjs/cli": "latest",
+    "@types/express": "latest",
+    "@types/node": "latest",
     "typescript": "latest"
   }
 }
