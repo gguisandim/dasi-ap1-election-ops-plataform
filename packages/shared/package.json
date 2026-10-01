@@ -10,6 +10,7 @@
     "./common": "./src/common.ts",
     "./communications": "./src/communications.ts",
     "./elections": "./src/elections.ts",
+    "./evidence": "./src/evidence.ts",
     "./format": "./src/format.ts",
     "./incidents": "./src/incidents.ts",
     "./inventory": "./src/inventory.ts",

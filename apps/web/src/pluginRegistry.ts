@@ -15,6 +15,7 @@ import { notificationsPlugin } from "@eops/plugin-notifications";
 import { operationalSimulatorPlugin } from "@eops/plugin-operational-simulator";
 import { fieldTeamsPlugin } from "@eops/plugin-field-teams";
 import { communicationsPlugin } from "@eops/plugin-communications";
+import { documentsEvidencePlugin } from "@eops/plugin-documents-evidence";
 
 export const plugins: PlatformPlugin[] = [
   electionsPlugin,
@@ -23,6 +24,7 @@ export const plugins: PlatformPlugin[] = [
   pollingSectionsPlugin,
   fieldTeamsPlugin,
   communicationsPlugin,
+  documentsEvidencePlugin,
   routesPlugin,
   inventoryPlugin,
   incidentsPlugin,

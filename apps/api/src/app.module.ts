@@ -17,6 +17,7 @@ import { TransmissionModule } from "../../../plugins/monitoring/transmission/src
 import { ReportsModule } from "../../../plugins/analytics/reports/src/server/reports.module";
 import { FieldTeamsModule } from "../../../plugins/operations/field-teams/src/server/field-teams.module";
 import { CommunicationsModule } from "../../../plugins/operations/communications/src/server/communications.module";
+import { DocumentsEvidenceModule } from "../../../plugins/operations/documents-evidence/src/server/evidence.module";
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { CommunicationsModule } from "../../../plugins/operations/communications
     ReportsModule,
     FieldTeamsModule,
     CommunicationsModule,
+    DocumentsEvidenceModule,
   ],
   controllers: [HealthController],
 })

@@ -288,6 +288,47 @@ enum CommunicationEventType {
   CANCELLED
 }
 
+enum EvidenceType {
+  PHOTO
+  DOCUMENT
+  RECEIPT
+  REPORT
+  LOG
+  SCREENSHOT
+  OTHER
+}
+
+enum EvidenceStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum EvidenceLinkType {
+  INCIDENT
+  ASSET
+  POLLING_PLACE
+  ELECTORAL_ZONE
+  ROUTE
+  DELIVERY
+  TRANSMISSION
+  RISK
+  COMMUNICATION
+  FIELD_TEAM
+  OTHER
+}
+
+enum EvidenceEventType {
+  CREATED
+  UPLOADED
+  VERSION_ADDED
+  METADATA_UPDATED
+  LINK_ADDED
+  LINK_REMOVED
+  ARCHIVED
+  RESTORED
+  DOWNLOADED
+}
+
 model Election {
   id                 String              @id @default(cuid())
   name               String
@@ -306,6 +347,7 @@ model Election {
   fieldTeams         FieldTeam[]
   fieldAllocations   FieldAllocation[]
   communications     Communication[]
+  evidences          Evidence[]
 
   @@index([year, status])
 }
@@ -1259,5 +1301,112 @@ model CommunicationEvent {
   communication   Communication          @relation(fields: [communicationId], references: [id], onDelete: Cascade)
 
   @@index([communicationId, createdAt])
+  @@index([type, createdAt])
+}
+
+model EvidenceTag {
+  id        String            @id @default(cuid())
+  label     String            @unique
+  slug      String            @unique
+  createdAt DateTime          @default(now())
+  links     EvidenceTagLink[]
+
+  @@index([label])
+}
+
+model EvidenceTagLink {
+  id         String      @id @default(cuid())
+  evidenceId String
+  tagId      String
+  evidence   Evidence    @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  tag        EvidenceTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([evidenceId, tagId])
+  @@index([tagId])
+}
+
+model Evidence {
+  id             String            @id @default(cuid())
+  code           String            @unique
+  title          String
+  description    String?
+  type           EvidenceType
+  status         EvidenceStatus    @default(ACTIVE)
+  electionId     String?
+  authorId       String?
+  authorName     String
+  origin         String?
+  observations   String?
+  capturedAt     DateTime?
+  currentVersion Int               @default(0)
+  versionCount   Int               @default(0)
+  archivedAt     DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  election       Election?         @relation(fields: [electionId], references: [id], onDelete: SetNull)
+  tags           EvidenceTagLink[]
+  versions       EvidenceVersion[]
+  links          EvidenceLink[]
+  timeline       EvidenceEvent[]
+
+  @@index([type, status])
+  @@index([electionId, status])
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([capturedAt])
+}
+
+model EvidenceVersion {
+  id            String   @id @default(cuid())
+  evidenceId    String
+  number        Int
+  fileName      String
+  extension     String
+  mimeType      String
+  size          Int
+  checksum      String
+  storageKey    String
+  storageDriver String
+  reason        String?
+  description   String?
+  authorId      String?
+  authorName    String
+  isCurrent     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  evidence      Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@unique([evidenceId, number])
+  @@index([evidenceId, createdAt])
+  @@index([checksum])
+  @@index([isCurrent])
+}
+
+model EvidenceLink {
+  id          String           @id @default(cuid())
+  evidenceId  String
+  type        EvidenceLinkType
+  targetId    String
+  targetLabel String?
+  notes       String?
+  createdAt   DateTime         @default(now())
+  evidence    Evidence         @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@unique([evidenceId, type, targetId])
+  @@index([type, targetId])
+  @@index([evidenceId])
+}
+
+model EvidenceEvent {
+  id         String            @id @default(cuid())
+  evidenceId String
+  type       EvidenceEventType
+  message    String
+  actorId    String?
+  actorName  String?
+  metadata   Json?
+  createdAt  DateTime          @default(now())
+  evidence   Evidence          @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@index([evidenceId, createdAt])
   @@index([type, createdAt])
 }

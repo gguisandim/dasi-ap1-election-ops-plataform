@@ -3,7 +3,7 @@ import { NotificationType, UserStatus } from "@prisma/client";
 import { EventBus, type DomainEvent, type DomainEventName } from "../../../../../packages/event-bus/src";
 import { PrismaService } from "../../../../../packages/database/src";
 
-const names = ["incident.created", "incident.assigned", "incident.resolved", "asset.created", "asset.moved", "asset.status_changed", "user.created", "election.created", "route.created", "route.started", "route.completed", "delivery.completed", "delivery.failed", "transmission.completed", "transmission.failed", "transmission.connectivity_changed", "transmission.alert_created", "field_team.allocated", "field_member.checked_in", "field_member.checked_out", "communication.published", "communication.cancelled", "communication.expired"] as const satisfies readonly DomainEventName[];
+const names = ["incident.created", "incident.assigned", "incident.resolved", "asset.created", "asset.moved", "asset.status_changed", "user.created", "election.created", "route.created", "route.started", "route.completed", "delivery.completed", "delivery.failed", "transmission.completed", "transmission.failed", "transmission.connectivity_changed", "transmission.alert_created", "field_team.allocated", "field_member.checked_in", "field_member.checked_out", "communication.published", "communication.cancelled", "communication.expired", "evidence.created", "evidence.versioned", "evidence.archived"] as const satisfies readonly DomainEventName[];
 type SubscribedEventName = (typeof names)[number];
 function content(event: DomainEvent<SubscribedEventName>): { title: string; message: string; type: NotificationType; entityType: string } {
   const payload = event.payload;
@@ -31,6 +31,9 @@ function content(event: DomainEvent<SubscribedEventName>): { title: string; mess
     case "communication.published": return { title: "Novo comunicado operacional", message: `${"code" in payload ? payload.code : "Comunicado"}: ${"title" in payload ? payload.title : "publicado"} (${"recipientCount" in payload ? payload.recipientCount : 0} destinatário(s)).`, type: "priority" in payload && (payload.priority === "CRITICAL" || payload.priority === "HIGH") ? NotificationType.CRITICAL : NotificationType.INFO, entityType: "Communication" };
     case "communication.cancelled": return { title: "Comunicado cancelado", message: `${"code" in payload ? payload.code : "Comunicado"}: ${"title" in payload ? payload.title : "cancelado"}.`, type: NotificationType.WARNING, entityType: "Communication" };
     case "communication.expired": return { title: "Comunicado expirado", message: `${"code" in payload ? payload.code : "Comunicado"}: ${"title" in payload ? payload.title : "expirado"}.`, type: NotificationType.WARNING, entityType: "Communication" };
+    case "evidence.created": return { title: "Nova evidência registrada", message: `${"code" in payload ? payload.code : "Evidência"}: ${"title" in payload ? payload.title : "registrada"}.`, type: NotificationType.INFO, entityType: "Evidence" };
+    case "evidence.versioned": return { title: "Nova versão de evidência", message: `${"code" in payload ? payload.code : "Evidência"} recebeu a versão ${"version" in payload ? payload.version : "?"}.`, type: NotificationType.WARNING, entityType: "Evidence" };
+    case "evidence.archived": return { title: "Evidência arquivada", message: `${"code" in payload ? payload.code : "Evidência"}: ${"title" in payload ? payload.title : "arquivada"}.`, type: NotificationType.WARNING, entityType: "Evidence" };
   }
 }
 @Injectable()

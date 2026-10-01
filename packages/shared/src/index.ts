@@ -2,6 +2,7 @@ export * from "./auth";
 export * from "./common";
 export * from "./communications";
 export * from "./elections";
+export * from "./evidence";
 export * from "./format";
 export * from "./incidents";
 export * from "./inventory";

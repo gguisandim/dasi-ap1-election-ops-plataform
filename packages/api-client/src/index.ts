@@ -107,6 +107,42 @@ export class ApiClient {
   delete<T = void>(path: string, options?: RequestOptions) {
     return this.request<T>("DELETE", path, undefined, options);
   }
+
+  /**
+   * Envia `multipart/form-data`.
+   *
+   * O `Content-Type` é deliberadamente omitido: o navegador precisa gerar ele
+   * mesmo o boundary do formulário, e defini-lo manualmente quebraria o upload.
+   */
+  async postForm<T>(path: string, form: FormData, options: RequestOptions = {}): Promise<T> {
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}${path}${queryString(options.query)}`, {
+        ...options,
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+          ...options.headers,
+        },
+        body: form,
+      });
+    } catch (cause) {
+      throw new ApiError(0, "Não foi possível conectar à API.", { details: cause });
+    }
+    const isJson = response.headers.get("content-type")?.includes("application/json");
+    const payload = isJson ? ((await response.json()) as unknown) : undefined;
+    if (!response.ok) {
+      const errorPayload = payload as ApiErrorPayload | undefined;
+      const rawMessage = errorPayload?.message;
+      throw new ApiError(
+        response.status,
+        Array.isArray(rawMessage) ? rawMessage.join("; ") : rawMessage ?? `Erro HTTP ${response.status}.`,
+        errorPayload,
+      );
+    }
+    return payload as T;
+  }
   async getBlob(path: string, options: RequestOptions = {}) {
     let response: Response;
     try {

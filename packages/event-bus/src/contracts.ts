@@ -26,6 +26,9 @@ export interface DomainEventMap {
   "communication.archived": { entityId: string; actorId?: string; code: string; title: string };
   "communication.read": { entityId: string; actorId?: string; communicationId: string; recipientId: string; recipientName: string; code: string };
   "communication.acknowledged": { entityId: string; actorId?: string; communicationId: string; recipientId: string; recipientName: string; code: string; title: string };
+  "evidence.created": { entityId: string; actorId?: string; code: string; title: string; type: string; size: number; checksum: string };
+  "evidence.versioned": { entityId: string; actorId?: string; code: string; title: string; version: number; size: number; checksum: string };
+  "evidence.archived": { entityId: string; actorId?: string; code: string; title: string };
 }
 export type DomainEventName = keyof DomainEventMap;
 export interface DomainEvent<K extends DomainEventName = DomainEventName> { name: K; payload: DomainEventMap[K]; occurredAt: Date; }

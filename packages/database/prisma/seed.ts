@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { scryptSync } from "node:crypto";
+import { createHash, scryptSync } from "node:crypto";
 import { PLATFORM_PERMISSION_KEYS, PERMISSIONS } from "@eops/security";
 import {
   AssetCondition,
@@ -10,6 +10,9 @@ import {
   CommunicationPriority,
   CommunicationStatus,
   ElectionStatus,
+  EvidenceEventType,
+  EvidenceLinkType,
+  EvidenceType,
   ElectionType,
   IncidentEventType,
   IncidentSeverity,
@@ -96,6 +99,9 @@ const communicationTemplates = [
   ["Retomada de transmissão", "TRANSMISSION", "Transmissão normalizada", "A transmissão foi normalizada no ponto indicado. Registre a conclusão no monitor de transmissão.", "NORMAL", "transmissao"],
   ["Interrupção de conectividade", "CONNECTIVITY", "Perda de conectividade no enlace", "O enlace principal apresentou perda de conectividade. Acione o plano de contingência e mantenha a supervisão informada.", "CRITICAL", "conectividade"],
 ] as const;
+/** Conteúdo textual do arquivo demonstrativo de evidência (o seed não embute binários). */
+const EVIDENCE_DEMO_CONTENT =
+  "Registro demonstrativo de evidencia fotografica: urna com etiqueta de identificacao parcialmente ilegivel.\n";
 const permissions = PLATFORM_PERMISSION_KEYS;
 const roles = [
   ["ADMIN", "Administrador"], ["SUPERVISOR", "Supervisor"], ["OPERATOR", "Operador"],
@@ -117,8 +123,8 @@ async function main() {
     const allowed = permissionRecords.filter((permission) => {
       if (key === "ADMIN") return true;
       if (key === "SUPERVISOR") return permission.key !== PERMISSIONS.users.manage;
-      if (key === "OPERATOR") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.create, PERMISSIONS.incidents.update, PERMISSIONS.inventory.read, PERMISSIONS.routes.read, PERMISSIONS.routes.manage, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.communications.read, PERMISSIONS.communications.manage, PERMISSIONS.communications.publish, PERMISSIONS.simulation.read, PERMISSIONS.simulation.manage]).has(permission.key);
-      if (key === "TECHNICIAN") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.update, PERMISSIONS.incidents.resolve, PERMISSIONS.inventory.read, PERMISSIONS.inventory.update, PERMISSIONS.inventory.move, PERMISSIONS.routes.read, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.communications.read, PERMISSIONS.simulation.read]).has(permission.key);
+      if (key === "OPERATOR") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.create, PERMISSIONS.incidents.update, PERMISSIONS.inventory.read, PERMISSIONS.routes.read, PERMISSIONS.routes.manage, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.communications.read, PERMISSIONS.communications.manage, PERMISSIONS.communications.publish, PERMISSIONS.evidence.read, PERMISSIONS.evidence.upload, PERMISSIONS.evidence.version, PERMISSIONS.simulation.read, PERMISSIONS.simulation.manage]).has(permission.key);
+      if (key === "TECHNICIAN") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.update, PERMISSIONS.incidents.resolve, PERMISSIONS.inventory.read, PERMISSIONS.inventory.update, PERMISSIONS.inventory.move, PERMISSIONS.routes.read, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.communications.read, PERMISSIONS.evidence.read, PERMISSIONS.evidence.upload, PERMISSIONS.simulation.read]).has(permission.key);
       return permission.key.endsWith(".read");
     });
     for (const permission of allowed) {
@@ -507,6 +513,69 @@ async function main() {
           create: [
             { type: CommunicationEventType.CREATED, message: "Comunicado criado.", actorName: "Coordenação Operacional" },
             { type: CommunicationEventType.SCHEDULED, message: "Comunicado agendado para 2026-10-04T07:00:00.000Z.", actorName: "Coordenação Operacional" },
+          ],
+        },
+      },
+    });
+  }
+
+  const seededEvidence = await prisma.evidence.findFirst({ where: { code: "EVD-00001" } });
+  const connectivityIncident = await prisma.incident.findUnique({ where: { code: "INC-00001" } });
+  if (!seededEvidence) {
+    const evidenceTags = [];
+    for (const [label, slug] of [["vistoria", "vistoria"], ["energia", "energia"], ["comprovante", "comprovante"]] as const) {
+      evidenceTags.push(
+        await prisma.evidenceTag.upsert({
+          where: { label },
+          update: {},
+          create: { label, slug },
+        }),
+      );
+    }
+    await prisma.evidence.create({
+      data: {
+        code: "EVD-00001",
+        title: "Foto da urna com etiqueta danificada",
+        description:
+          "Registro fotográfico da vistoria preventiva no local, evidenciando a etiqueta de identificação parcialmente ilegível.",
+        type: EvidenceType.PHOTO,
+        electionId: election.id,
+        authorName: "Coordenação Operacional",
+        origin: "Vistoria presencial de preparação",
+        observations: "Evidência demonstrativa criada pelo seed para exercitar o acervo.",
+        capturedAt: new Date("2026-09-30T14:20:00.000Z"),
+        currentVersion: 1,
+        versionCount: 1,
+        tags: {
+          create: [{ tag: { connect: { id: evidenceTags[0].id } } }, { tag: { connect: { id: evidenceTags[1].id } } }],
+        },
+        links: {
+          create: [
+            { type: EvidenceLinkType.INCIDENT, targetId: connectivityIncident!.id, targetLabel: "INC-00001 · Conectividade instável no enlace principal" },
+            { type: EvidenceLinkType.POLLING_PLACE, targetId: places[0].id, targetLabel: `${places[0].name} · ${places[0].city}` },
+          ],
+        },
+        versions: {
+          create: {
+            number: 1,
+            // Arquivo demonstrativo textual: o seed não embute binários no repositório.
+            fileName: "urna-etiqueta-danificada.txt",
+            extension: "txt",
+            mimeType: "text/plain",
+            size: 118,
+            checksum: createHash("sha256").update(EVIDENCE_DEMO_CONTENT).digest("hex"),
+            storageKey: "seed/EVD-00001/v1.txt",
+            storageDriver: "seed",
+            reason: "Versão inicial.",
+            authorName: "Coordenação Operacional",
+            isCurrent: true,
+          },
+        },
+        timeline: {
+          create: [
+            { type: EvidenceEventType.CREATED, message: "Evidência registrada.", actorName: "Coordenação Operacional", createdAt: new Date("2026-09-30T14:25:00.000Z") },
+            { type: EvidenceEventType.UPLOADED, message: "Arquivo enviado: urna-etiqueta-danificada.txt.", actorName: "Coordenação Operacional", createdAt: new Date("2026-09-30T14:25:05.000Z") },
+            { type: EvidenceEventType.LINK_ADDED, message: "Vínculo inicial com INC-00001.", actorName: "Coordenação Operacional", createdAt: new Date("2026-09-30T14:25:06.000Z") },
           ],
         },
       },

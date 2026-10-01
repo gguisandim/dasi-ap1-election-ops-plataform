@@ -11,3 +11,6 @@ playwright-report/
 
 backup-security-runtime-*/
 *.local-backup/
+
+# Conteúdo binário do armazenamento local de evidências
+storage/
