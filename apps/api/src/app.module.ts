@@ -17,6 +17,7 @@ import { TransmissionModule } from "../../../plugins/monitoring/transmission/src
 import { ReportsModule } from "../../../plugins/analytics/reports/src/server/reports.module";
 import { FieldTeamsModule } from "../../../plugins/operations/field-teams/src/server/field-teams.module";
 import { PreparationChecklistsModule } from "../../../plugins/operations/preparation-checklists/src/server/preparation-checklists.module";
+import { TasksModule } from "../../../plugins/operations/tasks/src/server/tasks.module";
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { PreparationChecklistsModule } from "../../../plugins/operations/prepara
     ReportsModule,
     FieldTeamsModule,
     PreparationChecklistsModule,
+    TasksModule,
   ],
   controllers: [HealthController],
 })

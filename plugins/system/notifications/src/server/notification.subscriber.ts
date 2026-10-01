@@ -3,7 +3,7 @@ import { NotificationType, UserStatus } from "@prisma/client";
 import { EventBus, type DomainEvent, type DomainEventName } from "../../../../../packages/event-bus/src";
 import { PrismaService } from "../../../../../packages/database/src";
 
-const names: DomainEventName[] = ["incident.created", "incident.assigned", "incident.resolved", "asset.created", "asset.moved", "asset.status_changed", "user.created", "election.created", "route.created", "route.started", "route.completed", "delivery.completed", "delivery.failed", "transmission.completed", "transmission.failed", "transmission.connectivity_changed", "transmission.alert_created", "field_team.allocated", "field_member.checked_in", "field_member.checked_out", "preparation_checklist.approved", "preparation_checklist.blocked"];
+const names: DomainEventName[] = ["incident.created", "incident.assigned", "incident.resolved", "asset.created", "asset.moved", "asset.status_changed", "user.created", "election.created", "route.created", "route.started", "route.completed", "delivery.completed", "delivery.failed", "transmission.completed", "transmission.failed", "transmission.connectivity_changed", "transmission.alert_created", "field_team.allocated", "field_member.checked_in", "field_member.checked_out", "preparation_checklist.approved", "preparation_checklist.blocked", "task.created", "task.assigned", "task.status_changed", "task.completed", "task.blocked"];
 function content(event: DomainEvent): { title: string; message: string; type: NotificationType; entityType: string } {
   const payload = event.payload;
   switch (event.name) {
@@ -29,6 +29,11 @@ function content(event: DomainEvent): { title: string; message: string; type: No
     case "field_member.checked_out": return { title: "Check-out de campo", message: `${"memberName" in payload ? payload.memberName : "Operador"} encerrou o serviço.`, type: NotificationType.INFO, entityType: "FieldMember" };
     case "preparation_checklist.approved": return { title: "Local preparado", message: "Um local de votação foi aprovado para a operação.", type: NotificationType.SUCCESS, entityType: "PreparationChecklist" };
     case "preparation_checklist.blocked": return { title: "Checklist bloqueado", message: `Pendência crítica: ${"reason" in payload ? payload.reason : "verifique os itens obrigatórios"}.`, type: NotificationType.CRITICAL, entityType: "PreparationChecklist" };
+    case "task.created": return { title: "Nova tarefa", message: `Tarefa criada: ${"title" in payload ? payload.title : "atividade operacional"}.`, type: NotificationType.INFO, entityType: "Task" };
+    case "task.assigned": return { title: "Tarefa atribuída", message: `Responsável atualizado para a tarefa ${"title" in payload ? payload.title : "operacional"}.`, type: NotificationType.INFO, entityType: "Task" };
+    case "task.status_changed": return { title: "Status de tarefa alterado", message: `${"title" in payload ? payload.title : "Tarefa"}: ${"to" in payload ? payload.to : "novo status"}.`, type: NotificationType.INFO, entityType: "Task" };
+    case "task.completed": return { title: "Tarefa concluída", message: `${"title" in payload ? payload.title : "Tarefa"} foi concluída.`, type: NotificationType.SUCCESS, entityType: "Task" };
+    case "task.blocked": return { title: "Tarefa bloqueada", message: `${"title" in payload ? payload.title : "Tarefa"}: ${"reason" in payload ? payload.reason : "verifique as dependências"}.`, type: NotificationType.CRITICAL, entityType: "Task" };
   }
 }
 @Injectable()
