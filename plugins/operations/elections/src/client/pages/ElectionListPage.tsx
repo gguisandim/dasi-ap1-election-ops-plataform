@@ -67,7 +67,7 @@ export function ElectionListPage() {
               {data.map((election) => (
                 <tr key={election.id}>
                   <td>
-                    <Link to={`/elections/${election.id}`}>
+                  <Link data-testid="election-link" to={`/elections/${election.id}`}>
                       {election.name}
                     </Link>
                   </td>

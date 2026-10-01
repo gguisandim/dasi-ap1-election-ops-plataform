@@ -5,14 +5,28 @@ import { ElectionsModule } from "../../../plugins/operations/elections/src/serve
 import { ElectoralZonesModule } from "../../../plugins/operations/electoral-zones/src/server/electoral-zones.module";
 import { PollingPlacesModule } from "../../../plugins/operations/polling-places/src/server/polling-places.module";
 import { PollingSectionsModule } from "../../../plugins/operations/polling-sections/src/server/polling-sections.module";
+import { IncidentsModule } from "../../../plugins/monitoring/incidents/src/server/incidents.module";
+import { InventoryModule } from "../../../plugins/logistics/inventory/src/server/inventory.module";
+import { AccessControlModule } from "../../../plugins/system/access-control/src/server/access-control.module";
+import { AuditModule } from "../../../plugins/system/audit/src/server/audit.module";
+import { EventBusModule } from "../../../packages/event-bus/src";
+import { NotificationsModule } from "../../../plugins/system/notifications/src/server/notifications.module";
+import { SimulatorModule } from "../../../plugins/simulation/operational-simulator/src/server/simulator.module";
 
 @Module({
   imports: [
     DatabaseModule,
+    EventBusModule,
     ElectionsModule,
     ElectoralZonesModule,
     PollingPlacesModule,
     PollingSectionsModule,
+    IncidentsModule,
+    InventoryModule,
+    AccessControlModule,
+    AuditModule,
+    NotificationsModule,
+    SimulatorModule,
   ],
   controllers: [HealthController],
 })

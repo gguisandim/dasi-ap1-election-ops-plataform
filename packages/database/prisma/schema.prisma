@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum ElectionStatus {
@@ -41,6 +41,88 @@ enum MonitoringStatus {
   OFFLINE
 }
 
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IncidentStatus {
+  NEW
+  TRIAGED
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  CANCELLED
+}
+
+enum IncidentEventType {
+  INCIDENT_CREATED
+  STATUS_CHANGED
+  ASSIGNED
+  COMMENT_ADDED
+  SEVERITY_CHANGED
+  RESOLVED
+  REOPENED
+  CLOSED
+}
+
+enum AssetStatus {
+  AVAILABLE
+  ALLOCATED
+  IN_TRANSIT
+  IN_USE
+  MAINTENANCE
+  LOST
+  RETIRED
+}
+
+enum AssetCondition {
+  GOOD
+  ATTENTION
+  DAMAGED
+  UNAVAILABLE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  LOCKED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  ASSIGN
+  STATUS_CHANGE
+  LOGIN
+  LOGOUT
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  CRITICAL
+  SUCCESS
+}
+
+enum SimulationStatus {
+  DRAFT
+  RUNNING
+  PAUSED
+  FINISHED
+  CANCELLED
+}
+
+enum FailureProbability {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model Election {
   id          String          @id @default(cuid())
   name        String
@@ -52,6 +134,8 @@ model Election {
   updatedAt   DateTime        @updatedAt
   rounds      ElectionRound[]
   zones       ElectoralZone[]
+  incidents   Incident[]
+  simulations Simulation[]
 
   @@index([year, status])
 }
@@ -71,38 +155,50 @@ model ElectionRound {
 }
 
 model ElectoralZone {
-  id            String         @id @default(cuid())
-  electionId    String
-  number        Int
-  name          String
-  municipality  String
-  state         String         @db.Char(2)
-  status        ResourceStatus @default(ACTIVE)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  election      Election       @relation(fields: [electionId], references: [id], onDelete: Cascade)
-  pollingPlaces PollingPlace[]
+  id                 String            @id @default(cuid())
+  electionId         String
+  number             Int
+  name               String
+  municipality       String
+  state              String            @db.Char(2)
+  status             ResourceStatus    @default(ACTIVE)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  election           Election          @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  pollingPlaces      PollingPlace[]
+  incidents          Incident[]
+  assets             Asset[]
+  assetMovementsFrom AssetMovement[]   @relation("AssetMovementFromZone")
+  assetMovementsTo   AssetMovement[]   @relation("AssetMovementToZone")
+  assetAssignments   AssetAssignment[]
+  simulationEvents   SimulationEvent[]
 
   @@unique([electionId, number])
   @@index([municipality, state])
 }
 
 model PollingPlace {
-  id               String           @id @default(cuid())
-  electoralZoneId  String
-  name             String
-  address          String
-  district         String
-  city             String
-  state            String           @db.Char(2)
-  latitude         Decimal?         @db.Decimal(9, 6)
-  longitude        Decimal?         @db.Decimal(9, 6)
-  status           ResourceStatus   @default(ACTIVE)
-  monitoringStatus MonitoringStatus @default(NORMAL)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  electoralZone    ElectoralZone    @relation(fields: [electoralZoneId], references: [id], onDelete: Cascade)
-  sections         PollingSection[]
+  id                 String            @id @default(cuid())
+  electoralZoneId    String
+  name               String
+  address            String
+  district           String
+  city               String
+  state              String            @db.Char(2)
+  latitude           Decimal?          @db.Decimal(9, 6)
+  longitude          Decimal?          @db.Decimal(9, 6)
+  status             ResourceStatus    @default(ACTIVE)
+  monitoringStatus   MonitoringStatus  @default(NORMAL)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  electoralZone      ElectoralZone     @relation(fields: [electoralZoneId], references: [id], onDelete: Cascade)
+  sections           PollingSection[]
+  incidents          Incident[]
+  assets             Asset[]
+  assetMovementsFrom AssetMovement[]   @relation("AssetMovementFromPlace")
+  assetMovementsTo   AssetMovement[]   @relation("AssetMovementToPlace")
+  assetAssignments   AssetAssignment[]
+  simulationEvents   SimulationEvent[]
 
   @@index([city, state])
   @@index([electoralZoneId, monitoringStatus])
@@ -120,4 +216,343 @@ model PollingSection {
 
   @@unique([pollingPlaceId, number])
   @@index([status])
+}
+
+model IncidentCategory {
+  id          String     @id @default(cuid())
+  key         String     @unique
+  name        String
+  description String?
+  active      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  incidents   Incident[]
+
+  @@index([active, name])
+}
+
+model Incident {
+  id               String               @id @default(cuid())
+  code             String               @unique
+  title            String
+  description      String
+  severity         IncidentSeverity
+  status           IncidentStatus       @default(NEW)
+  electionId       String
+  electoralZoneId  String?
+  pollingPlaceId   String?
+  categoryId       String
+  createdById      String?
+  assignedToId     String?
+  assignedToName   String?
+  openedAt         DateTime             @default(now())
+  resolvedAt       DateTime?
+  closedAt         DateTime?
+  slaDeadline      DateTime?
+  isSimulated      Boolean              @default(false)
+  simulationId     String?
+  assetId          String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  election         Election             @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  electoralZone    ElectoralZone?       @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
+  pollingPlace     PollingPlace?        @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  category         IncidentCategory     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  asset            Asset?               @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  simulation       Simulation?          @relation(fields: [simulationId], references: [id], onDelete: SetNull)
+  events           IncidentEvent[]
+  assignments      IncidentAssignment[]
+  simulationEvents SimulationEvent[]
+
+  @@index([electionId, status])
+  @@index([electoralZoneId, status])
+  @@index([pollingPlaceId, status])
+  @@index([severity, status])
+  @@index([slaDeadline])
+  @@index([assetId])
+  @@index([simulationId])
+}
+
+model IncidentEvent {
+  id         String            @id @default(cuid())
+  incidentId String
+  type       IncidentEventType
+  message    String
+  actorId    String?
+  metadata   Json?
+  createdAt  DateTime          @default(now())
+  incident   Incident          @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@index([incidentId, createdAt])
+}
+
+model IncidentAssignment {
+  id             String    @id @default(cuid())
+  incidentId     String
+  assignedToId   String?
+  assignedToName String
+  assignedById   String?
+  reason         String?
+  assignedAt     DateTime  @default(now())
+  endedAt        DateTime?
+  incident       Incident  @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@index([incidentId, assignedAt])
+  @@index([assignedToId])
+}
+
+model AssetType {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  assets      Asset[]
+
+  @@index([active, name])
+}
+
+model Asset {
+  id               String            @id @default(cuid())
+  assetTag         String            @unique
+  name             String
+  typeId           String
+  serialNumber     String?
+  manufacturer     String?
+  model            String?
+  status           AssetStatus       @default(AVAILABLE)
+  condition        AssetCondition    @default(GOOD)
+  electoralZoneId  String?
+  pollingPlaceId   String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  type             AssetType         @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  electoralZone    ElectoralZone?    @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
+  pollingPlace     PollingPlace?     @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  movements        AssetMovement[]
+  assignments      AssetAssignment[]
+  incidents        Incident[]
+  simulationEvents SimulationEvent[]
+
+  @@index([typeId, status])
+  @@index([electoralZoneId, status])
+  @@index([pollingPlaceId, status])
+  @@index([condition])
+}
+
+model AssetMovement {
+  id                 String         @id @default(cuid())
+  assetId            String
+  fromZoneId         String?
+  fromPollingPlaceId String?
+  toZoneId           String?
+  toPollingPlaceId   String?
+  originLabel        String
+  destinationLabel   String
+  responsibleId      String?
+  responsibleName    String
+  reason             String
+  statusBefore       AssetStatus
+  statusAfter        AssetStatus
+  movedAt            DateTime       @default(now())
+  createdAt          DateTime       @default(now())
+  asset              Asset          @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  fromZone           ElectoralZone? @relation("AssetMovementFromZone", fields: [fromZoneId], references: [id], onDelete: SetNull)
+  fromPollingPlace   PollingPlace?  @relation("AssetMovementFromPlace", fields: [fromPollingPlaceId], references: [id], onDelete: SetNull)
+  toZone             ElectoralZone? @relation("AssetMovementToZone", fields: [toZoneId], references: [id], onDelete: SetNull)
+  toPollingPlace     PollingPlace?  @relation("AssetMovementToPlace", fields: [toPollingPlaceId], references: [id], onDelete: SetNull)
+
+  @@index([assetId, movedAt])
+  @@index([toZoneId, movedAt])
+  @@index([toPollingPlaceId, movedAt])
+}
+
+model AssetAssignment {
+  id              String         @id @default(cuid())
+  assetId         String
+  electoralZoneId String?
+  pollingPlaceId  String?
+  assignedToId    String?
+  assignedToName  String?
+  assignedAt      DateTime       @default(now())
+  endedAt         DateTime?
+  asset           Asset          @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  electoralZone   ElectoralZone? @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
+  pollingPlace    PollingPlace?  @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+
+  @@index([assetId, assignedAt])
+  @@index([pollingPlaceId, endedAt])
+}
+
+model User {
+  id                      String                   @id @default(cuid())
+  name                    String
+  email                   String                   @unique
+  passwordHash            String
+  status                  UserStatus               @default(ACTIVE)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  roles                   UserRole[]
+  auditEvents             AuditEvent[]
+  notifications           Notification[]
+  notificationPreferences NotificationPreference[]
+
+  @@index([status, name])
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  name        String
+  description String?
+  system      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  users       UserRole[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  description String
+  createdAt   DateTime         @default(now())
+  roles       RolePermission[]
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([roleId])
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  createdAt    DateTime   @default(now())
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([permissionId])
+}
+
+model AuditEvent {
+  id         String      @id @default(cuid())
+  actorId    String?
+  action     AuditAction
+  entityType String
+  entityId   String?
+  oldData    Json?
+  newData    Json?
+  metadata   Json?
+  createdAt  DateTime    @default(now())
+  actor      User?       @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([entityType, entityId])
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String
+  type       NotificationType @default(INFO)
+  title      String
+  message    String
+  eventName  String?
+  entityType String?
+  entityId   String?
+  readAt     DateTime?
+  createdAt  DateTime         @default(now())
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@index([eventName, createdAt])
+}
+
+model NotificationPreference {
+  id        String   @id @default(cuid())
+  userId    String
+  eventName String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventName])
+}
+
+model SimulationScenario {
+  id            String       @id @default(cuid())
+  name          String
+  description   String?
+  configuration Json
+  active        Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  simulations   Simulation[]
+
+  @@index([active, name])
+}
+
+model Simulation {
+  id                String              @id @default(cuid())
+  name              String
+  electionId        String
+  scenarioId        String?
+  status            SimulationStatus    @default(DRAFT)
+  speed             Int                 @default(1)
+  probability       FailureProbability  @default(LOW)
+  connectivity      Boolean             @default(true)
+  equipment         Boolean             @default(true)
+  transmission      Boolean             @default(true)
+  logistics         Boolean             @default(true)
+  applyToOperations Boolean             @default(false)
+  elapsedSeconds    Int                 @default(0)
+  startedAt         DateTime?
+  pausedAt          DateTime?
+  endedAt           DateTime?
+  createdById       String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  election          Election            @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  scenario          SimulationScenario? @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
+  events            SimulationEvent[]
+  incidents         Incident[]
+
+  @@index([electionId, status])
+  @@index([createdAt])
+}
+
+model SimulationEvent {
+  id              String         @id @default(cuid())
+  simulationId    String
+  eventType       String
+  title           String
+  description     String?
+  offsetSeconds   Int
+  payload         Json?
+  incidentId      String?
+  assetId         String?
+  pollingPlaceId  String?
+  createdAt       DateTime       @default(now())
+  simulation      Simulation     @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  incident        Incident?      @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  asset           Asset?         @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  pollingPlace    PollingPlace?  @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  electoralZone   ElectoralZone? @relation(fields: [electoralZoneId], references: [id])
+  electoralZoneId String?
+
+  @@index([simulationId, offsetSeconds])
+  @@index([incidentId])
 }

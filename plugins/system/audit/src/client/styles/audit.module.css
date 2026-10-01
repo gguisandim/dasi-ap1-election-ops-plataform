@@ -1,0 +1,4 @@
+.page { max-width: 1280px; margin: 0 auto; } .page header { margin-bottom: 20px; } .page header span { color: #72aee6; font-size: 11px; letter-spacing: .13em; } .page h1 { margin: 6px 0; } .page header p { color: #8398ae; }
+.filters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px; margin-bottom: 18px; }
+.table { overflow-x: auto; background: #0d1a2b; border: 1px solid #1a2a41; border-radius: 12px; } .table table { width: 100%; border-collapse: collapse; } .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #1a2a41; } .table th { color: #778da5; font-size: 11px; text-transform: uppercase; } .table code { display: block; max-width: 320px; overflow: hidden; text-overflow: ellipsis; color: #9db1c7; }
+@media (max-width: 800px) { .filters { grid-template-columns: 1fr 1fr; } }

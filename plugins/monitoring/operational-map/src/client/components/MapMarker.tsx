@@ -11,6 +11,7 @@ export function MapMarker({ place }: { place: PollingPlaceSummary }) {
   if (place.latitude === null || place.longitude === null) return null;
   return (
     <CircleMarker
+      className="operational-marker"
       center={[place.latitude, place.longitude]}
       radius={9}
       pathOptions={{

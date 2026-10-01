@@ -1,12 +1,16 @@
 import { useMemo, useState } from "react";
 import { CATEGORY_LABELS, type PluginCategory } from "@eops/plugin-sdk";
-import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { LoginPage, useAuth } from "@eops/plugin-access-control";
+import { Loading } from "@eops/ui";
+import { NotificationBell } from "@eops/plugin-notifications";
 import { plugins } from "./pluginRegistry";
 import { HomeDashboard } from "./components/HomeDashboard";
 import "./styles/global.css";
 
 export default function App() {
   const location = useLocation();
+  const { user, loading: authLoading, logout } = useAuth();
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const grouped = useMemo(() => {
     const result = new Map<PluginCategory, typeof plugins>();
@@ -22,6 +26,12 @@ export default function App() {
       location.pathname === plugin.manifest.route ||
       location.pathname.startsWith(`${plugin.manifest.route}/`),
   );
+  if (authLoading) return <Loading label="Validando sessão…" />;
+  if (location.pathname === "/login") {
+    if (user) return <Navigate to={(location.state as { from?: string } | null)?.from ?? "/"} replace />;
+    return <Routes><Route path="/login" element={<LoginPage />} /></Routes>;
+  }
+  if (!user) return <Navigate to="/login" state={{ from: location.pathname }} replace />;
 
   return (
     <div className="app-shell">
@@ -91,8 +101,10 @@ export default function App() {
             </span>
           </div>
           <div className="topbar-actions">
+            <NotificationBell />
             <span className="status-dot" />
-            <span>API configurada</span>
+            <span>{user.name}</span>
+            <button onClick={() => void logout()}>Sair</button>
           </div>
         </header>
         <div className="workspace-content">

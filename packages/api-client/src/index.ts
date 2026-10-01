@@ -32,10 +32,15 @@ function queryString(query?: RequestOptions["query"]) {
 }
 
 export class ApiClient {
+  private token?: string;
   constructor(private baseUrl = "/api") {}
 
   setBaseUrl(baseUrl: string) {
     this.baseUrl = baseUrl.replace(/\/$/, "");
+  }
+
+  setToken(token?: string) {
+    this.token = token;
   }
 
   private async request<T>(
@@ -53,6 +58,7 @@ export class ApiClient {
           method,
           headers: {
             Accept: "application/json",
+            ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
             ...(body === undefined
               ? {}
               : { "Content-Type": "application/json" }),
@@ -106,4 +112,7 @@ export class ApiClient {
 export const apiClient = new ApiClient();
 export function configureApiClient(baseUrl?: string) {
   if (baseUrl) apiClient.setBaseUrl(baseUrl);
+}
+export function configureApiToken(token?: string) {
+  apiClient.setToken(token);
 }

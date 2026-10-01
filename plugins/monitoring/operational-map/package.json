@@ -1,5 +1,5 @@
 {
   "name": "@eops/plugin-operational-map", "version": "0.1.0", "private": true, "type": "module", "main": "src/index.ts",
-  "dependencies": { "@eops/api-client": "0.1.0", "@eops/plugin-sdk": "0.1.0", "@eops/shared": "0.1.0", "@eops/ui": "0.1.0", "leaflet": "latest", "react": "latest", "react-leaflet": "latest", "react-router-dom": "latest" },
-  "devDependencies": { "@types/leaflet": "latest" }
+  "dependencies": { "@eops/api-client": "0.1.0", "@eops/plugin-sdk": "0.1.0", "@eops/shared": "0.1.0", "@eops/ui": "0.1.0", "leaflet": "1.9.4", "react": "19.3.0", "react-leaflet": "5.0.0", "react-router-dom": "7.18.4" },
+  "devDependencies": { "@types/leaflet": "1.9.22" }
 }

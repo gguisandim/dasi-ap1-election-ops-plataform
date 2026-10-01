@@ -5,6 +5,7 @@ import {
 } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../../../../../packages/database/src";
+import { EventBus } from "../../../../../packages/event-bus/src";
 import {
   CreateElectionDto,
   CreateRoundDto,
@@ -14,7 +15,7 @@ import {
 
 @Injectable()
 export class ElectionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly eventBus?: EventBus) {}
 
   async findAll() {
     const elections = await this.prisma.election.findMany({
@@ -72,9 +73,9 @@ export class ElectionsService {
     };
   }
 
-  create(dto: CreateElectionDto) {
+  async create(dto: CreateElectionDto) {
     const { rounds, ...data } = dto;
-    return this.prisma.election.create({
+    const election = await this.prisma.election.create({
       data: {
         ...data,
         rounds: rounds
@@ -88,6 +89,8 @@ export class ElectionsService {
       },
       include: { rounds: true },
     });
+    await this.eventBus?.emit("election.created", { entityId: election.id, name: election.name, year: election.year });
+    return election;
   }
 
   async update(id: string, dto: UpdateElectionDto) {

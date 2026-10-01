@@ -10,6 +10,9 @@ import { incidentsPlugin } from "@eops/plugin-incidents";
 import { transmissionPlugin } from "@eops/plugin-transmission";
 import { reportsPlugin } from "@eops/plugin-reports";
 import { auditPlugin } from "@eops/plugin-audit";
+import { accessControlPlugin } from "@eops/plugin-access-control";
+import { notificationsPlugin } from "@eops/plugin-notifications";
+import { operationalSimulatorPlugin } from "@eops/plugin-operational-simulator";
 
 export const plugins: PlatformPlugin[] = [
   electionsPlugin,
@@ -23,4 +26,7 @@ export const plugins: PlatformPlugin[] = [
   operationalMapPlugin,
   reportsPlugin,
   auditPlugin,
+  accessControlPlugin,
+  notificationsPlugin,
+  operationalSimulatorPlugin,
 ];

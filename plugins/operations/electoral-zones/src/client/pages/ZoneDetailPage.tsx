@@ -64,7 +64,7 @@ export function ZoneDetailPage() {
           <ul className={styles.list}>
             {data.pollingPlaces.map((place) => (
               <li key={place.id}>
-                <Link to={`/polling-places/${place.id}`}>{place.name}</Link>
+                  <Link data-testid="polling-place-link" to={`/polling-places/${place.id}`}>{place.name}</Link>
                 <span>
                   {place.address} · {place.sectionCount} seções
                 </span>

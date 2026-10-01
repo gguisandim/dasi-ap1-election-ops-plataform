@@ -79,6 +79,8 @@
   margin-top: 8px;
   font-size: 22px;
 }
+.metricActions { display: flex; gap: 9px; margin-top: 8px; font-size: 12px; }
+.metricActions a { color: #8fc6f4; text-decoration: none; }
 .coordinates {
   font-size: 14px !important;
 }

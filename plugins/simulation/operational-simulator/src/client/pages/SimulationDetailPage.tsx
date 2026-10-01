@@ -1,0 +1,14 @@
+import { useEffect, useRef, useState } from "react";
+import { Button, Card, ErrorState, LinkButton, Loading, useAsync } from "@eops/ui";
+import { useParams } from "react-router-dom";
+import { simulatorService } from "../services/simulatorService";
+import styles from "../styles/simulator.module.css";
+
+function clock(seconds: number) { const hours = Math.floor(seconds / 3600); const minutes = Math.floor((seconds % 3600) / 60); const rest = seconds % 60; return [hours, minutes, rest].map((value) => String(value).padStart(2, "0")).join(":"); }
+export function SimulationDetailPage() {
+  const { id = "" } = useParams(); const { data, loading, error, reload } = useAsync(() => simulatorService.get(id), [id]); const [actionError, setActionError] = useState<unknown>(); const busy = useRef(false);
+  async function action(operation: () => Promise<unknown>) { if (busy.current) return; busy.current = true; setActionError(undefined); try { await operation(); reload(); } catch (cause) { setActionError(cause); } finally { busy.current = false; } }
+  useEffect(() => { if (data?.status !== "RUNNING") return; const timer = window.setInterval(() => void action(() => simulatorService.tick(id)), 5000); return () => window.clearInterval(timer); }, [data?.status, id]);
+  if (loading) return <Loading />; if (error || !data) return <ErrorState error={error ?? new Error("Simulação não encontrada.")} onRetry={reload} />;
+  return <section className={styles.page}><LinkButton secondary to="/simulator">Voltar</LinkButton><header><span>SIMULAÇÃO OPERACIONAL</span><h1>{data.name}</h1><p>{data.election.name} · relógio {clock(data.elapsedSeconds)} · velocidade {data.speed}x</p></header>{actionError !== undefined && <ErrorState error={actionError} />}<div className={styles.controls}><Card><strong data-status={data.status}>{data.status}</strong><div><Button disabled={!['DRAFT','PAUSED'].includes(data.status)} onClick={() => void action(() => simulatorService.start(id))}>Iniciar</Button><Button disabled={data.status !== 'RUNNING'} onClick={() => void action(() => simulatorService.pause(id))}>Pausar</Button><Button disabled={data.status !== 'RUNNING'} onClick={() => void action(() => simulatorService.tick(id))}>Gerar evento</Button><Button disabled={!['RUNNING','PAUSED'].includes(data.status)} onClick={() => void action(() => simulatorService.finish(id))}>Encerrar</Button></div><p>{data.applyToOperations ? "Estados dos ativos são aplicados temporariamente." : "Modo isolado: ativos produtivos não são alterados."}</p></Card></div><Card><h2>Replay</h2><ol className={styles.timeline}>{data.events?.map((event) => <li key={event.id}><time>{clock(event.offsetSeconds)}</time><div><strong>{event.title}</strong><p>{event.description}</p><span>{event.asset?.assetTag} {event.pollingPlace?.name} {event.incident?.code}</span></div></li>)}</ol></Card></section>;
+}

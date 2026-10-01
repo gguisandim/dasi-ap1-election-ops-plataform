@@ -5,7 +5,9 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from "@nestjs/common";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
+
+const delay = (milliseconds: number) => new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 
 @Injectable()
 export class PrismaService
@@ -13,7 +15,16 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   async onModuleInit() {
-    await this.$connect();
+    for (let attempt = 1; attempt <= 4; attempt += 1) {
+      try {
+        await this.$connect();
+        return;
+      } catch (error) {
+        const retryable = error instanceof Prisma.PrismaClientInitializationError && error.errorCode === "P1001";
+        if (!retryable || attempt === 4) throw error;
+        await delay(attempt * 1000);
+      }
+    }
   }
   async onModuleDestroy() {
     await this.$disconnect();

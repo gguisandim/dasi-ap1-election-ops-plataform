@@ -5,7 +5,7 @@
   "type": "module",
   "main": "src/index.ts",
   "dependencies": {
-    "react": "latest",
-    "react-router-dom": "latest"
+    "react": "19.3.0",
+    "react-router-dom": "7.18.4"
   }
 }

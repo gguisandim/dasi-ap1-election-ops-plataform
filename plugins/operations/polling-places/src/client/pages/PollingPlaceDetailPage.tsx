@@ -77,6 +77,22 @@ export function PollingPlaceDetailPage() {
             {data.latitude ?? "—"}, {data.longitude ?? "—"}
           </strong>
         </Card>
+        <Card>
+          <span>Incidentes ativos</span>
+          <strong>{data.activeIncidentCount ?? 0}</strong>
+          <div className={styles.metricActions}>
+            <Link to={`/incidents?pollingPlaceId=${id}`}>Ver incidentes</Link>
+            <Link to={`/incidents/new?pollingPlaceId=${id}`}>Novo incidente</Link>
+          </div>
+        </Card>
+        <Card>
+          <span>Equipamentos</span>
+          <strong>{data.assetCount ?? 0}</strong>
+          <div className={styles.metricActions}>
+            <Link to={`/inventory?pollingPlaceId=${id}`}>Ver equipamentos</Link>
+            <Link to={`/inventory/new?pollingPlaceId=${id}`}>Novo ativo</Link>
+          </div>
+        </Card>
       </div>
       <Card>
         <div className={styles.sectionHead}>

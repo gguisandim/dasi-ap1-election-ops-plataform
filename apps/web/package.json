@@ -26,15 +26,18 @@
     "@eops/plugin-transmission": "0.1.0",
     "@eops/plugin-reports": "0.1.0",
     "@eops/plugin-audit": "0.1.0",
-    "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "typescript": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "react-router-dom": "latest"
+    "@eops/plugin-access-control": "0.1.0",
+    "@eops/plugin-notifications": "0.1.0",
+    "@eops/plugin-operational-simulator": "0.1.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "vite": "8.3.1",
+    "typescript": "6.0.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-router-dom": "7.18.4"
   },
   "devDependencies": {
-    "@types/react": "latest",
-    "@types/react-dom": "latest"
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
   }
 }

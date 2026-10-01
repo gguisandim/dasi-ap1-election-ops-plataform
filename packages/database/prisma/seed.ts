@@ -1,7 +1,13 @@
 import "dotenv/config";
+import { scryptSync } from "node:crypto";
 import {
+  AssetCondition,
+  AssetStatus,
   ElectionStatus,
   ElectionType,
+  IncidentEventType,
+  IncidentSeverity,
+  IncidentStatus,
   MonitoringStatus,
   PrismaClient,
   ResourceStatus,
@@ -53,42 +59,119 @@ const neighborhoods = [
   "Águas Claras",
   "Bela Vista",
 ];
+const incidentCategories = [
+  ["CONNECTIVITY", "Conectividade"],
+  ["EQUIPMENT", "Equipamento"],
+  ["POWER", "Energia elétrica"],
+  ["TRANSPORT", "Transporte"],
+  ["TRANSMISSION", "Transmissão"],
+  ["SECURITY", "Segurança"],
+  ["OPERATIONAL", "Operacional"],
+  ["OTHER", "Outros"],
+] as const;
+const assetTypes = [
+  ["VOTING_MACHINE", "Urna"], ["NOTEBOOK", "Notebook"], ["ROUTER", "Roteador"],
+  ["MODEM", "Modem"], ["BATTERY", "Bateria"], ["PRINTER", "Impressora"],
+  ["ELECTION_KIT", "Kit Eleitoral"], ["RADIO", "Rádio"], ["PHONE", "Celular"], ["OTHER", "Outro"],
+] as const;
+const permissions = [
+  "elections.read", "elections.manage",
+  "incidents.read", "incidents.create", "incidents.assign", "incidents.update", "incidents.resolve", "incidents.close",
+  "inventory.read", "inventory.create", "inventory.update", "inventory.move",
+  "users.read", "users.manage", "audit.read",
+  "simulation.read", "simulation.manage",
+] as const;
+const roles = [
+  ["ADMIN", "Administrador"], ["SUPERVISOR", "Supervisor"], ["OPERATOR", "Operador"],
+  ["TECHNICIAN", "Técnico"], ["VIEWER", "Consulta"],
+] as const;
+function demoPasswordHash(password: string) {
+  const salt = "eops-demo-seed-2026";
+  return `scrypt:${salt}:${scryptSync(password, salt, 64).toString("hex")}`;
+}
 
 async function main() {
-  await prisma.pollingSection.deleteMany();
-  await prisma.pollingPlace.deleteMany();
-  await prisma.electoralZone.deleteMany();
-  await prisma.electionRound.deleteMany();
-  await prisma.election.deleteMany();
-
-  const election = await prisma.election.create({
-    data: {
-      name: "Eleições Gerais 2026 — Região Demonstração",
-      description:
-        "Pleito fictício para treinamento e demonstração da plataforma.",
-      year: 2026,
-      type: ElectionType.GENERAL,
-      status: ElectionStatus.PREPARATION,
-      rounds: {
-        create: [
-          {
-            roundNumber: 1,
-            date: new Date("2026-10-04T11:00:00.000Z"),
-            status: RoundStatus.SCHEDULED,
-          },
-          {
-            roundNumber: 2,
-            date: new Date("2026-10-25T11:00:00.000Z"),
-            status: RoundStatus.SCHEDULED,
-          },
-        ],
-      },
-    },
+  const permissionRecords = [];
+  for (const key of permissions) {
+    permissionRecords.push(await prisma.permission.upsert({ where: { key }, update: { description: key }, create: { key, description: key } }));
+  }
+  const roleRecords = [];
+  for (const [key, name] of roles) {
+    const role = await prisma.role.upsert({ where: { key }, update: { name, system: true }, create: { key, name, description: `Perfil padrão ${name}.`, system: true } });
+    const allowed = permissionRecords.filter((permission) => {
+      if (key === "ADMIN") return true;
+      if (key === "SUPERVISOR") return permission.key !== "users.manage";
+      if (key === "OPERATOR") return ["elections.read", "incidents.read", "incidents.create", "incidents.update", "inventory.read", "simulation.read", "simulation.manage"].includes(permission.key);
+      if (key === "TECHNICIAN") return ["incidents.read", "incidents.update", "incidents.resolve", "inventory.read", "inventory.update", "inventory.move", "simulation.read"].includes(permission.key);
+      return permission.key.endsWith(".read");
+    });
+    for (const permission of allowed) {
+      await prisma.rolePermission.upsert({ where: { roleId_permissionId: { roleId: role.id, permissionId: permission.id } }, update: {}, create: { roleId: role.id, permissionId: permission.id } });
+    }
+    roleRecords.push(role);
+  }
+  const passwordHash = demoPasswordHash(process.env.DEMO_ADMIN_PASSWORD ?? "DemoElectionOps2026!");
+  const demoUsers = [
+    ["ADMIN", "Administrador Demo", "admin@eops.local"], ["SUPERVISOR", "Supervisora Demo", "supervisor@eops.local"],
+    ["OPERATOR", "Operador Demo", "operator@eops.local"], ["TECHNICIAN", "Técnica Demo", "technician@eops.local"],
+    ["VIEWER", "Consulta Demo", "viewer@eops.local"],
+  ] as const;
+  const userRecords = [];
+  for (const [roleKey, name, email] of demoUsers) {
+    const user = await prisma.user.upsert({ where: { email }, update: { name, passwordHash, status: "ACTIVE" }, create: { name, email, passwordHash, status: "ACTIVE" } });
+    const role = roleRecords.find((item) => item.key === roleKey)!;
+    await prisma.userRole.upsert({ where: { userId_roleId: { userId: user.id, roleId: role.id } }, update: {}, create: { userId: user.id, roleId: role.id } });
+    userRecords.push(user);
+  }
+  for (const user of userRecords) {
+    if (!await prisma.notification.findFirst({ where: { userId: user.id, eventName: "seed.welcome" } })) {
+      await prisma.notification.create({ data: { userId: user.id, type: "INFO", title: "Ambiente de demonstração pronto", message: "Pleito, estrutura, incidentes e ativos fictícios foram carregados.", eventName: "seed.welcome", entityType: "System" } });
+    }
+  }
+  const electionData = {
+    name: "Eleições Gerais 2026 — Região Demonstração",
+    description: "Pleito fictício para treinamento e demonstração da plataforma.",
+    year: 2026,
+    type: ElectionType.GENERAL,
+    status: ElectionStatus.PREPARATION,
+  };
+  const existingElection = await prisma.election.findFirst({
+    where: { year: electionData.year, type: electionData.type },
   });
+  const election = existingElection
+    ? await prisma.election.update({ where: { id: existingElection.id }, data: electionData })
+    : await prisma.election.create({ data: electionData });
+  const scenario = await prisma.simulationScenario.findFirst({ where: { name: "Dia de votação — falhas combinadas" } }) ?? await prisma.simulationScenario.create({ data: { name: "Dia de votação — falhas combinadas", description: "Cenário demonstrativo com conectividade, equipamentos, transmissão e logística.", configuration: { recommendedSpeed: 20, probability: "MEDIUM", failures: ["connectivity", "equipment", "transmission", "logistics"] } } });
+  if (!await prisma.simulation.findFirst({ where: { electionId: election.id, name: "Treinamento operacional padrão" } })) {
+    await prisma.simulation.create({ data: { name: "Treinamento operacional padrão", electionId: election.id, scenarioId: scenario.id, speed: 20, probability: "MEDIUM" } });
+  }
+  await prisma.electionRound.upsert({
+      where: { electionId_roundNumber: { electionId: election.id, roundNumber: 1 } },
+      update: { date: new Date("2026-10-04T11:00:00.000Z"), status: RoundStatus.SCHEDULED },
+      create: { electionId: election.id, roundNumber: 1, date: new Date("2026-10-04T11:00:00.000Z"), status: RoundStatus.SCHEDULED },
+    });
+  await prisma.electionRound.upsert({
+      where: { electionId_roundNumber: { electionId: election.id, roundNumber: 2 } },
+      update: { date: new Date("2026-10-25T11:00:00.000Z"), status: RoundStatus.SCHEDULED },
+      create: { electionId: election.id, roundNumber: 2, date: new Date("2026-10-25T11:00:00.000Z"), status: RoundStatus.SCHEDULED },
+    });
 
+  const existingStructure = await Promise.all([
+    prisma.electoralZone.count({ where: { electionId: election.id } }),
+    prisma.pollingPlace.count({ where: { electoralZone: { electionId: election.id } } }),
+    prisma.pollingSection.count({ where: { pollingPlace: { electoralZone: { electionId: election.id } } } }),
+  ]);
+  if (existingStructure[0] < 4 || existingStructure[1] < 32 || existingStructure[2] < 208) {
   for (const [zoneIndex, zoneData] of zones.entries()) {
-    const zone = await prisma.electoralZone.create({
-      data: {
+    const zone = await prisma.electoralZone.upsert({
+      where: { electionId_number: { electionId: election.id, number: zoneData.number } },
+      update: {
+        name: zoneData.name,
+        municipality: zoneData.municipality,
+        state: zoneData.state,
+        status: ResourceStatus.ACTIVE,
+      },
+      create: {
         electionId: election.id,
         number: zoneData.number,
         name: zoneData.name,
@@ -102,50 +185,177 @@ async function main() {
       const neighborhood =
         neighborhoods[(placeIndex + zoneIndex) % neighborhoods.length];
       const placeNumber = zoneIndex * 8 + placeIndex + 1;
-      const place = await prisma.pollingPlace.create({
-        data: {
-          electoralZoneId: zone.id,
-          name: `${placeKinds[placeIndex % placeKinds.length]} ${["Ipê", "Jatobá", "Guará", "Açaí"][zoneIndex]} ${placeIndex + 1}`,
-          address: `Avenida Cívica, ${100 + placeNumber * 7}`,
-          district: neighborhood,
-          city: zoneData.municipality,
-          state: zoneData.state,
-          latitude:
-            zoneData.base[0] +
-            (placeIndex % 4) * 0.006 -
-            Math.floor(placeIndex / 4) * 0.004,
-          longitude:
-            zoneData.base[1] +
-            (placeIndex % 4) * 0.007 +
-            Math.floor(placeIndex / 4) * 0.005,
-          status: ResourceStatus.ACTIVE,
-          monitoringStatus: [
-            MonitoringStatus.NORMAL,
-            MonitoringStatus.NORMAL,
-            MonitoringStatus.NORMAL,
-            MonitoringStatus.ATTENTION,
-            MonitoringStatus.NORMAL,
-            MonitoringStatus.CRITICAL,
-            MonitoringStatus.NORMAL,
-            MonitoringStatus.OFFLINE,
-          ][placeIndex],
-          sections: {
-            create: Array.from(
-              { length: 5 + (placeIndex % 4) },
-              (_, sectionIndex) => ({
-                number:
-                  zoneData.number * 100 + placeIndex * 10 + sectionIndex + 1,
-                registeredVoters:
-                  285 + ((placeNumber * 23 + sectionIndex * 17) % 116),
-                status: ResourceStatus.ACTIVE,
-              }),
-            ),
-          },
-        },
+      const name = `${placeKinds[placeIndex % placeKinds.length]} ${["Ipê", "Jatobá", "Guará", "Açaí"][zoneIndex]} ${placeIndex + 1}`;
+      const placeData = {
+        electoralZoneId: zone.id,
+        name,
+        address: `Avenida Cívica, ${100 + placeNumber * 7}`,
+        district: neighborhood,
+        city: zoneData.municipality,
+        state: zoneData.state,
+        latitude: zoneData.base[0] + (placeIndex % 4) * 0.006 - Math.floor(placeIndex / 4) * 0.004,
+        longitude: zoneData.base[1] + (placeIndex % 4) * 0.007 + Math.floor(placeIndex / 4) * 0.005,
+        status: ResourceStatus.ACTIVE,
+        monitoringStatus: [
+          MonitoringStatus.NORMAL,
+          MonitoringStatus.NORMAL,
+          MonitoringStatus.NORMAL,
+          MonitoringStatus.ATTENTION,
+          MonitoringStatus.NORMAL,
+          MonitoringStatus.CRITICAL,
+          MonitoringStatus.NORMAL,
+          MonitoringStatus.OFFLINE,
+        ][placeIndex],
+      };
+      const existingPlace = await prisma.pollingPlace.findFirst({
+        where: { electoralZoneId: zone.id, name },
       });
-      console.log(`Criado local fictício: ${place.name}`);
+      const place = existingPlace
+        ? await prisma.pollingPlace.update({ where: { id: existingPlace.id }, data: placeData })
+        : await prisma.pollingPlace.create({ data: placeData });
+      for (let sectionIndex = 0; sectionIndex < 5 + (placeIndex % 4); sectionIndex += 1) {
+        const number = zoneData.number * 100 + placeIndex * 10 + sectionIndex + 1;
+        const registeredVoters = 285 + ((placeNumber * 23 + sectionIndex * 17) % 116);
+        await prisma.pollingSection.upsert({
+            where: { pollingPlaceId_number: { pollingPlaceId: place.id, number } },
+            update: { registeredVoters, status: ResourceStatus.ACTIVE },
+            create: { pollingPlaceId: place.id, number, registeredVoters, status: ResourceStatus.ACTIVE },
+          });
+      }
+      console.log(`Local fictício sincronizado: ${place.name}`);
     }
   }
+  } else {
+    console.log("Estrutura eleitoral existente preservada: 4 zonas, 32 locais e 208 seções.");
+  }
+
+  const categories = [];
+  for (const [key, name] of incidentCategories) {
+    categories.push(
+      await prisma.incidentCategory.upsert({
+        where: { key },
+        update: { name, active: true },
+        create: { key, name, description: `Categoria demonstrativa: ${name}.` },
+      }),
+    );
+  }
+  const places = await prisma.pollingPlace.findMany({
+    include: { electoralZone: true },
+    orderBy: { name: "asc" },
+    take: 4,
+  });
+  const category = (key: string) => categories.find((item) => item.key === key)!;
+  const types = [];
+  for (const [key, name] of assetTypes) {
+    types.push(await prisma.assetType.upsert({
+      where: { key }, update: { name, active: true }, create: { key, name, description: `Tipo demonstrativo: ${name}.` },
+    }));
+  }
+  const seededAssets = [];
+  for (const [placeIndex, place] of places.entries()) {
+    for (let assetIndex = 0; assetIndex < 3; assetIndex += 1) {
+      const sequence = placeIndex * 3 + assetIndex + 1;
+      const type = types[(placeIndex + assetIndex) % types.length];
+      seededAssets.push(await prisma.asset.upsert({
+        where: { assetTag: `EQP-${String(sequence).padStart(4, "0")}` },
+        update: { pollingPlaceId: place.id, electoralZoneId: place.electoralZoneId },
+        create: {
+          assetTag: `EQP-${String(sequence).padStart(4, "0")}`,
+          name: `${type.name} operacional ${sequence}`,
+          typeId: type.id,
+          serialNumber: `DEMO-${20260000 + sequence}`,
+          manufacturer: "Fabricante Demonstração",
+          model: `Modelo ${String.fromCharCode(64 + ((sequence - 1) % 4) + 1)}`,
+          status: sequence === 6 ? AssetStatus.MAINTENANCE : AssetStatus.IN_USE,
+          condition: sequence === 6 ? AssetCondition.ATTENTION : AssetCondition.GOOD,
+          electoralZoneId: place.electoralZoneId,
+          pollingPlaceId: place.id,
+        },
+      }));
+    }
+  }
+  if (await prisma.assetMovement.count({ where: { assetId: seededAssets[0].id } }) === 0) {
+    await prisma.assetMovement.create({
+      data: {
+        assetId: seededAssets[0].id,
+        toZoneId: places[0].electoralZoneId,
+        toPollingPlaceId: places[0].id,
+        originLabel: "Depósito central",
+        destinationLabel: places[0].name,
+        responsibleName: "Equipe Logística Demonstração",
+        reason: "Distribuição inicial para preparação do pleito",
+        statusBefore: AssetStatus.AVAILABLE,
+        statusAfter: AssetStatus.IN_USE,
+        movedAt: new Date("2026-09-29T13:00:00.000Z"),
+      },
+    });
+  }
+  const openedAt = new Date("2026-09-30T11:30:00.000Z");
+  await prisma.incident.upsert({
+    where: { code: "INC-00001" },
+    update: { assetId: seededAssets[0].id },
+    create: {
+      code: "INC-00001",
+      title: "Conectividade instável no enlace principal",
+      description: "O local apresenta perda intermitente de pacotes durante a preparação operacional.",
+      severity: IncidentSeverity.HIGH,
+      status: IncidentStatus.IN_PROGRESS,
+      electionId: election.id,
+      electoralZoneId: places[0].electoralZoneId,
+      pollingPlaceId: places[0].id,
+      categoryId: category("CONNECTIVITY").id,
+      assetId: seededAssets[0].id,
+      assignedToName: "Equipe de Redes Alfa",
+      openedAt,
+      slaDeadline: new Date("2026-09-30T15:30:00.000Z"),
+      events: {
+        create: [
+          { type: IncidentEventType.INCIDENT_CREATED, message: "Incidente registrado pela supervisão local.", createdAt: openedAt },
+          { type: IncidentEventType.ASSIGNED, message: "Incidente atribuído à Equipe de Redes Alfa.", createdAt: new Date("2026-09-30T11:38:00.000Z") },
+          { type: IncidentEventType.STATUS_CHANGED, message: "Atendimento remoto iniciado.", createdAt: new Date("2026-09-30T11:45:00.000Z") },
+        ],
+      },
+      assignments: { create: { assignedToName: "Equipe de Redes Alfa", reason: "Plantão de conectividade", assignedAt: new Date("2026-09-30T11:38:00.000Z") } },
+    },
+  });
+  await prisma.incident.upsert({
+    where: { code: "INC-00002" },
+    update: { assetId: seededAssets[5].id },
+    create: {
+      code: "INC-00002",
+      title: "Bateria de contingência com autonomia reduzida",
+      description: "Teste preventivo indicou autonomia abaixo do parâmetro operacional.",
+      severity: IncidentSeverity.MEDIUM,
+      status: IncidentStatus.TRIAGED,
+      electionId: election.id,
+      electoralZoneId: places[1].electoralZoneId,
+      pollingPlaceId: places[1].id,
+      categoryId: category("POWER").id,
+      assetId: seededAssets[5].id,
+      openedAt: new Date("2026-09-30T12:10:00.000Z"),
+      slaDeadline: new Date("2026-09-30T20:10:00.000Z"),
+      events: { create: [{ type: IncidentEventType.INCIDENT_CREATED, message: "Incidente criado a partir da vistoria preventiva." }, { type: IncidentEventType.STATUS_CHANGED, message: "Triagem concluída; substituição recomendada." }] },
+    },
+  });
+  await prisma.incident.upsert({
+    where: { code: "INC-00003" },
+    update: {},
+    create: {
+      code: "INC-00003",
+      title: "Impressora de apoio indisponível",
+      description: "Equipamento reserva não conclui a inicialização.",
+      severity: IncidentSeverity.LOW,
+      status: IncidentStatus.RESOLVED,
+      electionId: election.id,
+      electoralZoneId: places[2].electoralZoneId,
+      pollingPlaceId: places[2].id,
+      categoryId: category("EQUIPMENT").id,
+      openedAt: new Date("2026-09-30T09:00:00.000Z"),
+      resolvedAt: new Date("2026-09-30T10:05:00.000Z"),
+      slaDeadline: new Date("2026-10-01T09:00:00.000Z"),
+      events: { create: [{ type: IncidentEventType.INCIDENT_CREATED, message: "Falha identificada no checklist." }, { type: IncidentEventType.RESOLVED, message: "Equipamento reserva substituído e testado." }] },
+    },
+  });
 
   const [zoneCount, placeCount, sectionCount] = await Promise.all([
     prisma.electoralZone.count(),

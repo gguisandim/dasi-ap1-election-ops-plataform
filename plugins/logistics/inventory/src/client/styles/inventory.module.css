@@ -1,0 +1,25 @@
+.page { max-width: 1280px; margin: 0 auto; }
+.header { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 22px; }
+.header h1 { margin: 7px 0; } .header p { margin: 0; color: #8ca0b6; }
+.headerActions, .badges { display: flex; gap: 9px; }
+.eyebrow { color: #72aee6; font-size: 11px; letter-spacing: .13em; font-weight: 700; }
+.metrics { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 18px; }
+.metrics span { color: #8296ad; font-size: 12px; } .metrics strong { display: block; font-size: 25px; margin-top: 8px; }
+.filters { display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 9px; margin-bottom: 18px; }
+.tableWrap { overflow-x: auto; background: #0d1a2b; border: 1px solid #1a2a41; border-radius: 12px; }
+.tableWrap table { width: 100%; border-collapse: collapse; } .tableWrap th, .tableWrap td { padding: 13px 14px; text-align: left; border-bottom: 1px solid #1a2a41; }
+.tableWrap th { color: #778da5; font-size: 11px; text-transform: uppercase; } .tableWrap a, .related a { color: #8fc6f4; text-decoration: none; }
+.tableWrap small { display: block; color: #788ca3; margin-top: 4px; }
+.form { display: grid; gap: 18px; max-width: 960px; padding: 22px; background: #0d1a2b; border: 1px solid #1a2a41; border-radius: 12px; }
+.formGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.detailGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.detailGrid h2 { margin-top: 0; } .detailGrid dl { display: grid; grid-template-columns: 110px 1fr; gap: 9px; }
+.detailGrid dt { color: #7f94aa; } .detailGrid dd { margin: 0; }
+.movements, .related, .types { list-style: none; padding: 0; margin: 12px 0 0; }
+.movements li { display: grid; grid-template-columns: 150px 1fr 1.3fr; gap: 15px; padding: 12px 0; border-top: 1px solid #1c3048; }
+.movements time, .movements span, .types span, .types small { color: #8095ab; }
+.related li { display: grid; grid-template-columns: 100px 1fr; gap: 10px; padding: 9px 0; border-top: 1px solid #1c3048; }
+.types li { display: grid; grid-template-columns: 1fr 120px 60px; padding: 10px 0; border-top: 1px solid #1c3048; }
+.actions { display: grid; gap: 10px; }
+@media (max-width: 900px) { .metrics { grid-template-columns: repeat(2, 1fr); } .filters, .formGrid { grid-template-columns: 1fr 1fr; } .detailGrid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .header { flex-direction: column; } .filters, .formGrid { grid-template-columns: 1fr; } }

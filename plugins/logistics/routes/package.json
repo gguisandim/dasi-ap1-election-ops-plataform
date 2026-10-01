@@ -6,6 +6,6 @@
   "main": "src/index.ts",
   "dependencies": {
     "@eops/plugin-sdk": "0.1.0",
-    "react": "latest"
+    "react": "19.3.0"
   }
 }

@@ -5,6 +5,8 @@ export type PluginCategory =
   | 'logistics'
   | 'monitoring'
   | 'analytics'
+  | 'integration'
+  | 'simulation'
   | 'system';
 
 export type PluginStatus = 'stable' | 'beta' | 'experimental';
@@ -36,5 +38,7 @@ export const CATEGORY_LABELS: Record<PluginCategory, string> = {
   logistics: 'Logística',
   monitoring: 'Monitoramento',
   analytics: 'Analytics',
+  integration: 'Integrações',
+  simulation: 'Simulação',
   system: 'Sistema'
 };

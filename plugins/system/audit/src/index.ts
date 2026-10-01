@@ -1,5 +1,4 @@
-import type { PlatformPlugin } from '@eops/plugin-sdk';
-import { manifest } from './manifest';
-import { View } from './pages/Overview';
-
-export const auditPlugin: PlatformPlugin = { manifest, View };
+import type { PlatformPlugin } from "@eops/plugin-sdk";
+import { AuditListPage } from "./client/pages/AuditListPage";
+import { manifest } from "./manifest";
+export const auditPlugin: PlatformPlugin = { manifest, View: AuditListPage, routes: [{ path: "/audit", Component: AuditListPage }] };

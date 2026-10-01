@@ -80,7 +80,7 @@ export function ZoneListPage() {
                 </div>
               </dl>
               <footer>
-                <Link to={`/electoral-zones/${zone.id}`}>Detalhes</Link>
+              <Link data-testid="zone-details-link" to={`/electoral-zones/${zone.id}`}>Detalhes</Link>
                 <Link to={`/electoral-zones/${zone.id}/edit`}>Editar</Link>
                 <Button onClick={() => void remove(zone.id)}>Excluir</Button>
               </footer>

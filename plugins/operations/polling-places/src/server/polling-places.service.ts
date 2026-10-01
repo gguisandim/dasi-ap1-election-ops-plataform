@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
+import { IncidentStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "../../../../../packages/database/src";
 import {
   CreatePollingPlaceDto,
   PollingPlaceQueryDto,
   UpdatePollingPlaceDto,
 } from "./dto/polling-place.dto";
+import { deriveOperationalStatus } from "./operational-status";
 
 const includeRelations = {
   electoralZone: {
@@ -18,6 +19,11 @@ const includeRelations = {
     },
   },
   sections: { select: { registeredVoters: true } },
+  incidents: {
+    where: { status: { in: [IncidentStatus.NEW, IncidentStatus.TRIAGED, IncidentStatus.ASSIGNED, IncidentStatus.IN_PROGRESS] } },
+    select: { severity: true },
+  },
+  assets: { select: { status: true, condition: true } },
 } satisfies Prisma.PollingPlaceInclude;
 
 function serializePlace(
@@ -25,6 +31,7 @@ function serializePlace(
 ) {
   return {
     ...place,
+    monitoringStatus: deriveOperationalStatus(place.monitoringStatus, place.incidents, place.assets),
     latitude: place.latitude === null ? null : Number(place.latitude),
     longitude: place.longitude === null ? null : Number(place.longitude),
     sectionCount: place.sections.length,
@@ -33,6 +40,8 @@ function serializePlace(
       0,
     ),
     sections: undefined,
+    incidents: undefined,
+    assets: undefined,
   };
 }
 
@@ -94,24 +103,41 @@ export class PollingPlacesService {
   }
 
   async findOne(id: string) {
-    const place = await this.prisma.pollingPlace.findUnique({
-      where: { id },
-      include: {
-        ...includeRelations,
-        sections: {
-          select: {
-            id: true,
-            number: true,
-            registeredVoters: true,
-            status: true,
+    const [place, activeIncidentCount, assetCount] = await Promise.all([
+      this.prisma.pollingPlace.findUnique({
+        where: { id },
+        include: {
+          ...includeRelations,
+          sections: {
+            select: {
+              id: true,
+              number: true,
+              registeredVoters: true,
+              status: true,
+            },
+            orderBy: { number: "asc" },
           },
-          orderBy: { number: "asc" },
         },
-      },
-    });
+      }),
+      this.prisma.incident.count({
+        where: {
+          pollingPlaceId: id,
+          status: {
+            in: [
+              IncidentStatus.NEW,
+              IncidentStatus.TRIAGED,
+              IncidentStatus.ASSIGNED,
+              IncidentStatus.IN_PROGRESS,
+            ],
+          },
+        },
+      }),
+      this.prisma.asset.count({ where: { pollingPlaceId: id } }),
+    ]);
     if (!place) throw new NotFoundException("Local de votação não encontrado.");
     return {
       ...place,
+      monitoringStatus: deriveOperationalStatus(place.monitoringStatus, place.incidents, place.assets),
       latitude: place.latitude === null ? null : Number(place.latitude),
       longitude: place.longitude === null ? null : Number(place.longitude),
       sectionCount: place.sections.length,
@@ -119,6 +145,8 @@ export class PollingPlacesService {
         (total, section) => total + section.registeredVoters,
         0,
       ),
+      activeIncidentCount,
+      assetCount,
     };
   }
 

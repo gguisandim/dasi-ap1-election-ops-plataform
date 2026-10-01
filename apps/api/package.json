@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start:dev": "nest start --watch",
+    "start:dev": "nest build && concurrently -k -n compiler,server \"nest build --watch\" \"node --watch dist/apps/api/src/main.js\"",
     "start:prod": "node dist/apps/api/src/main.js",
     "build": "nest build",
     "typecheck": "tsc --noEmit",
@@ -11,19 +11,19 @@
   },
   "dependencies": {
     "@eops/database": "0.1.0",
-    "@nestjs/common": "latest",
-    "@nestjs/core": "latest",
-    "@nestjs/mapped-types": "latest",
-    "@nestjs/platform-express": "latest",
-    "class-transformer": "latest",
-    "class-validator": "latest",
-    "reflect-metadata": "latest",
-    "rxjs": "latest"
+    "@nestjs/common": "12.1.2",
+    "@nestjs/core": "12.1.2",
+    "@nestjs/mapped-types": "12.0.0",
+    "@nestjs/platform-express": "12.1.2",
+    "class-transformer": "0.5.1",
+    "class-validator": "0.15.1",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2"
   },
   "devDependencies": {
-    "@nestjs/cli": "latest",
-    "@types/express": "latest",
-    "@types/node": "latest",
-    "typescript": "latest"
+    "@nestjs/cli": "12.0.8",
+    "@types/express": "5.0.6",
+    "@types/node": "26.6.3",
+    "typescript": "6.0.3"
   }
 }
