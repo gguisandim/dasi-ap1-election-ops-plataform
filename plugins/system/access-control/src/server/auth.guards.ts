@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { PUBLIC_ROUTE, REQUIRED_PERMISSIONS } from "./auth.decorators";
-import type { AuthenticatedRequest } from "./auth.types";
+import { PUBLIC_ROUTE, REQUIRED_PERMISSIONS } from "@eops/security";
+import type { AuthenticatedRequest } from "@eops/security";
 import { verifyToken } from "./security";
 
 @Injectable()

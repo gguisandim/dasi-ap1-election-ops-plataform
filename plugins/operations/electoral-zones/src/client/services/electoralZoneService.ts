@@ -1,5 +1,5 @@
 import { apiClient } from "@eops/api-client";
-import type { ElectoralZoneSummary, ResourceStatus } from "@eops/shared";
+import type { ElectoralZoneSummary, ResourceStatus } from "@eops/shared/elections";
 export interface ZoneInput {
   electionId: string;
   number: number;

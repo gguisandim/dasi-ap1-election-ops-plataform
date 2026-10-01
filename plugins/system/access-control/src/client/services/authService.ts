@@ -1,5 +1,5 @@
 import { apiClient } from "@eops/api-client";
-import type { CurrentUser, RoleSummary, UserStatus, UserSummary } from "@eops/shared";
+import type { CurrentUser, RoleSummary, UserStatus, UserSummary } from "@eops/shared/auth";
 export const authService = {
   login: (email: string, password: string) => apiClient.post<{ token: string; user: CurrentUser }, { email: string; password: string }>("/auth/login", { email, password }),
   me: () => apiClient.get<CurrentUser>("/auth/me"),

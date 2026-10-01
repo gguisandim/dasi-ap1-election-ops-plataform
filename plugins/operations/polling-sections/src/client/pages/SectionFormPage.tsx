@@ -9,11 +9,8 @@ import {
   Select,
   useAsync,
 } from "@eops/ui";
-import type {
-  Paginated,
-  PollingPlaceSummary,
-  ResourceStatus,
-} from "@eops/shared";
+import type { Paginated } from "@eops/shared/common";
+import type { PollingPlaceSummary, ResourceStatus } from "@eops/shared/elections";
 import { apiClient } from "@eops/api-client";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {

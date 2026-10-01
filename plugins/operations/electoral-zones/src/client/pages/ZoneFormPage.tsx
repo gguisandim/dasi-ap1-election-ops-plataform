@@ -9,7 +9,7 @@ import {
   Select,
   useAsync,
 } from "@eops/ui";
-import type { ElectionSummary, ResourceStatus } from "@eops/shared";
+import type { ElectionSummary, ResourceStatus } from "@eops/shared/elections";
 import { apiClient } from "@eops/api-client";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {

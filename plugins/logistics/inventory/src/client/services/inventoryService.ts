@@ -1,5 +1,7 @@
 import { apiClient } from "@eops/api-client";
-import type { AssetCondition, AssetDashboard, AssetStatus, AssetSummary, AssetTypeSummary, ElectoralZoneSummary, Paginated, PollingPlaceSummary } from "@eops/shared";
+import type { AssetCondition, AssetDashboard, AssetStatus, AssetSummary, AssetTypeSummary } from "@eops/shared/inventory";
+import type { ElectoralZoneSummary, PollingPlaceSummary } from "@eops/shared/elections";
+import type { Paginated } from "@eops/shared/common";
 
 export interface AssetFilters { search?: string; typeId?: string; status?: AssetStatus; condition?: AssetCondition; zoneId?: string; pollingPlaceId?: string; page?: number; pageSize?: number; }
 export interface AssetInput { assetTag: string; name: string; typeId: string; serialNumber?: string; manufacturer?: string; model?: string; status: AssetStatus; condition: AssetCondition; electoralZoneId?: string; pollingPlaceId?: string; }

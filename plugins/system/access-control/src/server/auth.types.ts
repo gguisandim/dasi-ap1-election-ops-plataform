@@ -1,3 +1,2 @@
-import type { Request } from "express";
-export interface AuthenticatedUser { id: string; email: string; roles: string[]; permissions: string[]; }
-export interface AuthenticatedRequest extends Request { user: AuthenticatedUser; }
+// Compatibility re-export. New code must import from @eops/security.
+export type { AuthenticatedRequest, AuthenticatedUser } from "@eops/security";

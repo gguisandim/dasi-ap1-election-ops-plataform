@@ -8,7 +8,10 @@ O `@eops/event-bus` desacopla efeitos secundários dos módulos de domínio. Um 
 
 ```text
 packages/event-bus/
-  src/index.ts
+  src/contracts.ts        nomes e payloads compartilhados
+  src/event-bus.ts        implementação em memória
+  src/event-bus.module.ts módulo NestJS
+  src/index.ts            barrel público
   src/index.test.ts
 ```
 
@@ -25,7 +28,7 @@ O módulo é global no NestJS e é registrado em `apps/api/src/app.module.ts`.
 - `user.created`
 - `election.created`
 
-Cada nome possui payload definido em `DomainEventMap`. Não use `any` para eventos novos: primeiro acrescente o contrato ao mapa e depois publique/consuma o evento.
+Cada nome possui payload definido em `DomainEventMap`, em `src/contracts.ts`. Não use `any` para eventos novos: primeiro acrescente o contrato ao mapa e depois publique/consuma o evento.
 
 ## Fluxo
 

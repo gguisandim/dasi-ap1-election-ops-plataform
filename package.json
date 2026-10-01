@@ -11,20 +11,23 @@
   "scripts": {
     "dev": "concurrently -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
     "dev:web": "npm run dev -w @eops/web",
-    "dev:api": "npm run start:dev -w @eops/api",
+    "dev:api": "npm run build:security && npm run start:dev -w @eops/api",
     "build": "npm run build:api && npm run build:web",
     "build:web": "npm run build -w @eops/web",
-    "build:api": "npm run build -w @eops/api",
+    "build:api": "npm run build:security && npm run build -w @eops/api",
     "typecheck": "npm run typecheck -w @eops/api && npm run typecheck -w @eops/web",
     "lint": "eslint apps packages plugins",
+    "check:boundaries": "node scripts/check-plugin-boundaries.mjs",
     "test": "vitest run --exclude tests/e2e/**",
     "e2e": "npm run build && playwright test",
     "db:generate": "prisma generate --schema packages/database/prisma/schema.prisma",
     "db:migrate": "prisma migrate dev --schema packages/database/prisma/schema.prisma",
     "db:migrate:deploy": "prisma migrate deploy --schema packages/database/prisma/schema.prisma",
-    "db:seed": "tsx packages/database/prisma/seed.ts",
+    "db:seed": "npm run build:security && tsx packages/database/prisma/seed.ts",
     "db:validate": "prisma validate --schema packages/database/prisma/schema.prisma",
-    "count:loc": "node scripts/count-loc.mjs"
+    "count:loc": "node scripts/count-loc.mjs",
+    "build:security": "npm run build -w @eops/security",
+    "pretest": "npm run build:security"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
@@ -40,6 +43,6 @@
     "vitest": "3.2.7"
   },
   "engines": {
-    "node": ">=20.19"
+    "node": ">=22.22.3"
   }
 }

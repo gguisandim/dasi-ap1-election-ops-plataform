@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { ASSET_CONDITIONS, ASSET_CONDITION_LABELS, ASSET_STATUSES, ASSET_STATUS_LABELS, type AssetCondition, type AssetStatus, type AssetTypeSummary, type ElectoralZoneSummary, type PollingPlaceSummary } from "@eops/shared";
+import { ASSET_CONDITIONS, ASSET_CONDITION_LABELS, ASSET_STATUSES, ASSET_STATUS_LABELS, type AssetCondition, type AssetStatus, type AssetTypeSummary } from "@eops/shared/inventory";
+import { type ElectoralZoneSummary, type PollingPlaceSummary } from "@eops/shared/elections";
 import { Button, ErrorState, Field, Input, Loading, Select } from "@eops/ui";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { inventoryService } from "../services/inventoryService";

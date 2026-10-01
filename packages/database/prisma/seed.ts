@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { scryptSync } from "node:crypto";
+import { PLATFORM_PERMISSION_KEYS, PERMISSIONS } from "@eops/security";
 import {
   AssetCondition,
   AssetStatus,
@@ -74,13 +75,7 @@ const assetTypes = [
   ["MODEM", "Modem"], ["BATTERY", "Bateria"], ["PRINTER", "Impressora"],
   ["ELECTION_KIT", "Kit Eleitoral"], ["RADIO", "Rádio"], ["PHONE", "Celular"], ["OTHER", "Outro"],
 ] as const;
-const permissions = [
-  "elections.read", "elections.manage",
-  "incidents.read", "incidents.create", "incidents.assign", "incidents.update", "incidents.resolve", "incidents.close",
-  "inventory.read", "inventory.create", "inventory.update", "inventory.move",
-  "users.read", "users.manage", "audit.read",
-  "simulation.read", "simulation.manage",
-] as const;
+const permissions = PLATFORM_PERMISSION_KEYS;
 const roles = [
   ["ADMIN", "Administrador"], ["SUPERVISOR", "Supervisor"], ["OPERATOR", "Operador"],
   ["TECHNICIAN", "Técnico"], ["VIEWER", "Consulta"],
@@ -100,9 +95,9 @@ async function main() {
     const role = await prisma.role.upsert({ where: { key }, update: { name, system: true }, create: { key, name, description: `Perfil padrão ${name}.`, system: true } });
     const allowed = permissionRecords.filter((permission) => {
       if (key === "ADMIN") return true;
-      if (key === "SUPERVISOR") return permission.key !== "users.manage";
-      if (key === "OPERATOR") return ["elections.read", "incidents.read", "incidents.create", "incidents.update", "inventory.read", "simulation.read", "simulation.manage"].includes(permission.key);
-      if (key === "TECHNICIAN") return ["elections.read", "incidents.read", "incidents.update", "incidents.resolve", "inventory.read", "inventory.update", "inventory.move", "simulation.read"].includes(permission.key);
+      if (key === "SUPERVISOR") return permission.key !== PERMISSIONS.users.manage;
+      if (key === "OPERATOR") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.create, PERMISSIONS.incidents.update, PERMISSIONS.inventory.read, PERMISSIONS.simulation.read, PERMISSIONS.simulation.manage]).has(permission.key);
+      if (key === "TECHNICIAN") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.update, PERMISSIONS.incidents.resolve, PERMISSIONS.inventory.read, PERMISSIONS.inventory.update, PERMISSIONS.inventory.move, PERMISSIONS.simulation.read]).has(permission.key);
       return permission.key.endsWith(".read");
     });
     for (const permission of allowed) {

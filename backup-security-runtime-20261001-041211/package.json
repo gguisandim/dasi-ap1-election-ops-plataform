@@ -1,0 +1,46 @@
+{
+  "name": "election-ops-platform",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "plugins/*/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:web": "npm run dev -w @eops/web",
+    "dev:api": "npm run start:dev -w @eops/api",
+    "build": "npm run build:api && npm run build:web",
+    "build:web": "npm run build -w @eops/web",
+    "build:api": "npm run build -w @eops/api",
+    "typecheck": "npm run typecheck -w @eops/api && npm run typecheck -w @eops/web",
+    "lint": "eslint apps packages plugins",
+    "check:boundaries": "node scripts/check-plugin-boundaries.mjs",
+    "test": "vitest run --exclude tests/e2e/**",
+    "e2e": "npm run build && playwright test",
+    "db:generate": "prisma generate --schema packages/database/prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema packages/database/prisma/schema.prisma",
+    "db:migrate:deploy": "prisma migrate deploy --schema packages/database/prisma/schema.prisma",
+    "db:seed": "tsx packages/database/prisma/seed.ts",
+    "db:validate": "prisma validate --schema packages/database/prisma/schema.prisma",
+    "count:loc": "node scripts/count-loc.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@playwright/test": "1.55.0",
+    "concurrently": "9.2.4",
+    "dotenv": "17.4.2",
+    "eslint": "9.39.5",
+    "globals": "16.5.0",
+    "prisma": "6.19.3",
+    "prettier": "3.9.9",
+    "tsx": "4.23.15",
+    "typescript-eslint": "8.71.0",
+    "vitest": "3.2.7"
+  },
+  "engines": {
+    "node": ">=22.22.3"
+  }
+}

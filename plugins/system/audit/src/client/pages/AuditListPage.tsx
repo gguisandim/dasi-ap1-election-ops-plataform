@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { ErrorState, Input, Loading, Pagination, Select, useAsync } from "@eops/ui";
 import { apiClient } from "@eops/api-client";
-import { formatDateTime, type Paginated } from "@eops/shared";
+import { formatDateTime } from "@eops/shared/format";
+import { type Paginated } from "@eops/shared/common";
 import styles from "../styles/audit.module.css";
 
 const actions = ["CREATE", "UPDATE", "DELETE", "ASSIGN", "STATUS_CHANGE", "LOGIN", "LOGOUT"] as const;

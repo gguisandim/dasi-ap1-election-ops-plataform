@@ -1,10 +1,5 @@
 import { Button, Select } from "@eops/ui";
-import {
-  MONITORING_STATUSES,
-  STATUS_LABELS,
-  type ElectionSummary,
-  type ElectoralZoneSummary,
-} from "@eops/shared";
+import { MONITORING_STATUSES, STATUS_LABELS, type ElectionSummary, type ElectoralZoneSummary } from "@eops/shared/elections";
 import type { MapFiltersValue } from "../services/operationalMapService";
 import styles from "../styles/map.module.css";
 interface Props {

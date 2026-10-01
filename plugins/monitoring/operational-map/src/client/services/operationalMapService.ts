@@ -1,10 +1,5 @@
 import { apiClient } from "@eops/api-client";
-import type {
-  ElectionSummary,
-  ElectoralZoneSummary,
-  MonitoringStatus,
-  PollingPlaceSummary,
-} from "@eops/shared";
+import type { ElectionSummary, ElectoralZoneSummary, MonitoringStatus, PollingPlaceSummary } from "@eops/shared/elections";
 export interface MapFiltersValue {
   electionId: string;
   zoneId: string;

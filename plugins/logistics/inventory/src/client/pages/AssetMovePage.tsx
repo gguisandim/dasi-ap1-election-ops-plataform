@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { ASSET_STATUSES, ASSET_STATUS_LABELS, type AssetStatus, type ElectoralZoneSummary, type PollingPlaceSummary } from "@eops/shared";
+import { ASSET_STATUSES, ASSET_STATUS_LABELS, type AssetStatus } from "@eops/shared/inventory";
+import { type ElectoralZoneSummary, type PollingPlaceSummary } from "@eops/shared/elections";
 import { Button, ErrorState, Field, Input, Loading, Select } from "@eops/ui";
 import { useNavigate, useParams } from "react-router-dom";
 import { inventoryService } from "../services/inventoryService";

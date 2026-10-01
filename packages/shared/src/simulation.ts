@@ -1,0 +1,5 @@
+import type { IncidentStatus } from "./incidents";
+export type SimulationStatus = "DRAFT" | "RUNNING" | "PAUSED" | "FINISHED" | "CANCELLED";
+export type FailureProbability = "LOW" | "MEDIUM" | "HIGH";
+export interface SimulationEventSummary { id: string; eventType: string; title: string; description: string | null; offsetSeconds: number; incidentId: string | null; assetId: string | null; pollingPlaceId: string | null; incident?: { code: string; status: IncidentStatus } | null; asset?: { assetTag: string; name: string } | null; pollingPlace?: { name: string } | null; }
+export interface SimulationSummary { id: string; name: string; electionId: string; status: SimulationStatus; speed: number; probability: FailureProbability; connectivity: boolean; equipment: boolean; transmission: boolean; logistics: boolean; applyToOperations: boolean; elapsedSeconds: number; startedAt: string | null; endedAt: string | null; election: { id: string; name: string }; events?: SimulationEventSummary[]; _count?: { events: number; incidents: number }; }

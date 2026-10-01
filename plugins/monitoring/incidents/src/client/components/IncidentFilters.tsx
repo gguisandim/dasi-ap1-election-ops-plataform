@@ -1,5 +1,5 @@
 import { Input, Select } from "@eops/ui";
-import { INCIDENT_SEVERITIES, INCIDENT_SEVERITY_LABELS, INCIDENT_STATUSES, INCIDENT_STATUS_LABELS, type IncidentCategorySummary } from "@eops/shared";
+import { INCIDENT_SEVERITIES, INCIDENT_SEVERITY_LABELS, INCIDENT_STATUSES, INCIDENT_STATUS_LABELS, type IncidentCategorySummary } from "@eops/shared/incidents";
 import type { IncidentFilters as Filters } from "../services/incidentService";
 import styles from "../styles/incidents.module.css";
 

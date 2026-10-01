@@ -1,5 +1,6 @@
 import { EmptyState } from "@eops/ui";
-import { formatDateTime, type IncidentEventSummary } from "@eops/shared";
+import { formatDateTime } from "@eops/shared/format";
+import { type IncidentEventSummary } from "@eops/shared/incidents";
 import styles from "../styles/incidents.module.css";
 
 export function IncidentTimeline({ events = [] }: { events?: IncidentEventSummary[] }) {

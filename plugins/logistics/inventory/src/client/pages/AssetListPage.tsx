@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, EmptyState, ErrorState, Input, LinkButton, Loading, Pagination, Select, useAsync } from "@eops/ui";
-import { ASSET_CONDITIONS, ASSET_CONDITION_LABELS, ASSET_STATUSES, ASSET_STATUS_LABELS, type AssetTypeSummary } from "@eops/shared";
+import { ASSET_CONDITIONS, ASSET_CONDITION_LABELS, ASSET_STATUSES, ASSET_STATUS_LABELS, type AssetTypeSummary } from "@eops/shared/inventory";
 import { Link, useSearchParams } from "react-router-dom";
 import { AssetConditionBadge, AssetStatusBadge } from "../components/AssetBadge";
 import { inventoryService, type AssetFilters } from "../services/inventoryService";

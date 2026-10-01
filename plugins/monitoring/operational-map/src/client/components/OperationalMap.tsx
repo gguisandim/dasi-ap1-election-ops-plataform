@@ -1,5 +1,5 @@
 import { MapContainer, TileLayer } from "react-leaflet";
-import type { PollingPlaceSummary } from "@eops/shared";
+import type { PollingPlaceSummary } from "@eops/shared/elections";
 import { MapMarker } from "./MapMarker";
 import styles from "../styles/map.module.css";
 export function OperationalMap({ places }: { places: PollingPlaceSummary[] }) {

@@ -1,5 +1,5 @@
 import { apiClient } from "@eops/api-client";
-import type { PollingSectionSummary, ResourceStatus } from "@eops/shared";
+import type { PollingSectionSummary, ResourceStatus } from "@eops/shared/elections";
 export interface SectionInput {
   pollingPlaceId: string;
   number: number;

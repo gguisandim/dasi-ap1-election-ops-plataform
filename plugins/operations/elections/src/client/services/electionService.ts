@@ -1,10 +1,5 @@
 import { apiClient } from "@eops/api-client";
-import type {
-  ElectionStatus,
-  ElectionSummary,
-  ElectionType,
-  RoundStatus,
-} from "@eops/shared";
+import type { ElectionStatus, ElectionSummary, ElectionType, RoundStatus } from "@eops/shared/elections";
 
 export interface ElectionInput {
   name: string;

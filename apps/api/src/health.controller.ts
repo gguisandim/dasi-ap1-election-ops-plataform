@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { Public } from '../../../plugins/system/access-control/src/server/auth.decorators';
+import { Public } from '@eops/security';
 
 @Controller('health')
 export class HealthController {

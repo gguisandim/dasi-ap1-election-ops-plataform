@@ -38,7 +38,7 @@ Autenticação + RBAC
 
 ## Pré-requisitos
 
-- Node.js 20.19 ou superior;
+- Node.js 22.22.3 ou superior (22.23.3 recomendado no Windows);
 - npm;
 - PostgreSQL acessível por `DATABASE_URL` ou Docker Compose;
 - navegador compatível com Playwright para E2E.
@@ -149,9 +149,10 @@ apps/
 packages/
   api-client/              cliente HTTP tipado
   database/                Prisma, migrations, seed e retry de conexão
-  event-bus/               eventos internos tipados
+  event-bus/               barramento + contratos de eventos tipados
   plugin-sdk/              manifests/categorias/rotas
-  shared/                  tipos compartilhados
+  security/                decorators, tipos e catálogo RBAC neutros
+  shared/                  contratos compartilhados separados por domínio
   ui/                      componentes reutilizáveis
 plugins/
   operations/
@@ -245,7 +246,11 @@ O Vite usa a raiz do monorepo como `envDir` e possui proxy `/api` tanto em desen
 6. use `@eops/ui` para componentes realmente genéricos;
 7. mantenha estilos específicos em CSS Modules;
 8. registre o plugin no shell e o módulo no `AppModule`;
-9. adicione permissões backend quando houver dados/mutações protegidas;
-10. adicione testes das regras críticas.
+9. adicione permissões em `@eops/security` e no seed quando houver dados/mutações protegidas;
+10. altere `packages/event-bus/src/contracts.ts` apenas se houver integração cross-domain;
+11. adicione testes das regras críticas;
+12. rode `npm run check:boundaries` para garantir que nenhum plugin importou implementação de outro.
 
-Consulte [docs/PLUGIN_ARCHITECTURE.md](docs/PLUGIN_ARCHITECTURE.md).
+Para Codex/IA, consulte primeiro [AGENTS.md](AGENTS.md), [plugins/AGENTS.md](plugins/AGENTS.md) e [docs/AI-PLUGIN-GUIDE.md](docs/AI-PLUGIN-GUIDE.md).
+
+Consulte também [docs/PLUGIN_ARCHITECTURE.md](docs/PLUGIN_ARCHITECTURE.md).

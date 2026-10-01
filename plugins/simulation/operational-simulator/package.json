@@ -1,4 +1,21 @@
 {
-  "name": "@eops/plugin-operational-simulator", "version": "0.1.0", "private": true, "type": "module", "main": "src/index.ts",
-  "dependencies": { "@eops/api-client": "0.1.0", "@eops/event-bus": "0.1.0", "@eops/plugin-sdk": "0.1.0", "@eops/shared": "0.1.0", "@eops/ui": "0.1.0", "@nestjs/common": "12.1.2", "@prisma/client": "6.19.3", "class-transformer": "0.5.1", "class-validator": "0.15.1", "react": "19.3.0", "react-router-dom": "7.18.4" }
+  "name": "@eops/plugin-operational-simulator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@eops/api-client": "0.1.0",
+    "@eops/event-bus": "0.1.0",
+    "@eops/plugin-sdk": "0.1.0",
+    "@eops/security": "0.1.0",
+    "@eops/shared": "0.1.0",
+    "@eops/ui": "0.1.0",
+    "@nestjs/common": "12.1.2",
+    "@prisma/client": "6.19.3",
+    "class-transformer": "0.5.1",
+    "class-validator": "0.15.1",
+    "react": "19.3.0",
+    "react-router-dom": "7.18.4"
+  }
 }

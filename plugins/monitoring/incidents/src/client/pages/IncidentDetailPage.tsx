@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Breadcrumb, Button, Card, ErrorState, Input, LinkButton, Loading, Select, useAsync } from "@eops/ui";
-import { formatDateTime, INCIDENT_STATUSES, INCIDENT_STATUS_LABELS, type IncidentStatus } from "@eops/shared";
+import { formatDateTime } from "@eops/shared/format";
+import { INCIDENT_STATUSES, INCIDENT_STATUS_LABELS, type IncidentStatus } from "@eops/shared/incidents";
 import { IncidentStatusBadge, SeverityBadge } from "../components/IncidentBadge";
 import { IncidentTimeline } from "../components/IncidentTimeline";
 import { incidentService } from "../services/incidentService";

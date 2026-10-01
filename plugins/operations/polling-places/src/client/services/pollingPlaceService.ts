@@ -1,10 +1,6 @@
 import { apiClient } from "@eops/api-client";
-import type {
-  MonitoringStatus,
-  Paginated,
-  PollingPlaceSummary,
-  ResourceStatus,
-} from "@eops/shared";
+import type { MonitoringStatus, PollingPlaceSummary, ResourceStatus } from "@eops/shared/elections";
+import type { Paginated } from "@eops/shared/common";
 export interface PlaceQuery {
   search?: string;
   electionId?: string;

@@ -1,5 +1,5 @@
 import { Button, EmptyState, ErrorState, Loading, useAsync } from "@eops/ui";
-import { formatDateTime } from "@eops/shared";
+import { formatDateTime } from "@eops/shared/format";
 import { notificationService } from "../services/notificationService";
 import styles from "../styles/notifications.module.css";
 export function NotificationListPage() {

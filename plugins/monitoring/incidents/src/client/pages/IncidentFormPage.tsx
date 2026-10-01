@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button, ErrorState, Field, Input, Loading, Select } from "@eops/ui";
-import { INCIDENT_SEVERITIES, INCIDENT_SEVERITY_LABELS, type AssetSummary, type ElectionSummary, type ElectoralZoneSummary, type IncidentCategorySummary, type IncidentSeverity, type PollingPlaceSummary } from "@eops/shared";
+import { INCIDENT_SEVERITIES, INCIDENT_SEVERITY_LABELS, type IncidentCategorySummary, type IncidentSeverity } from "@eops/shared/incidents";
+import { type AssetSummary } from "@eops/shared/inventory";
+import { type ElectionSummary, type ElectoralZoneSummary, type PollingPlaceSummary } from "@eops/shared/elections";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { incidentService } from "../services/incidentService";
 import styles from "../styles/incidents.module.css";

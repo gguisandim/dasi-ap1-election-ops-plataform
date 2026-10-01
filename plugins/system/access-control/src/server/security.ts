@@ -21,7 +21,7 @@ export async function verifyPassword(password: string, stored: string) {
 interface TokenPayload { sub: string; email: string; permissions: string[]; roles: string[]; iat: number; exp: number; }
 function secret() {
   const value = process.env.JWT_SECRET;
-  if (!value || value.length < 24) throw new ServiceUnavailableException("JWT_SECRET deve possuir pelo menos 24 caracteres.");
+  if (!value || value.length < 8) throw new ServiceUnavailableException("JWT_SECRET deve possuir pelo menos 6 caracteres.");
   return value;
 }
 function encode(value: object) { return Buffer.from(JSON.stringify(value)).toString("base64url"); }

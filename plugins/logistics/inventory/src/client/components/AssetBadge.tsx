@@ -1,4 +1,4 @@
-import { ASSET_CONDITION_LABELS, ASSET_STATUS_LABELS, type AssetCondition, type AssetStatus } from "@eops/shared";
+import { ASSET_CONDITION_LABELS, ASSET_STATUS_LABELS, type AssetCondition, type AssetStatus } from "@eops/shared/inventory";
 import { Badge } from "@eops/ui";
 
 export function AssetStatusBadge({ status }: { status: AssetStatus }) {

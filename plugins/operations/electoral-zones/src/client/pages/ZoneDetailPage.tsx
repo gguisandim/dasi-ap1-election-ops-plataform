@@ -8,7 +8,7 @@ import {
   Loading,
   useAsync,
 } from "@eops/ui";
-import { STATUS_LABELS } from "@eops/shared";
+import { STATUS_LABELS } from "@eops/shared/elections";
 import { Link, useParams } from "react-router-dom";
 import { electoralZoneService } from "../services/electoralZoneService";
 import styles from "../styles/zones.module.css";

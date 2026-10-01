@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Button, Card, EmptyState, ErrorState, Field, Input, Loading, Select, useAsync } from "@eops/ui";
-import type { ElectionSummary, FailureProbability } from "@eops/shared";
+import type { ElectionSummary } from "@eops/shared/elections";
+import type { FailureProbability } from "@eops/shared/simulation";
 import { Link, useNavigate } from "react-router-dom";
 import { simulatorService } from "../services/simulatorService";
 import styles from "../styles/simulator.module.css";

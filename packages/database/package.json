@@ -4,6 +4,7 @@
   "private": true,
   "main": "src/index.ts",
   "dependencies": {
+    "@eops/security": "0.1.0",
     "@nestjs/common": "12.1.2",
     "@prisma/client": "6.19.3"
   }

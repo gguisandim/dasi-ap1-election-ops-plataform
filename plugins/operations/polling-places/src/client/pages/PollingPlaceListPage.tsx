@@ -10,7 +10,7 @@ import {
   Pagination,
   useAsync,
 } from "@eops/ui";
-import { STATUS_LABELS } from "@eops/shared";
+import { STATUS_LABELS } from "@eops/shared/elections";
 import { Link, useSearchParams } from "react-router-dom";
 import { pollingPlaceService } from "../services/pollingPlaceService";
 import styles from "../styles/places.module.css";

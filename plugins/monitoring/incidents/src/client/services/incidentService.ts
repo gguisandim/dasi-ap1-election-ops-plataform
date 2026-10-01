@@ -1,16 +1,8 @@
 import { apiClient } from "@eops/api-client";
-import type {
-  ElectionSummary,
-  ElectoralZoneSummary,
-  IncidentCategorySummary,
-  IncidentDashboard,
-  IncidentSeverity,
-  IncidentStatus,
-  IncidentSummary,
-  Paginated,
-  PollingPlaceSummary,
-  AssetSummary,
-} from "@eops/shared";
+import type { ElectionSummary, ElectoralZoneSummary, PollingPlaceSummary } from "@eops/shared/elections";
+import type { IncidentCategorySummary, IncidentDashboard, IncidentSeverity, IncidentStatus, IncidentSummary } from "@eops/shared/incidents";
+import type { Paginated } from "@eops/shared/common";
+import type { AssetSummary } from "@eops/shared/inventory";
 
 export interface IncidentFilters {
   status?: IncidentStatus;

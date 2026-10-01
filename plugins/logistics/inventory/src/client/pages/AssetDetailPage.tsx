@@ -1,5 +1,5 @@
 import { Breadcrumb, Card, EmptyState, ErrorState, LinkButton, Loading, useAsync } from "@eops/ui";
-import { formatDateTime } from "@eops/shared";
+import { formatDateTime } from "@eops/shared/format";
 import { Link, useParams } from "react-router-dom";
 import { AssetConditionBadge, AssetStatusBadge } from "../components/AssetBadge";
 import { inventoryService } from "../services/inventoryService";

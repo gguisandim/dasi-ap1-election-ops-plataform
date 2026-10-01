@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const password = process.env.DEMO_ADMIN_PASSWORD ?? 'DemoElectionOps2026!';
 
-test('autentica e consulta módulos persistidos no Neon', async ({ request }) => {
+test('autentica e consulta módulos persistidos no PostgreSQL', async ({ request }) => {
   const login = await request.post('http://127.0.0.1:3001/api/auth/login', { data: { email: 'admin@eops.local', password } });
   expect(login.ok()).toBeTruthy();
   const { token } = await login.json() as { token: string };

@@ -8,7 +8,7 @@ import {
   Loading,
   useAsync,
 } from "@eops/ui";
-import { STATUS_LABELS, TYPE_LABELS } from "@eops/shared";
+import { STATUS_LABELS, TYPE_LABELS } from "@eops/shared/elections";
 import { Link } from "react-router-dom";
 import { electionService } from "../services/electionService";
 import styles from "../styles/elections.module.css";

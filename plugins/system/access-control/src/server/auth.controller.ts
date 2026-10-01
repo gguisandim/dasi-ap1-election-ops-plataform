@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Post, Req } from "@nestjs/common";
 import { AuthService } from "./auth.service";
-import { Public } from "./auth.decorators";
-import type { AuthenticatedRequest } from "./auth.types";
+import { Public } from "@eops/security";
+import type { AuthenticatedRequest } from "@eops/security";
 import { LoginDto } from "./dto/auth.dto";
 
 @Controller("auth")

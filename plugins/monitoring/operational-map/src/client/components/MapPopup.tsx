@@ -1,5 +1,5 @@
-import type { PollingPlaceSummary } from "@eops/shared";
-import { STATUS_LABELS } from "@eops/shared";
+import type { PollingPlaceSummary } from "@eops/shared/elections";
+import { STATUS_LABELS } from "@eops/shared/elections";
 import { Link } from "react-router-dom";
 import styles from "../styles/map.module.css";
 export function MapPopup({ place }: { place: PollingPlaceSummary }) {

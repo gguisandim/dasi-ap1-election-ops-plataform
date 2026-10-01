@@ -8,14 +8,7 @@ import {
   Loading,
   Select,
 } from "@eops/ui";
-import {
-  ELECTION_STATUSES,
-  ELECTION_TYPES,
-  STATUS_LABELS,
-  TYPE_LABELS,
-  type ElectionStatus,
-  type ElectionType,
-} from "@eops/shared";
+import { ELECTION_STATUSES, ELECTION_TYPES, STATUS_LABELS, TYPE_LABELS, type ElectionStatus, type ElectionType } from "@eops/shared/elections";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   electionService,

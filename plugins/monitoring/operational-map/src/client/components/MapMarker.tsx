@@ -1,5 +1,5 @@
 import { CircleMarker, Popup } from "react-leaflet";
-import type { PollingPlaceSummary } from "@eops/shared";
+import type { PollingPlaceSummary } from "@eops/shared/elections";
 import { MapPopup } from "./MapPopup";
 const colors = {
   NORMAL: "#39c998",

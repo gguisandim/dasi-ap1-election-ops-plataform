@@ -1,12 +1,9 @@
 import { apiClient } from "@eops/api-client";
 import type { PlatformPlugin } from "@eops/plugin-sdk";
-import type {
-  AssetDashboard,
-  ElectionSummary,
-  IncidentDashboard,
-  Paginated,
-  PollingPlaceSummary,
-} from "@eops/shared";
+import type { AssetDashboard } from "@eops/shared/inventory";
+import type { ElectionSummary, PollingPlaceSummary } from "@eops/shared/elections";
+import type { IncidentDashboard } from "@eops/shared/incidents";
+import type { Paginated } from "@eops/shared/common";
 import { ErrorState, Loading, useAsync } from "@eops/ui";
 import { Link } from "react-router-dom";
 

@@ -7,7 +7,7 @@ import {
   Loading,
   useAsync,
 } from "@eops/ui";
-import { STATUS_LABELS } from "@eops/shared";
+import { STATUS_LABELS } from "@eops/shared/elections";
 import { Link, useSearchParams } from "react-router-dom";
 import { pollingSectionService } from "../services/pollingSectionService";
 import styles from "../styles/sections.module.css";

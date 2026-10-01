@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, EmptyState, ErrorState, LinkButton, Loading, Pagination, useAsync } from "@eops/ui";
-import { formatDateTime, type IncidentCategorySummary } from "@eops/shared";
+import { formatDateTime } from "@eops/shared/format";
+import { type IncidentCategorySummary } from "@eops/shared/incidents";
 import { Link, useSearchParams } from "react-router-dom";
 import { IncidentFilters } from "../components/IncidentFilters";
 import { IncidentStatusBadge, SeverityBadge } from "../components/IncidentBadge";

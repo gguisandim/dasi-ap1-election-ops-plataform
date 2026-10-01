@@ -1,5 +1,5 @@
 import { Badge } from "@eops/ui";
-import { INCIDENT_SEVERITY_LABELS, INCIDENT_STATUS_LABELS, type IncidentSeverity, type IncidentStatus } from "@eops/shared";
+import { INCIDENT_SEVERITY_LABELS, INCIDENT_STATUS_LABELS, type IncidentSeverity, type IncidentStatus } from "@eops/shared/incidents";
 
 export function SeverityBadge({ severity }: { severity: IncidentSeverity }) {
   const tone = severity === "CRITICAL" ? "danger" : severity === "HIGH" ? "warning" : "neutral";

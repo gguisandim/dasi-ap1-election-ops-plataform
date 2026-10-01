@@ -56,10 +56,12 @@ Plugins de domínio expõem módulos NestJS dentro de `src/server`. `apps/api/sr
 - `@eops/api-client`: transporte HTTP tipado, JSON e `ApiError`;
 - `@eops/database`: schema, migrations, seed e integração Prisma;
 - `@eops/plugin-sdk`: contratos de manifest e rotas;
-- `@eops/shared`: tipos, enums e formatação de domínio;
+- `@eops/security`: decorators, tipos autenticados e catálogo de permissões;
+- `@eops/shared/<dominio>`: tipos, enums e labels compartilhados por domínio;
+- `@eops/event-bus`: comunicação tipada entre domínios sem import direto;
 - `@eops/ui`: Button, Input, Select, Badge, Card, estados, breadcrumb e paginação.
 
-Componentes que só fazem sentido em um módulo continuam no plugin.
+Componentes que só fazem sentido em um módulo continuam no plugin. Plugins não importam implementação de outros plugins; comunicação transversal usa packages compartilhados, API pública ou Event Bus.
 
 ## Categorias
 
@@ -83,5 +85,19 @@ Plugins usam `*.module.css` para impedir colisões. O CSS global contém somente
 2. Implementar e exportar as rotas próprias.
 3. Separar páginas, componentes, services e estilos.
 4. Se houver backend, criar módulo, controller, service e DTOs no plugin.
-5. Registrar a exportação no shell e o módulo no bootstrap da API.
-6. Adicionar validação, estados de loading/erro/vazio e testes relevantes.
+5. Registrar a exportação no shell (`apps/web/src/pluginRegistry.ts`) e o módulo no bootstrap da API (`apps/api/src/app.module.ts`).
+6. Se precisar de persistência, alterar o schema Prisma central e criar migration.
+7. Se precisar de RBAC, declarar a permissão em `packages/security/src/permissions.ts` e no seed.
+8. Se precisar comunicar outro domínio, declarar o evento em `packages/event-bus/src/contracts.ts`.
+9. Adicionar validação, estados de loading/erro/vazio e testes relevantes.
+10. Executar `npm run check:boundaries`.
+
+## Trabalho com agentes de IA
+
+As regras de escopo para Codex/IA estão em `AGENTS.md`, `plugins/AGENTS.md` e `docs/AI-PLUGIN-GUIDE.md`. O objetivo é permitir que um agente trabalhe a partir da pasta do plugin e abra somente os contratos globais necessários.
+
+A fronteira pode ser validada com:
+
+```bash
+npm run check:boundaries
+```

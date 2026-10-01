@@ -1,5 +1,5 @@
 import { configureApiToken } from "@eops/api-client";
-import type { CurrentUser } from "@eops/shared";
+import type { CurrentUser } from "@eops/shared/auth";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { authService } from "./services/authService";
 

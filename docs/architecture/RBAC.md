@@ -61,15 +61,18 @@ A senha dos usuários demo é derivada de `DEMO_ADMIN_PASSWORD`. Não use o valo
 
 ## Backend
 
+Os contratos neutros de segurança ficam em `packages/security` (`@eops/security`). O plugin `access-control` implementa autenticação, usuários e os guards, mas outros plugins não importam sua implementação.
+
 `AuthenticationGuard` e `PermissionGuard` são guards globais. Rotas públicas precisam usar `@Public()`. Requisitos específicos são declarados com `@Permissions(...)`.
 
 Exemplo:
 
 ```ts
-@Permissions("inventory.read")
+import { PERMISSIONS, Permissions } from "@eops/security";
+@Permissions(PERMISSIONS.inventory.read)
 @Controller("inventory")
 export class InventoryController {
-  @Permissions("inventory.move")
+  @Permissions(PERMISSIONS.inventory.move)
   @Post(":id/movements")
   move() {}
 }
@@ -86,3 +89,8 @@ IDs que representam o autor da ação não devem vir do body HTTP. Incidentes, I
 O token é armazenado em `localStorage` sob `eops.session`, aplicado ao `@eops/api-client` e revalidado por `/api/auth/me` ao iniciar a aplicação.
 
 A segurança final permanece no backend. Esconder botões no frontend pode melhorar UX, mas não substitui os guards.
+
+
+## Evolução por plugin
+
+Quando um plugin introduzir uma nova permissão, adicione a chave em `packages/security/src/permissions.ts` e sincronize sua concessão em `packages/database/prisma/seed.ts`. Não replique strings de permissão em packages/plugins diferentes quando a chave puder ser reutilizada pelo catálogo central.
