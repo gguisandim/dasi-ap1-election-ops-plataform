@@ -13,12 +13,14 @@ import { auditPlugin } from "@eops/plugin-audit";
 import { accessControlPlugin } from "@eops/plugin-access-control";
 import { notificationsPlugin } from "@eops/plugin-notifications";
 import { operationalSimulatorPlugin } from "@eops/plugin-operational-simulator";
+import { fieldTeamsPlugin } from "@eops/plugin-field-teams";
 
 export const plugins: PlatformPlugin[] = [
   electionsPlugin,
   electoralZonesPlugin,
   pollingPlacesPlugin,
   pollingSectionsPlugin,
+  fieldTeamsPlugin,
   routesPlugin,
   inventoryPlugin,
   incidentsPlugin,

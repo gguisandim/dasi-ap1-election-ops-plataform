@@ -113,22 +113,23 @@ Nunca mantenha a senha de demonstração padrão em um ambiente publicado.
 - Gestão de Pleitos;
 - Zonas Eleitorais;
 - Locais de Votação;
-- Seções Eleitorais.
+- Seções Eleitorais;
+- Equipes de Campo.
 
 ### Logística
 
 - Inventário e Ativos;
-- Rotas (placeholder para etapa futura).
+- Rotas e Distribuição.
 
 ### Monitoramento
 
 - Mapa Operacional;
 - Central de Incidentes;
-- Transmissão (placeholder para etapa futura).
+- Monitor de Transmissão.
 
 ### Analytics
 
-- Relatórios e BI (placeholder para etapa futura).
+- Relatórios e BI.
 
 ### Sistema
 
@@ -184,6 +185,13 @@ Cada plugin funcional mantém sua UI, services, CSS Modules, backend e testes na
 /incidents/:id
 /inventory
 /inventory/:id
+/routes
+/routes/:id
+/transmission
+/transmission/:id
+/reports
+/field-teams
+/field-teams/teams/:id
 /audit
 /notifications
 /simulator

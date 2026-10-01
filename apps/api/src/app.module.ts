@@ -12,6 +12,10 @@ import { AuditModule } from "../../../plugins/system/audit/src/server/audit.modu
 import { EventBusModule } from "../../../packages/event-bus/src";
 import { NotificationsModule } from "../../../plugins/system/notifications/src/server/notifications.module";
 import { SimulatorModule } from "../../../plugins/simulation/operational-simulator/src/server/simulator.module";
+import { RoutesModule } from "../../../plugins/logistics/routes/src/server/routes.module";
+import { TransmissionModule } from "../../../plugins/monitoring/transmission/src/server/transmission.module";
+import { ReportsModule } from "../../../plugins/analytics/reports/src/server/reports.module";
+import { FieldTeamsModule } from "../../../plugins/operations/field-teams/src/server/field-teams.module";
 
 @Module({
   imports: [
@@ -27,6 +31,10 @@ import { SimulatorModule } from "../../../plugins/simulation/operational-simulat
     AuditModule,
     NotificationsModule,
     SimulatorModule,
+    RoutesModule,
+    TransmissionModule,
+    ReportsModule,
+    FieldTeamsModule,
   ],
   controllers: [HealthController],
 })

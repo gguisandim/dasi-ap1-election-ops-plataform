@@ -3,7 +3,7 @@ import { NotificationType, UserStatus } from "@prisma/client";
 import { EventBus, type DomainEvent, type DomainEventName } from "../../../../../packages/event-bus/src";
 import { PrismaService } from "../../../../../packages/database/src";
 
-const names: DomainEventName[] = ["incident.created", "incident.assigned", "incident.resolved", "asset.created", "asset.moved", "asset.status_changed", "user.created", "election.created"];
+const names: DomainEventName[] = ["incident.created", "incident.assigned", "incident.resolved", "asset.created", "asset.moved", "asset.status_changed", "user.created", "election.created", "route.created", "route.started", "route.completed", "delivery.completed", "delivery.failed", "transmission.completed", "transmission.failed", "transmission.connectivity_changed", "transmission.alert_created", "field_team.allocated", "field_member.checked_in", "field_member.checked_out"];
 function content(event: DomainEvent): { title: string; message: string; type: NotificationType; entityType: string } {
   const payload = event.payload;
   switch (event.name) {
@@ -15,6 +15,18 @@ function content(event: DomainEvent): { title: string; message: string; type: No
     case "asset.created": return { title: "Ativo cadastrado", message: `${"assetTag" in payload ? payload.assetTag : "Ativo"} foi cadastrado.`, type: NotificationType.INFO, entityType: "Asset" };
     case "user.created": return { title: "Usuário criado", message: `${"name" in payload ? payload.name : "Usuário"} foi cadastrado.`, type: NotificationType.INFO, entityType: "User" };
     case "election.created": return { title: "Pleito criado", message: `${"name" in payload ? payload.name : "Pleito"} foi cadastrado.`, type: NotificationType.INFO, entityType: "Election" };
+    case "route.created": return { title: "Rota criada", message: `${"code" in payload ? payload.code : "Rota"} foi cadastrada.`, type: NotificationType.INFO, entityType: "DistributionRoute" };
+    case "route.started": return { title: "Rota iniciada", message: `${"code" in payload ? payload.code : "Rota"} iniciou a distribuição.`, type: NotificationType.INFO, entityType: "DistributionRoute" };
+    case "route.completed": return { title: "Rota concluída", message: `${"code" in payload ? payload.code : "Rota"} chegou ao destino.`, type: NotificationType.SUCCESS, entityType: "DistributionRoute" };
+    case "delivery.completed": return { title: "Entrega concluída", message: "Uma entrega de materiais foi recebida.", type: NotificationType.SUCCESS, entityType: "Delivery" };
+    case "delivery.failed": return { title: "Falha de entrega", message: `Falha registrada: ${"reason" in payload ? payload.reason : "motivo não informado"}.`, type: NotificationType.WARNING, entityType: "Delivery" };
+    case "transmission.completed": return { title: "Transmissão concluída", message: `${"identification" in payload ? payload.identification : "Ponto"} concluiu a transmissão.`, type: NotificationType.SUCCESS, entityType: "TransmissionPoint" };
+    case "transmission.failed": return { title: "Falha de transmissão", message: `${"identification" in payload ? payload.identification : "Ponto"}: ${"error" in payload ? payload.error : "falha operacional"}.`, type: NotificationType.CRITICAL, entityType: "TransmissionPoint" };
+    case "transmission.connectivity_changed": return { title: "Conectividade alterada", message: `${"identification" in payload ? payload.identification : "Ponto"} mudou para ${"to" in payload ? payload.to : "novo estado"}.`, type: NotificationType.WARNING, entityType: "TransmissionPoint" };
+    case "transmission.alert_created": return { title: "Alerta de transmissão", message: "message" in payload ? payload.message : "Novo alerta operacional.", type: NotificationType.WARNING, entityType: "TransmissionAlert" };
+    case "field_team.allocated": return { title: "Equipe alocada", message: "Nova alocação de campo registrada.", type: NotificationType.INFO, entityType: "FieldAllocation" };
+    case "field_member.checked_in": return { title: "Check-in de campo", message: `${"memberName" in payload ? payload.memberName : "Operador"} iniciou o serviço.`, type: NotificationType.SUCCESS, entityType: "FieldMember" };
+    case "field_member.checked_out": return { title: "Check-out de campo", message: `${"memberName" in payload ? payload.memberName : "Operador"} encerrou o serviço.`, type: NotificationType.INFO, entityType: "FieldMember" };
   }
 }
 @Injectable()

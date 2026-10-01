@@ -51,6 +51,20 @@ A senha dos usuários demo é derivada de `DEMO_ADMIN_PASSWORD`. Não use o valo
 - `inventory.update`
 - `inventory.move`
 
+### Logística, transmissão e equipes
+
+- `routes.read`
+- `routes.manage`
+- `transmission.read`
+- `transmission.manage`
+- `field-teams.read`
+- `field-teams.manage`
+
+### Analytics
+
+- `reports.read`
+- `reports.export`
+
 ### Sistema/simulação
 
 - `users.read`
@@ -82,7 +96,7 @@ Os controllers de Pleitos, Zonas, Locais e Seções exigem `elections.read` para
 
 ## Proveniência de auditoria
 
-IDs que representam o autor da ação não devem vir do body HTTP. Incidentes, Inventário e Simulador recebem o `request.user.id` autenticado no controller e o propagam ao domínio/Event Bus. IDs que representam o alvo/responsável de uma atribuição continuam podendo fazer parte do DTO.
+IDs que representam o autor da ação não devem vir do body HTTP. Incidentes, Inventário, Rotas, Transmissão, Equipes de Campo e Simulador recebem o `request.user.id` autenticado no controller e o propagam ao domínio/Event Bus. IDs que representam o alvo/responsável de uma atribuição continuam podendo fazer parte do DTO.
 
 ## Frontend
 

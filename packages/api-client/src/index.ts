@@ -107,6 +107,20 @@ export class ApiClient {
   delete<T = void>(path: string, options?: RequestOptions) {
     return this.request<T>("DELETE", path, undefined, options);
   }
+  async getBlob(path: string, options: RequestOptions = {}) {
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}${path}${queryString(options.query)}`, {
+        ...options,
+        method: "GET",
+        headers: { Accept: "*/*", ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}), ...options.headers },
+      });
+    } catch (cause) {
+      throw new ApiError(0, "Não foi possível conectar à API.", { details: cause });
+    }
+    if (!response.ok) throw new ApiError(response.status, `Erro HTTP ${response.status}.`);
+    return response.blob();
+  }
 }
 
 export const apiClient = new ApiClient();

@@ -1,0 +1,30 @@
+.page { max-width: 1380px; display: grid; gap: 18px; }
+.nav { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid #1a2a41; }
+.nav a { padding: 8px 11px; border-radius: 8px; color: #8298ae; text-decoration: none; font-size: 13px; }
+.nav a:hover, .nav .active { color: #eef7ff; background: #14243a; }
+.header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.header > div > span { color: #6ee7b7; font-size: 10px; font-weight: 700; letter-spacing: .14em; }
+.header h1 { margin: 7px 0 8px; font-size: 30px; }
+.header p { margin: 0; color: #8194aa; }
+.metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 11px; }
+.metrics span { display: block; color: #7f91a7; font-size: 12px; }
+.metrics strong { display: block; margin-top: 8px; font-size: 21px; }
+.columns { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(420px, 1.5fr); gap: 14px; align-items: start; }
+.columns h2 { margin-top: 0; }
+.form, .catalog { display: grid; gap: 12px; }
+.tableWrap { overflow-x: auto; }
+.tableWrap table { width: 100%; border-collapse: collapse; }
+.tableWrap th, .tableWrap td { text-align: left; padding: 11px; border-bottom: 1px solid #1a2a41; vertical-align: top; }
+.tableWrap th { color: #7f91a7; font-size: 11px; text-transform: uppercase; }
+.tableWrap small { display: block; color: #7f91a7; margin-top: 4px; }
+.list { display: grid; gap: 8px; }
+.list > a, .list > article { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px; border: 1px solid #1a2a41; border-radius: 9px; color: inherit; text-decoration: none; }
+.list > a > div, .list > article > div { display: grid; gap: 4px; }
+.list span, .list small { color: #7f91a7; }
+.schedule { display: grid; gap: 10px; }
+.schedule article { display: grid; grid-template-columns: 125px 1fr; gap: 14px; padding: 12px; border-left: 3px solid #34d399; background: #0a1726; border-radius: 7px; }
+.schedule time, .schedule div { display: grid; gap: 4px; }
+.schedule time { color: #7f91a7; }
+.schedule span, .schedule small { color: #7f91a7; }
+@media (max-width: 900px) { .metrics { grid-template-columns: repeat(2, 1fr); } .columns { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .header { flex-direction: column; } .metrics { grid-template-columns: 1fr; } }

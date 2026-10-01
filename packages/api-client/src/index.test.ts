@@ -40,4 +40,14 @@ describe("ApiClient", () => {
       }),
     );
   });
+
+  it("baixa arquivos mantendo o token de autenticação", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("arquivo", { status: 200, headers: { "content-type": "text/csv" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new ApiClient("/api");
+    client.setToken("token-test");
+    const blob = await client.getBlob("/reports/export.csv", { query: { electionId: "e-1" } });
+    expect(blob.size).toBeGreaterThan(0);
+    expect(fetchMock).toHaveBeenCalledWith("/api/reports/export.csv?electionId=e-1", expect.objectContaining({ headers: expect.objectContaining({ Authorization: "Bearer token-test" }) }));
+  });
 });

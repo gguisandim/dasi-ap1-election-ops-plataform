@@ -27,6 +27,18 @@ O módulo é global no NestJS e é registrado em `apps/api/src/app.module.ts`.
 - `asset.status_changed`
 - `user.created`
 - `election.created`
+- `route.created`
+- `route.started`
+- `route.completed`
+- `delivery.completed`
+- `delivery.failed`
+- `transmission.completed`
+- `transmission.failed`
+- `transmission.connectivity_changed`
+- `transmission.alert_created`
+- `field_team.allocated`
+- `field_member.checked_in`
+- `field_member.checked_out`
 
 Cada nome possui payload definido em `DomainEventMap`, em `src/contracts.ts`. Não use `any` para eventos novos: primeiro acrescente o contrato ao mapa e depois publique/consuma o evento.
 

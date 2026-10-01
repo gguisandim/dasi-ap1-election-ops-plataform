@@ -75,6 +75,8 @@ const assetTypes = [
   ["MODEM", "Modem"], ["BATTERY", "Bateria"], ["PRINTER", "Impressora"],
   ["ELECTION_KIT", "Kit Eleitoral"], ["RADIO", "Rádio"], ["PHONE", "Celular"], ["OTHER", "Outro"],
 ] as const;
+const fieldRoleDefinitions = [["COORDINATOR", "Coordenador"], ["TECHNICIAN", "Técnico"], ["DRIVER", "Motorista"], ["LOGISTICS", "Logística"], ["SUPPORT", "Suporte"], ["SUPERVISOR", "Supervisor"]] as const;
+const specialtyDefinitions = [["NETWORK", "Rede"], ["HARDWARE", "Hardware"], ["SOFTWARE", "Software"], ["TRANSMISSION", "Transmissão"], ["LOGISTICS", "Logística"], ["ELECTRICAL", "Elétrica"]] as const;
 const permissions = PLATFORM_PERMISSION_KEYS;
 const roles = [
   ["ADMIN", "Administrador"], ["SUPERVISOR", "Supervisor"], ["OPERATOR", "Operador"],
@@ -96,8 +98,8 @@ async function main() {
     const allowed = permissionRecords.filter((permission) => {
       if (key === "ADMIN") return true;
       if (key === "SUPERVISOR") return permission.key !== PERMISSIONS.users.manage;
-      if (key === "OPERATOR") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.create, PERMISSIONS.incidents.update, PERMISSIONS.inventory.read, PERMISSIONS.simulation.read, PERMISSIONS.simulation.manage]).has(permission.key);
-      if (key === "TECHNICIAN") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.update, PERMISSIONS.incidents.resolve, PERMISSIONS.inventory.read, PERMISSIONS.inventory.update, PERMISSIONS.inventory.move, PERMISSIONS.simulation.read]).has(permission.key);
+      if (key === "OPERATOR") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.create, PERMISSIONS.incidents.update, PERMISSIONS.inventory.read, PERMISSIONS.routes.read, PERMISSIONS.routes.manage, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.simulation.read, PERMISSIONS.simulation.manage]).has(permission.key);
+      if (key === "TECHNICIAN") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.update, PERMISSIONS.incidents.resolve, PERMISSIONS.inventory.read, PERMISSIONS.inventory.update, PERMISSIONS.inventory.move, PERMISSIONS.routes.read, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.simulation.read]).has(permission.key);
       return permission.key.endsWith(".read");
     });
     for (const permission of allowed) {
@@ -239,6 +241,20 @@ async function main() {
     orderBy: { name: "asc" },
     take: 4,
   });
+  const fieldRoles = [];
+  for (const [key, name] of fieldRoleDefinitions) fieldRoles.push(await prisma.fieldRole.upsert({ where: { key }, update: { name, active: true }, create: { key, name, description: `Função operacional: ${name}.` } }));
+  const fieldSpecialties = [];
+  for (const [key, name] of specialtyDefinitions) fieldSpecialties.push(await prisma.fieldSpecialty.upsert({ where: { key }, update: { name, active: true }, create: { key, name, description: `Especialidade operacional: ${name}.` } }));
+  const demoTeam = await prisma.fieldTeam.upsert({ where: { code: "EQ-DEMO-01" }, update: { electionId: election.id, name: "Equipe de Campo Alfa", responsibleName: "Coordenação Operacional", status: "ACTIVE" }, create: { code: "EQ-DEMO-01", electionId: election.id, name: "Equipe de Campo Alfa", responsibleName: "Coordenação Operacional", status: "ACTIVE", notes: "Equipe demonstrativa para cobertura inicial." } });
+  const demoMembers = [["Ana Ribeiro", "COORDINATOR", "ana.campo@eops.local", ["LOGISTICS"]], ["Carlos Nunes", "TECHNICIAN", "carlos.campo@eops.local", ["NETWORK", "TRANSMISSION"]], ["Marina Lopes", "DRIVER", "marina.campo@eops.local", ["LOGISTICS"]]] as const;
+  for (const [name, roleKey, email, specialtyKeys] of demoMembers) {
+    const role = fieldRoles.find((item) => item.key === roleKey)!;
+    const member = await prisma.fieldMember.findFirst({ where: { teamId: demoTeam.id, email } }) ?? await prisma.fieldMember.create({ data: { teamId: demoTeam.id, roleId: role.id, name, email, phone: "(91) 90000-0000", status: "AVAILABLE" } });
+    for (const specialtyKey of specialtyKeys) { const specialty = fieldSpecialties.find((item) => item.key === specialtyKey)!; await prisma.fieldMemberSpecialty.upsert({ where: { memberId_specialtyId: { memberId: member.id, specialtyId: specialty.id } }, update: {}, create: { memberId: member.id, specialtyId: specialty.id } }); }
+  }
+  const demoShiftStart = new Date("2026-10-04T09:00:00.000Z");
+  if (!await prisma.fieldShift.findFirst({ where: { teamId: demoTeam.id, startsAt: demoShiftStart } })) await prisma.fieldShift.create({ data: { teamId: demoTeam.id, electoralZoneId: places[0].electoralZoneId, pollingPlaceId: places[0].id, startsAt: demoShiftStart, endsAt: new Date("2026-10-04T21:00:00.000Z"), notes: "Turno demonstrativo do dia de votação." } });
+  if (!await prisma.fieldAllocation.findFirst({ where: { teamId: demoTeam.id, pollingPlaceId: places[0].id, startsAt: demoShiftStart } })) await prisma.fieldAllocation.create({ data: { electionId: election.id, teamId: demoTeam.id, electoralZoneId: places[0].electoralZoneId, pollingPlaceId: places[0].id, activity: "Cobertura operacional", startsAt: demoShiftStart, endsAt: new Date("2026-10-04T21:00:00.000Z"), status: "SCHEDULED" } });
   const category = (key: string) => categories.find((item) => item.key === key)!;
   const types = [];
   for (const [key, name] of assetTypes) {
