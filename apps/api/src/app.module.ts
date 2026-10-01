@@ -19,6 +19,7 @@ import { FieldTeamsModule } from "../../../plugins/operations/field-teams/src/se
 import { CommunicationsModule } from "../../../plugins/operations/communications/src/server/communications.module";
 import { DocumentsEvidenceModule } from "../../../plugins/operations/documents-evidence/src/server/evidence.module";
 import { KnowledgeRunbooksModule } from "../../../plugins/operations/knowledge-runbooks/src/server/knowledge.module";
+import { RiskManagementModule } from "../../../plugins/operations/risk-management/src/server/risk.module";
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { KnowledgeRunbooksModule } from "../../../plugins/operations/knowledge-r
     CommunicationsModule,
     DocumentsEvidenceModule,
     KnowledgeRunbooksModule,
+    RiskManagementModule,
   ],
   controllers: [HealthController],
 })

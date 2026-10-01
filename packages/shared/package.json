@@ -15,6 +15,7 @@
     "./incidents": "./src/incidents.ts",
     "./inventory": "./src/inventory.ts",
     "./knowledge": "./src/knowledge.ts",
+    "./risks": "./src/risks.ts",
     "./simulation": "./src/simulation.ts"
   }
 }

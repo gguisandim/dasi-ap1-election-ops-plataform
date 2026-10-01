@@ -33,6 +33,10 @@ export interface DomainEventMap {
   "runbook.published": { entityId: string; actorId?: string; code: string; title: string; stepCount: number };
   "runbook.matched": { entityId: string; actorId?: string; incidentId?: string; matchCount: number };
   "runbook.executed": { entityId: string; actorId?: string; code: string; title: string; outcome: string; resolved: boolean; incidentId?: string };
+  "risk.created": { entityId: string; actorId?: string; code: string; title: string; electionId: string; score: number; level: string };
+  "risk.escalated": { entityId: string; actorId?: string; code: string; title: string; fromLevel: string; toLevel: string; score: number };
+  "risk.materialized": { entityId: string; actorId?: string; code: string; title: string; level: string; actualImpact: string; incidentId?: string };
+  "risk.closed": { entityId: string; actorId?: string; code: string; title: string; level: string };
 }
 export type DomainEventName = keyof DomainEventMap;
 export interface DomainEvent<K extends DomainEventName = DomainEventName> { name: K; payload: DomainEventMap[K]; occurredAt: Date; }

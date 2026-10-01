@@ -33,6 +33,7 @@
     "@eops/plugin-communications": "0.1.0",
     "@eops/plugin-documents-evidence": "0.1.0",
     "@eops/plugin-knowledge-runbooks": "0.1.0",
+    "@eops/plugin-risk-management": "0.1.0",
     "@vitejs/plugin-react": "6.1.1",
     "vite": "8.3.1",
     "typescript": "6.0.3",

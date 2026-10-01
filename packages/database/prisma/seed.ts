@@ -15,6 +15,11 @@ import {
   EvidenceType,
   KnowledgeArticleKind,
   KnowledgeArticleStatus,
+  RiskEventType,
+  RiskImpact,
+  RiskLevel,
+  RiskProbability,
+  RiskStatus,
   RunbookUsageOutcome,
   ElectionType,
   IncidentEventType,
@@ -136,6 +141,14 @@ const demoRunbook = {
     ["Validar transmissão de teste", "Executar uma transmissão de teste e conferir o resultado.", "Transmissão concluída com sucesso", true, null],
   ],
 } as const;
+const riskCategories = [
+  ["POWER", "Energia"],
+  ["CONNECTIVITY", "Conectividade"],
+  ["LOGISTICS", "Logística"],
+  ["SECURITY", "Segurança"],
+  ["STAFFING", "Pessoal"],
+  ["WEATHER", "Condições climáticas"],
+] as const;
 const permissions = PLATFORM_PERMISSION_KEYS;
 const roles = [
   ["ADMIN", "Administrador"], ["SUPERVISOR", "Supervisor"], ["OPERATOR", "Operador"],
@@ -157,8 +170,8 @@ async function main() {
     const allowed = permissionRecords.filter((permission) => {
       if (key === "ADMIN") return true;
       if (key === "SUPERVISOR") return permission.key !== PERMISSIONS.users.manage;
-      if (key === "OPERATOR") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.create, PERMISSIONS.incidents.update, PERMISSIONS.inventory.read, PERMISSIONS.routes.read, PERMISSIONS.routes.manage, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.communications.read, PERMISSIONS.communications.manage, PERMISSIONS.communications.publish, PERMISSIONS.evidence.read, PERMISSIONS.evidence.upload, PERMISSIONS.evidence.version, PERMISSIONS.knowledge.read, PERMISSIONS.knowledge.manage, PERMISSIONS.knowledge.execute, PERMISSIONS.simulation.read, PERMISSIONS.simulation.manage]).has(permission.key);
-      if (key === "TECHNICIAN") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.update, PERMISSIONS.incidents.resolve, PERMISSIONS.inventory.read, PERMISSIONS.inventory.update, PERMISSIONS.inventory.move, PERMISSIONS.routes.read, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.communications.read, PERMISSIONS.evidence.read, PERMISSIONS.evidence.upload, PERMISSIONS.knowledge.read, PERMISSIONS.knowledge.execute, PERMISSIONS.simulation.read]).has(permission.key);
+      if (key === "OPERATOR") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.create, PERMISSIONS.incidents.update, PERMISSIONS.inventory.read, PERMISSIONS.routes.read, PERMISSIONS.routes.manage, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.communications.read, PERMISSIONS.communications.manage, PERMISSIONS.communications.publish, PERMISSIONS.evidence.read, PERMISSIONS.evidence.upload, PERMISSIONS.evidence.version, PERMISSIONS.knowledge.read, PERMISSIONS.knowledge.manage, PERMISSIONS.knowledge.execute, PERMISSIONS.risks.read, PERMISSIONS.risks.manage, PERMISSIONS.risks.assess, PERMISSIONS.simulation.read, PERMISSIONS.simulation.manage]).has(permission.key);
+      if (key === "TECHNICIAN") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.update, PERMISSIONS.incidents.resolve, PERMISSIONS.inventory.read, PERMISSIONS.inventory.update, PERMISSIONS.inventory.move, PERMISSIONS.routes.read, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.communications.read, PERMISSIONS.evidence.read, PERMISSIONS.evidence.upload, PERMISSIONS.knowledge.read, PERMISSIONS.knowledge.execute, PERMISSIONS.risks.read, PERMISSIONS.risks.assess, PERMISSIONS.simulation.read]).has(permission.key);
       return permission.key.endsWith(".read");
     });
     for (const permission of allowed) {
@@ -726,6 +739,120 @@ async function main() {
     await prisma.knowledgeArticle.update({
       where: { id: runbookRecord.id },
       data: { usageCount: 1, resolvedCount: 1 },
+    });
+  }
+
+  const riskCategoryRecords = [];
+  for (const [key, name] of riskCategories) {
+    riskCategoryRecords.push(
+      await prisma.riskCategory.upsert({
+        where: { key },
+        update: { name, active: true },
+        create: { key, name, description: `Categoria de risco: ${name}.` },
+      }),
+    );
+  }
+  const riskCategory = (key: string) => riskCategoryRecords.find((item) => item.key === key)!;
+  const seededRisk = await prisma.risk.findUnique({ where: { code: "RSK-00001" } });
+  if (!seededRisk) {
+    await prisma.risk.create({
+      data: {
+        code: "RSK-00001",
+        title: "Queda de energia no local da Zona 76",
+        description:
+          "O local já apresentou oscilação de energia em pleitos anteriores e não possui gerador próprio. Uma queda durante a votação interrompe a operação das urnas.",
+        electionId: election.id,
+        electoralZoneId: places[0].electoralZoneId,
+        pollingPlaceId: places[0].id,
+        categoryId: riskCategory("POWER").id,
+        ownerName: "Coordenação Operacional",
+        responsibleName: "Equipe de Infraestrutura",
+        // HIGH × HIGH = 16 ⇒ CRITICAL pela faixa publicada.
+        probability: RiskProbability.HIGH,
+        impact: RiskImpact.HIGH,
+        score: 16,
+        level: RiskLevel.CRITICAL,
+        status: RiskStatus.MITIGATING,
+        identifiedAt: new Date("2026-09-20T09:00:00.000Z"),
+        dueDate: new Date("2026-10-03T18:00:00.000Z"),
+        observations: "Risco demonstrativo criado pelo seed para exercitar a matriz e o painel.",
+        mitigationCount: 2,
+        mitigations: {
+          create: [
+            {
+              description: "Contratar gerador de contingência para o local",
+              responsibleName: "Equipe de Infraestrutura",
+              dueDate: new Date("2026-10-02T18:00:00.000Z"),
+              status: "IN_PROGRESS",
+              progress: 60,
+              notes: "Fornecedor confirmado; entrega prevista para o dia anterior ao pleito.",
+            },
+            {
+              description: "Testar a autonomia do gerador antes da abertura",
+              responsibleName: "Equipe Técnica",
+              dueDate: new Date("2026-10-03T12:00:00.000Z"),
+              status: "PLANNED",
+              progress: 0,
+            },
+          ],
+        },
+        events: {
+          create: [
+            {
+              type: RiskEventType.CREATED,
+              message: "Risco registrado com score 16 (CRITICAL).",
+              actorName: "Coordenação Operacional",
+              createdAt: new Date("2026-09-20T09:00:00.000Z"),
+            },
+            {
+              type: RiskEventType.MITIGATION_ADDED,
+              message: "Mitigação adicionada: Contratar gerador de contingência para o local",
+              actorName: "Coordenação Operacional",
+              createdAt: new Date("2026-09-21T10:00:00.000Z"),
+            },
+            {
+              type: RiskEventType.STATUS_CHANGED,
+              message: "Situação alterada de IDENTIFIED para MITIGATING.",
+              actorName: "Coordenação Operacional",
+              createdAt: new Date("2026-09-21T10:05:00.000Z"),
+            },
+          ],
+        },
+      },
+    });
+  }
+  if (!await prisma.risk.findUnique({ where: { code: "RSK-00002" } })) {
+    await prisma.risk.create({
+      data: {
+        code: "RSK-00002",
+        title: "Rota única de acesso ao local da Zona 91",
+        description:
+          "Há apenas uma via de acesso ao local. Bloqueio por obra ou chuva forte impede a chegada da equipe e dos materiais.",
+        electionId: election.id,
+        electoralZoneId: places[1].electoralZoneId,
+        pollingPlaceId: places[1].id,
+        categoryId: riskCategory("LOGISTICS").id,
+        ownerName: "Coordenação de Logística",
+        responsibleName: "Equipe de Rotas",
+        // MEDIUM × MEDIUM = 9 ⇒ MODERATE.
+        probability: RiskProbability.MEDIUM,
+        impact: RiskImpact.MEDIUM,
+        score: 9,
+        level: RiskLevel.MODERATE,
+        status: RiskStatus.IDENTIFIED,
+        identifiedAt: new Date("2026-09-25T14:00:00.000Z"),
+        dueDate: new Date("2026-10-02T18:00:00.000Z"),
+        events: {
+          create: [
+            {
+              type: RiskEventType.CREATED,
+              message: "Risco registrado com score 9 (MODERATE).",
+              actorName: "Coordenação de Logística",
+              createdAt: new Date("2026-09-25T14:00:00.000Z"),
+            },
+          ],
+        },
+      },
     });
   }
 

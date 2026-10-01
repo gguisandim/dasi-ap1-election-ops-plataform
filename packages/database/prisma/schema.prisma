@@ -317,6 +317,61 @@ enum EvidenceLinkType {
   OTHER
 }
 
+enum RiskProbability {
+  VERY_LOW
+  LOW
+  MEDIUM
+  HIGH
+  VERY_HIGH
+}
+
+enum RiskImpact {
+  VERY_LOW
+  LOW
+  MEDIUM
+  HIGH
+  VERY_HIGH
+}
+
+enum RiskLevel {
+  LOW
+  MODERATE
+  HIGH
+  CRITICAL
+}
+
+enum RiskStatus {
+  IDENTIFIED
+  ASSESSED
+  MITIGATING
+  MONITORING
+  ACCEPTED
+  CLOSED
+  MATERIALIZED
+}
+
+enum RiskMitigationStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum RiskEventType {
+  CREATED
+  ASSESSED
+  SCORE_CHANGED
+  OWNER_CHANGED
+  STATUS_CHANGED
+  MITIGATION_ADDED
+  MITIGATION_UPDATED
+  MITIGATION_COMPLETED
+  MATERIALIZED
+  CLOSED
+  REOPENED
+  NOTE_ADDED
+}
+
 enum KnowledgeArticleKind {
   ARTICLE
   RUNBOOK
@@ -366,6 +421,7 @@ model Election {
   fieldAllocations   FieldAllocation[]
   communications     Communication[]
   evidences          Evidence[]
+  risks              Risk[]
 
   @@index([year, status])
 }
@@ -407,6 +463,7 @@ model ElectoralZone {
   fieldAllocations       FieldAllocation[]
   fieldChecks            FieldCheckEvent[]
   communicationAudiences CommunicationAudience[]
+  risks                  Risk[]
 
   @@unique([electionId, number])
   @@index([municipality, state])
@@ -441,6 +498,7 @@ model PollingPlace {
   fieldAllocations       FieldAllocation[]
   fieldChecks            FieldCheckEvent[]
   communicationAudiences CommunicationAudience[]
+  risks                  Risk[]
 
   @@index([city, state])
   @@index([electoralZoneId, monitoringStatus])
@@ -1572,4 +1630,115 @@ model RunbookUsage {
   @@index([incidentId])
   @@index([outcome])
   @@index([userId, createdAt])
+}
+
+model RiskCategory {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  color       String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  risks       Risk[]
+
+  @@index([active, name])
+}
+
+model Risk {
+  id                   String           @id @default(cuid())
+  code                 String           @unique
+  title                String
+  description          String
+  electionId           String
+  electoralZoneId      String?
+  pollingPlaceId       String?
+  categoryId           String
+  ownerId              String?
+  ownerName            String
+  responsibleId        String?
+  responsibleName      String
+  probability          RiskProbability  @default(MEDIUM)
+  impact               RiskImpact       @default(MEDIUM)
+  /**
+   * Derivado: valorDaProbabilidade × valorDoImpacto (1 a 25).
+   */
+  score                Int              @default(9)
+  /**
+   * Derivado do score pelas faixas publicadas na especificação.
+   */
+  level                RiskLevel        @default(MODERATE)
+  status               RiskStatus       @default(IDENTIFIED)
+  identifiedAt         DateTime         @default(now())
+  dueDate              DateTime?
+  acceptedAt           DateTime?
+  closedAt             DateTime?
+  materializedAt       DateTime?
+  actualImpact         String?
+  materializationNotes String?
+  /**
+   * Incidente real associado, referenciado por ID opaco.
+   */
+  incidentId           String?
+  observations         String?
+  mitigationCount      Int              @default(0)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  election             Election         @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  electoralZone        ElectoralZone?   @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
+  pollingPlace         PollingPlace?    @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  category             RiskCategory     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  mitigations          RiskMitigation[]
+  events               RiskEvent[]
+
+  @@index([electionId, status])
+  @@index([level, status])
+  @@index([electoralZoneId, status])
+  @@index([pollingPlaceId, status])
+  @@index([categoryId])
+  @@index([probability, impact])
+  @@index([dueDate])
+}
+
+model RiskMitigation {
+  id              String               @id @default(cuid())
+  riskId          String
+  description     String
+  responsibleName String
+  responsibleId   String?
+  dueDate         DateTime?
+  status          RiskMitigationStatus @default(PLANNED)
+  /**
+   * Percentual de conclusão de 0 a 100.
+   */
+  progress        Int                  @default(0)
+  /**
+   * Evidência comprobatória, referenciada por ID opaco.
+   */
+  evidenceId      String?
+  evidenceLabel   String?
+  notes           String?
+  completedAt     DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  risk            Risk                 @relation(fields: [riskId], references: [id], onDelete: Cascade)
+
+  @@index([riskId, status])
+  @@index([dueDate, status])
+}
+
+model RiskEvent {
+  id        String        @id @default(cuid())
+  riskId    String
+  type      RiskEventType
+  message   String
+  actorId   String?
+  actorName String?
+  metadata  Json?
+  createdAt DateTime      @default(now())
+  risk      Risk          @relation(fields: [riskId], references: [id], onDelete: Cascade)
+
+  @@index([riskId, createdAt])
+  @@index([type, createdAt])
 }
