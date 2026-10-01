@@ -1,0 +1,22 @@
+# Checklist de entrega — DSAI AP1
+
+- [ ] Renomear o repositório para `dsai-ap1-election-ops-platform`.
+- [ ] Preencher nomes dos dois integrantes no README.
+- [ ] Publicar a aplicação e inserir URL pública no README.
+- [x] Criar `SPEC/`.
+- [x] Marcar specs reconstruídas como retroativas.
+- [x] Criar `prompts/sessoes/`.
+- [ ] Rodar `scripts/coletar-sessoes-codex.ps1` e revisar/commitar exportações literais reais.
+- [ ] Exportar outras conversas usadas (ChatGPT/Claude/etc.) literalmente quando disponíveis.
+- [ ] Rodar `scripts/exportar-historico-git.ps1`.
+- [ ] Garantir commits futuros com trailers `Agent:` e `Spec:`.
+- [ ] Confirmar que ambos os integrantes aparecem como autores no Git.
+- [ ] Rodar o `cloc` oficial e colar a saída no README.
+- [ ] Verificar meta de 100.000 LOC válidas — **a estrutura documental não corrige esse requisito quantitativo**.
+- [ ] `npm run check:boundaries`.
+- [ ] `npm run typecheck`.
+- [ ] `npm run lint`.
+- [ ] `npm test`.
+- [ ] `npm run build`.
+- [ ] `npm run e2e`.
+- [ ] Revisar `git status` e confirmar ausência de `.env`, secrets, builds e backups.

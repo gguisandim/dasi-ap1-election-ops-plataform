@@ -1,6 +1,40 @@
-# Election Ops Platform
+# DSAI AP1 — Election Ops Platform
 
 Plataforma acadêmica modular para gestão, acompanhamento e simulação de operações eleitorais, inspirada no domínio operacional de sistemas de logística eleitoral. O projeto é organizado como monorepo e cresce por plugins isolados.
+
+## Entrega DSAI — AP1
+
+- **Repositório recomendado:** `dsai-ap1-election-ops-platform` (ver `RENOMEAR-REPOSITORIO.md`).
+- **Aplicação pública:** `PENDENTE — inserir URL antes da entrega/apresentação`.
+- **Integrantes:** `PENDENTE — preencher nomes completos da dupla`.
+- **Specs:** consulte [`SPEC/`](SPEC/README.md). As specs iniciais reconstruídas retroativamente são marcadas como tal; novas specs devem ser commitadas antes do código.
+- **Prompts/sessões:** consulte [`prompts/sessoes/`](prompts/sessoes/README.md).
+- **Ferramentas de IA registradas:** ChatGPT (GPT-5.6 Sol, quando explicitamente identificado) e Codex (modelo registrado somente quando a ferramenta/registro o expôs). Não inferimos modelos/tokens ausentes.
+- **Histórico:** execute `powershell -ExecutionPolicy Bypass -File scripts/exportar-historico-git.ps1` para gerar um snapshot literal do Git.
+
+### Comando oficial de LOC da atividade
+
+Execute em ambiente com `cloc` instalado:
+
+```bash
+cloc . --vcs=git \
+  --exclude-dir=node_modules,vendor,dist,build,prompts \
+  --exclude-lang=Markdown,JSON,YAML,CSV,Text,SVG \
+  --not-match-f='(lock|\.min\.)'
+```
+
+> **Saída do `cloc`: PENDENTE.** Cole aqui a saída real imediatamente antes da entrega. Não substitua por `npm run count:loc`, porque a rubrica usa o comando acima.
+
+### Fluxo SDD obrigatório a partir de agora
+
+1. escrever/atualizar `SPEC/<data>-<feature>.md`;
+2. commit da spec;
+3. prompt para IA planejar tarefas;
+4. implementação;
+5. commit de implementação com trailers `Agent:` e `Spec:`;
+6. exportar a sessão literal para `prompts/sessoes/`;
+7. não fazer rebase/squash/force-push para fabricar anterioridade.
+
 
 ## Estado atual
 

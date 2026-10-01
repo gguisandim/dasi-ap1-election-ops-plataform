@@ -8,3 +8,6 @@ coverage/
 *.tsbuildinfo
 test-results/
 playwright-report/
+
+backup-security-runtime-*/
+*.local-backup/
