@@ -209,6 +209,16 @@ filtros e expiração em lote.
 Suíte completa: `npm test` → **21 arquivos, 112 testes, todos aprovados** (eram 13
 arquivos / 29 testes no baseline).
 
+## LOC
+
+`npm run count:loc`:
+
+| Momento | Arquivos | Linhas |
+| --- | --- | --- |
+| Baseline (antes da etapa 1) | 287 | 12.253 |
+| Após a etapa 1 | 343 | 20.489 |
+| Diferença | +56 | **+8.236** |
+
 ## Pendências
 
 Nenhuma pendência funcional do plugin.
