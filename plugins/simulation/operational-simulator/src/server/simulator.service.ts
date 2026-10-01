@@ -11,11 +11,11 @@ export class SimulatorService {
   list() { return this.prisma.simulation.findMany({ include: { election: { select: { id: true, name: true } }, scenario: true, _count: { select: { events: true, incidents: true } } }, orderBy: { createdAt: "desc" } }); }
   scenarios() { return this.prisma.simulationScenario.findMany({ where: { active: true }, orderBy: { name: "asc" } }); }
   async get(id: string) { const simulation = await this.prisma.simulation.findUnique({ where: { id }, include: { election: { select: { id: true, name: true } }, scenario: true, events: { include: { incident: { select: { code: true, status: true } }, asset: { select: { assetTag: true, name: true } }, pollingPlace: { select: { name: true } } }, orderBy: { offsetSeconds: "asc" } }, incidents: { select: { id: true, code: true, title: true, status: true } } } }); if (!simulation) throw new NotFoundException("Simulação não encontrada."); return simulation; }
-  async create(dto: CreateSimulationDto) {
+  async create(dto: CreateSimulationDto, actorId?: string) {
     const [election, scenario] = await Promise.all([this.prisma.election.findUnique({ where: { id: dto.electionId } }), dto.scenarioId ? this.prisma.simulationScenario.findUnique({ where: { id: dto.scenarioId } }) : null]);
     if (!election) throw new NotFoundException("Pleito não encontrado."); if (dto.scenarioId && !scenario?.active) throw new NotFoundException("Cenário não encontrado ou inativo.");
     if (!dto.connectivity && !dto.equipment && !dto.transmission && !dto.logistics) throw new BadRequestException("Selecione pelo menos um tipo de falha.");
-    return this.prisma.simulation.create({ data: dto, include: { election: true, scenario: true } });
+    return this.prisma.simulation.create({ data: { ...dto, createdById: actorId }, include: { election: true, scenario: true } });
   }
   async start(id: string) {
     const simulation = await this.get(id); const startable: SimulationStatus[] = [SimulationStatus.DRAFT, SimulationStatus.PAUSED]; if (!startable.includes(simulation.status)) throw new BadRequestException("A simulação não pode ser iniciada neste estado.");

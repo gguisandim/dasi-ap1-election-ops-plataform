@@ -171,7 +171,6 @@ model ElectoralZone {
   assetMovementsFrom AssetMovement[]   @relation("AssetMovementFromZone")
   assetMovementsTo   AssetMovement[]   @relation("AssetMovementToZone")
   assetAssignments   AssetAssignment[]
-  simulationEvents   SimulationEvent[]
 
   @@unique([electionId, number])
   @@index([municipality, state])
@@ -550,9 +549,6 @@ model SimulationEvent {
   incident        Incident?      @relation(fields: [incidentId], references: [id], onDelete: SetNull)
   asset           Asset?         @relation(fields: [assetId], references: [id], onDelete: SetNull)
   pollingPlace    PollingPlace?  @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
-  electoralZone   ElectoralZone? @relation(fields: [electoralZoneId], references: [id])
-  electoralZoneId String?
-
   @@index([simulationId, offsetSeconds])
   @@index([incidentId])
 }

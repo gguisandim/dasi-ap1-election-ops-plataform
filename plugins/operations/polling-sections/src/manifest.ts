@@ -9,4 +9,5 @@ export const manifest: PluginManifest = {
   version: "0.1.0",
   status: "beta",
   route: "/polling-sections",
+  permissions: ["elections.read"],
 };

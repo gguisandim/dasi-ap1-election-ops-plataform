@@ -9,5 +9,6 @@ export const manifest: PluginManifest = {
   icon: '▣',
   version: '0.1.0',
   status: 'beta',
-  route: '/elections'
+  route: '/elections',
+  permissions: ["elections.read"],
 };

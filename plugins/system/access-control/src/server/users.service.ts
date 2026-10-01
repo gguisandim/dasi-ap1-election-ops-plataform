@@ -25,7 +25,6 @@ export class UsersService {
     await this.validateRoles(dto.roleIds);
     try {
       const user = await this.prisma.user.create({ data: { name: dto.name, email: dto.email.toLowerCase(), passwordHash: await hashPassword(dto.password), roles: { create: dto.roleIds.map((roleId) => ({ roleId })) } }, include: includeAccess });
-      await this.prisma.auditEvent.create({ data: { actorId, action: AuditAction.CREATE, entityType: "User", entityId: user.id, newData: { name: user.name, email: user.email, roleIds: dto.roleIds } } });
       await this.eventBus.emit("user.created", { entityId: user.id, actorId, email: user.email, name: user.name });
       return withoutPassword(user);
     } catch (error) {

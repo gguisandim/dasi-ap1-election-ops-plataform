@@ -12,16 +12,25 @@ export default function App() {
   const location = useLocation();
   const { user, loading: authLoading, logout } = useAuth();
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const accessiblePlugins = useMemo(
+    () =>
+      plugins.filter((plugin) =>
+        (plugin.manifest.permissions ?? []).every((permission) =>
+          user?.permissions.includes(permission),
+        ),
+      ),
+    [user],
+  );
   const grouped = useMemo(() => {
     const result = new Map<PluginCategory, typeof plugins>();
-    for (const plugin of plugins)
+    for (const plugin of accessiblePlugins)
       result.set(plugin.manifest.category, [
         ...(result.get(plugin.manifest.category) ?? []),
         plugin,
       ]);
     return result;
-  }, []);
-  const activePlugin = plugins.find(
+  }, [accessiblePlugins]);
+  const activePlugin = accessiblePlugins.find(
     (plugin) =>
       location.pathname === plugin.manifest.route ||
       location.pathname.startsWith(`${plugin.manifest.route}/`),
@@ -109,8 +118,8 @@ export default function App() {
         </header>
         <div className="workspace-content">
           <Routes>
-            <Route path="/" element={<HomeDashboard plugins={plugins} />} />
-            {plugins
+            <Route path="/" element={<HomeDashboard plugins={accessiblePlugins} />} />
+            {accessiblePlugins
               .flatMap(
                 (plugin) =>
                   plugin.routes ??

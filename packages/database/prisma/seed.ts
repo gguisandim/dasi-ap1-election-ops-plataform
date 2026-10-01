@@ -102,7 +102,7 @@ async function main() {
       if (key === "ADMIN") return true;
       if (key === "SUPERVISOR") return permission.key !== "users.manage";
       if (key === "OPERATOR") return ["elections.read", "incidents.read", "incidents.create", "incidents.update", "inventory.read", "simulation.read", "simulation.manage"].includes(permission.key);
-      if (key === "TECHNICIAN") return ["incidents.read", "incidents.update", "incidents.resolve", "inventory.read", "inventory.update", "inventory.move", "simulation.read"].includes(permission.key);
+      if (key === "TECHNICIAN") return ["elections.read", "incidents.read", "incidents.update", "incidents.resolve", "inventory.read", "inventory.update", "inventory.move", "simulation.read"].includes(permission.key);
       return permission.key.endsWith(".read");
     });
     for (const permission of allowed) {

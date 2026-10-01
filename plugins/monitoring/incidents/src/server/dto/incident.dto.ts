@@ -36,10 +36,7 @@ export class CreateIncidentDto {
   @IsString() @IsOptional() pollingPlaceId?: string;
   @IsString() categoryId!: string;
   @IsString() @IsOptional() assetId?: string;
-  @IsString() @IsOptional() createdById?: string;
   @IsDateString() @IsOptional() slaDeadline?: string;
-  @IsBoolean() @IsOptional() isSimulated?: boolean;
-  @IsString() @IsOptional() simulationId?: string;
 }
 
 export class UpdateIncidentDto {
@@ -54,19 +51,16 @@ export class UpdateIncidentDto {
 export class ChangeIncidentStatusDto {
   @IsEnum(IncidentStatus) status!: IncidentStatus;
   @IsString() @Length(3, 500) @IsOptional() comment?: string;
-  @IsString() @IsOptional() actorId?: string;
 }
 
 export class AssignIncidentDto {
   @IsString() @IsOptional() assignedToId?: string;
   @IsString() @Length(2, 160) assignedToName!: string;
   @IsString() @Length(3, 500) @IsOptional() reason?: string;
-  @IsString() @IsOptional() assignedById?: string;
 }
 
 export class AddIncidentCommentDto {
   @IsString() @Length(1, 2000) message!: string;
-  @IsString() @IsOptional() actorId?: string;
 }
 
 export class CreateIncidentCategoryDto {

@@ -9,12 +9,14 @@ import {
   Post,
   Query,
 } from "@nestjs/common";
+import { Permissions } from "../../../../system/access-control/src/server/auth.decorators";
 import {
   CreatePollingSectionDto,
   UpdatePollingSectionDto,
 } from "./dto/polling-section.dto";
 import { PollingSectionsService } from "./polling-sections.service";
 
+@Permissions("elections.read")
 @Controller("polling-sections")
 export class PollingSectionsController {
   constructor(private readonly service: PollingSectionsService) {}
@@ -24,15 +26,18 @@ export class PollingSectionsController {
   @Get(":id") findOne(@Param("id") id: string) {
     return this.service.findOne(id);
   }
+  @Permissions("elections.manage")
   @Post() create(@Body() dto: CreatePollingSectionDto) {
     return this.service.create(dto);
   }
+  @Permissions("elections.manage")
   @Patch(":id") update(
     @Param("id") id: string,
     @Body() dto: UpdatePollingSectionDto,
   ) {
     return this.service.update(id, dto);
   }
+  @Permissions("elections.manage")
   @Delete(":id") @HttpCode(204) remove(@Param("id") id: string) {
     return this.service.remove(id);
   }

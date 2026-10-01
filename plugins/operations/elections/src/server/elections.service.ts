@@ -73,7 +73,7 @@ export class ElectionsService {
     };
   }
 
-  async create(dto: CreateElectionDto) {
+  async create(dto: CreateElectionDto, actorId?: string) {
     const { rounds, ...data } = dto;
     const election = await this.prisma.election.create({
       data: {
@@ -89,7 +89,7 @@ export class ElectionsService {
       },
       include: { rounds: true },
     });
-    await this.eventBus?.emit("election.created", { entityId: election.id, name: election.name, year: election.year });
+    await this.eventBus?.emit("election.created", { entityId: election.id, actorId, name: election.name, year: election.year });
     return election;
   }
 

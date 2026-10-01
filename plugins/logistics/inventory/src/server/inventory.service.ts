@@ -76,14 +76,14 @@ export class InventoryService {
     return { zone, place };
   }
 
-  async create(dto: CreateAssetDto) {
+  async create(dto: CreateAssetDto, actorId?: string) {
     const type = await this.prisma.assetType.findUnique({ where: { id: dto.typeId } });
     if (!type?.active) throw new NotFoundException("Tipo de ativo não encontrado ou inativo.");
     const { place } = await this.validateLocation(dto.electoralZoneId, dto.pollingPlaceId);
     const electoralZoneId = place?.electoralZoneId ?? dto.electoralZoneId;
     try {
       const asset = await this.prisma.asset.create({ data: { ...dto, assetTag: dto.assetTag.toUpperCase(), electoralZoneId }, include: includeLocation });
-      await this.eventBus?.emit("asset.created", { entityId: asset.id, assetTag: asset.assetTag, name: asset.name });
+      await this.eventBus?.emit("asset.created", { entityId: asset.id, actorId, assetTag: asset.assetTag, name: asset.name });
       return asset;
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") throw new ConflictException("Já existe um ativo com esse patrimônio.");
@@ -91,18 +91,18 @@ export class InventoryService {
     }
   }
 
-  async update(id: string, dto: UpdateAssetDto) {
+  async update(id: string, dto: UpdateAssetDto, actorId?: string) {
     const current = await this.findOne(id);
     if (dto.typeId) {
       const type = await this.prisma.assetType.findUnique({ where: { id: dto.typeId } });
       if (!type?.active) throw new NotFoundException("Tipo de ativo não encontrado ou inativo.");
     }
     const asset = await this.prisma.asset.update({ where: { id }, data: dto, include: includeLocation });
-    if (dto.status && dto.status !== current.status) await this.eventBus?.emit("asset.status_changed", { entityId: asset.id, assetTag: asset.assetTag, from: current.status, to: dto.status });
+    if (dto.status && dto.status !== current.status) await this.eventBus?.emit("asset.status_changed", { entityId: asset.id, actorId, assetTag: asset.assetTag, from: current.status, to: dto.status });
     return asset;
   }
 
-  async move(id: string, dto: MoveAssetDto) {
+  async move(id: string, dto: MoveAssetDto, actorId?: string) {
     const asset = await this.findOne(id);
     const { zone, place } = await this.validateLocation(dto.toZoneId, dto.toPollingPlaceId);
     const toZoneId = place?.electoralZoneId ?? zone?.id;
@@ -123,7 +123,7 @@ export class InventoryService {
       await tx.assetAssignment.create({ data: { assetId: id, electoralZoneId: toZoneId, pollingPlaceId: place?.id, assignedToId: dto.responsibleId, assignedToName: dto.responsibleName } });
       return movement;
     });
-    await this.eventBus?.emit("asset.moved", { entityId: asset.id, actorId: dto.responsibleId, assetTag: asset.assetTag, origin: originLabel, destination: destinationLabel, responsibleName: dto.responsibleName });
+    await this.eventBus?.emit("asset.moved", { entityId: asset.id, actorId, assetTag: asset.assetTag, origin: originLabel, destination: destinationLabel, responsibleName: dto.responsibleName });
     return movement;
   }
 

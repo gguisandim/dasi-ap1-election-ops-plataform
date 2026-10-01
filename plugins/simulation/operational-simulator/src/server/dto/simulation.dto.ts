@@ -8,6 +8,5 @@ export class CreateSimulationDto {
   @IsEnum(FailureProbability) probability!: FailureProbability;
   @IsBoolean() connectivity!: boolean; @IsBoolean() equipment!: boolean; @IsBoolean() transmission!: boolean; @IsBoolean() logistics!: boolean;
   @IsBoolean() @IsOptional() applyToOperations?: boolean;
-  @IsString() @IsOptional() createdById?: string;
 }
 export class SimulationSpeedDto { @IsInt() @IsIn([1, 5, 20, 100]) speed!: number; }

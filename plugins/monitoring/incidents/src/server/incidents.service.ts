@@ -147,7 +147,7 @@ export class IncidentsService {
     if (dto.assetId && !asset) throw new NotFoundException("Ativo não encontrado.");
   }
 
-  async create(dto: CreateIncidentDto) {
+  async create(dto: CreateIncidentDto, actorId?: string) {
     await this.validateRelations(dto);
     const sequence = (await this.prisma.incident.count()) + 1;
     const code = `INC-${String(sequence).padStart(5, "0")}`;
@@ -156,17 +156,18 @@ export class IncidentsService {
         const incident = await tx.incident.create({
           data: {
             ...dto,
+            createdById: actorId,
             code,
             slaDeadline: dto.slaDeadline ? new Date(dto.slaDeadline) : defaultSla(dto.severity),
           },
           include: includeRelations,
         });
         await tx.incidentEvent.create({
-          data: { incidentId: incident.id, type: IncidentEventType.INCIDENT_CREATED, message: "Incidente criado.", actorId: dto.createdById },
+          data: { incidentId: incident.id, type: IncidentEventType.INCIDENT_CREATED, message: "Incidente criado.", actorId },
         });
         return incident;
       });
-      await this.eventBus?.emit("incident.created", { entityId: incident.id, actorId: dto.createdById, code: incident.code, title: incident.title, severity: incident.severity, electionId: incident.electionId, pollingPlaceId: incident.pollingPlaceId ?? undefined });
+      await this.eventBus?.emit("incident.created", { entityId: incident.id, actorId, code: incident.code, title: incident.title, severity: incident.severity, electionId: incident.electionId, pollingPlaceId: incident.pollingPlaceId ?? undefined });
       return incident;
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") throw new ConflictException("Não foi possível gerar um código único para o incidente. Tente novamente.");
@@ -198,7 +199,7 @@ export class IncidentsService {
     return incident;
   }
 
-  async changeStatus(id: string, dto: ChangeIncidentStatusDto) {
+  async changeStatus(id: string, dto: ChangeIncidentStatusDto, actorId?: string) {
     const current = await this.findOne(id);
     if (current.status === dto.status) return current;
     if (!transitions[current.status].includes(dto.status)) throw new BadRequestException(`Transição de ${current.status} para ${dto.status} não permitida.`);
@@ -218,17 +219,17 @@ export class IncidentsService {
           incidentId: id,
           type: eventForStatus(dto.status),
           message: dto.comment ?? `Status alterado de ${current.status} para ${dto.status}.`,
-          actorId: dto.actorId,
+          actorId,
           metadata: { from: current.status, to: dto.status },
         },
       });
       return incident;
     });
-    if (dto.status === IncidentStatus.RESOLVED) await this.eventBus?.emit("incident.resolved", { entityId: incident.id, actorId: dto.actorId, code: incident.code, title: incident.title });
+    if (dto.status === IncidentStatus.RESOLVED) await this.eventBus?.emit("incident.resolved", { entityId: incident.id, actorId, code: incident.code, title: incident.title });
     return incident;
   }
 
-  async assign(id: string, dto: AssignIncidentDto) {
+  async assign(id: string, dto: AssignIncidentDto, actorId?: string) {
     const current = await this.findOne(id);
     const immutableStatuses: IncidentStatus[] = [IncidentStatus.CLOSED, IncidentStatus.CANCELLED];
     if (immutableStatuses.includes(current.status)) throw new BadRequestException("Incidentes encerrados ou cancelados não podem ser atribuídos.");
@@ -239,17 +240,17 @@ export class IncidentsService {
         data: { assignedToId: dto.assignedToId, assignedToName: dto.assignedToName, status: current.status === IncidentStatus.IN_PROGRESS ? undefined : IncidentStatus.ASSIGNED },
         include: includeRelations,
       });
-      await tx.incidentAssignment.create({ data: { incidentId: id, ...dto } });
-      await tx.incidentEvent.create({ data: { incidentId: id, type: IncidentEventType.ASSIGNED, message: `Incidente atribuído a ${dto.assignedToName}.`, actorId: dto.assignedById } });
+      await tx.incidentAssignment.create({ data: { incidentId: id, ...dto, assignedById: actorId } });
+      await tx.incidentEvent.create({ data: { incidentId: id, type: IncidentEventType.ASSIGNED, message: `Incidente atribuído a ${dto.assignedToName}.`, actorId } });
       return incident;
     });
-    await this.eventBus?.emit("incident.assigned", { entityId: incident.id, actorId: dto.assignedById, code: incident.code, assignedToName: dto.assignedToName });
+    await this.eventBus?.emit("incident.assigned", { entityId: incident.id, actorId, code: incident.code, assignedToName: dto.assignedToName });
     return incident;
   }
 
-  async addComment(id: string, dto: AddIncidentCommentDto) {
+  async addComment(id: string, dto: AddIncidentCommentDto, actorId?: string) {
     await this.findOne(id);
-    return this.prisma.incidentEvent.create({ data: { incidentId: id, type: IncidentEventType.COMMENT_ADDED, message: dto.message, actorId: dto.actorId } });
+    return this.prisma.incidentEvent.create({ data: { incidentId: id, type: IncidentEventType.COMMENT_ADDED, message: dto.message, actorId } });
   }
 
   async remove(id: string) {

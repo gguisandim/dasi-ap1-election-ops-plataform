@@ -9,5 +9,6 @@ export const manifest: PluginManifest = {
   icon: '▤',
   version: '0.1.0',
   status: 'beta',
-  route: '/inventory'
+  route: '/inventory',
+  permissions: ["inventory.read"],
 };
