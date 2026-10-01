@@ -4,6 +4,11 @@ import { PLATFORM_PERMISSION_KEYS, PERMISSIONS } from "@eops/security";
 import {
   AssetCondition,
   AssetStatus,
+  CommunicationAudienceType,
+  CommunicationDeliveryStatus,
+  CommunicationEventType,
+  CommunicationPriority,
+  CommunicationStatus,
   ElectionStatus,
   ElectionType,
   IncidentEventType,
@@ -77,6 +82,20 @@ const assetTypes = [
 ] as const;
 const fieldRoleDefinitions = [["COORDINATOR", "Coordenador"], ["TECHNICIAN", "Técnico"], ["DRIVER", "Motorista"], ["LOGISTICS", "Logística"], ["SUPPORT", "Suporte"], ["SUPERVISOR", "Supervisor"]] as const;
 const specialtyDefinitions = [["NETWORK", "Rede"], ["HARDWARE", "Hardware"], ["SOFTWARE", "Software"], ["TRANSMISSION", "Transmissão"], ["LOGISTICS", "Logística"], ["ELECTRICAL", "Elétrica"]] as const;
+const communicationCategories = [
+  ["CONNECTIVITY", "Conectividade", "#4f9ae8"],
+  ["POWER", "Energia", "#d8ad4a"],
+  ["LOGISTICS", "Logística", "#35c88b"],
+  ["TRANSMISSION", "Transmissão", "#8f7ae8"],
+  ["SECURITY", "Segurança", "#e86f7a"],
+  ["OPERATIONAL", "Operacional", "#72aee6"],
+] as const;
+const communicationTemplates = [
+  ["Abertura de turno", "OPERATIONAL", "Abertura de turno operacional", "Equipes, confirmem o checklist inicial e a disponibilidade dos equipamentos antes do início do turno.", "NORMAL", "abertura, turno"],
+  ["Falha de energia", "POWER", "Oscilação de energia no local", "Registramos oscilação de energia no local. Confirme o acionamento da bateria de contingência e informe a supervisão.", "HIGH", "energia"],
+  ["Retomada de transmissão", "TRANSMISSION", "Transmissão normalizada", "A transmissão foi normalizada no ponto indicado. Registre a conclusão no monitor de transmissão.", "NORMAL", "transmissao"],
+  ["Interrupção de conectividade", "CONNECTIVITY", "Perda de conectividade no enlace", "O enlace principal apresentou perda de conectividade. Acione o plano de contingência e mantenha a supervisão informada.", "CRITICAL", "conectividade"],
+] as const;
 const permissions = PLATFORM_PERMISSION_KEYS;
 const roles = [
   ["ADMIN", "Administrador"], ["SUPERVISOR", "Supervisor"], ["OPERATOR", "Operador"],
@@ -98,8 +117,8 @@ async function main() {
     const allowed = permissionRecords.filter((permission) => {
       if (key === "ADMIN") return true;
       if (key === "SUPERVISOR") return permission.key !== PERMISSIONS.users.manage;
-      if (key === "OPERATOR") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.create, PERMISSIONS.incidents.update, PERMISSIONS.inventory.read, PERMISSIONS.routes.read, PERMISSIONS.routes.manage, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.simulation.read, PERMISSIONS.simulation.manage]).has(permission.key);
-      if (key === "TECHNICIAN") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.update, PERMISSIONS.incidents.resolve, PERMISSIONS.inventory.read, PERMISSIONS.inventory.update, PERMISSIONS.inventory.move, PERMISSIONS.routes.read, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.simulation.read]).has(permission.key);
+      if (key === "OPERATOR") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.create, PERMISSIONS.incidents.update, PERMISSIONS.inventory.read, PERMISSIONS.routes.read, PERMISSIONS.routes.manage, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.communications.read, PERMISSIONS.communications.manage, PERMISSIONS.communications.publish, PERMISSIONS.simulation.read, PERMISSIONS.simulation.manage]).has(permission.key);
+      if (key === "TECHNICIAN") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.update, PERMISSIONS.incidents.resolve, PERMISSIONS.inventory.read, PERMISSIONS.inventory.update, PERMISSIONS.inventory.move, PERMISSIONS.routes.read, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.communications.read, PERMISSIONS.simulation.read]).has(permission.key);
       return permission.key.endsWith(".read");
     });
     for (const permission of allowed) {
@@ -367,6 +386,132 @@ async function main() {
       events: { create: [{ type: IncidentEventType.INCIDENT_CREATED, message: "Falha identificada no checklist." }, { type: IncidentEventType.RESOLVED, message: "Equipamento reserva substituído e testado." }] },
     },
   });
+
+  const communicationCategoryRecords = [];
+  for (const [key, name, color] of communicationCategories) {
+    communicationCategoryRecords.push(
+      await prisma.communicationCategory.upsert({
+        where: { key },
+        update: { name, color, active: true },
+        create: { key, name, color, description: `Categoria de comunicado: ${name}.` },
+      }),
+    );
+  }
+  const communicationCategory = (key: string) =>
+    communicationCategoryRecords.find((item) => item.key === key)!;
+  for (const [name, categoryKey, defaultTitle, body, priority] of communicationTemplates) {
+    await prisma.communicationTemplate.upsert({
+      where: { name },
+      update: { defaultTitle, body, categoryId: communicationCategory(categoryKey).id },
+      create: {
+        name,
+        description: `Template demonstrativo: ${name}.`,
+        defaultTitle,
+        body,
+        priority,
+        categoryId: communicationCategory(categoryKey).id,
+      },
+    });
+  }
+  const seededCommunication = await prisma.communication.upsert({
+    where: { code: "COM-00001" },
+    update: {},
+    create: {
+      code: "COM-00001",
+      title: "Confirmação de checklist antes da abertura dos locais",
+      content:
+        "Todas as equipes devem confirmar o checklist de abertura — energia, conectividade e urna — até 30 minutos antes do horário previsto.\n\nDivergências devem ser registradas como incidente na Central de Incidentes.",
+      priority: CommunicationPriority.HIGH,
+      status: CommunicationStatus.PUBLISHED,
+      electionId: election.id,
+      categoryId: communicationCategory("OPERATIONAL").id,
+      authorName: "Coordenação Operacional",
+      observations: "Comunicado demonstrativo criado pelo seed para exercitar o acompanhamento de leitura.",
+      publishedAt: new Date("2026-10-01T09:00:00.000Z"),
+      dispatchedAt: new Date("2026-10-01T09:00:05.000Z"),
+      expiresAt: new Date("2026-10-04T11:00:00.000Z"),
+      recipientCount: userRecords.length,
+      tags: {
+        create: [
+          { tag: { connect: { id: (await prisma.communicationTag.upsert({ where: { label: "turno" }, update: {}, create: { label: "turno", slug: "turno" } })).id } } },
+          { tag: { connect: { id: (await prisma.communicationTag.upsert({ where: { label: "checklist" }, update: {}, create: { label: "checklist", slug: "checklist" } })).id } } },
+        ],
+      },
+      audiences: { create: [{ type: CommunicationAudienceType.ALL, label: "Todos os usuários ativos" }] },
+      timeline: {
+        create: [
+          { type: CommunicationEventType.CREATED, message: "Comunicado criado.", actorName: "Coordenação Operacional", createdAt: new Date("2026-10-01T08:55:00.000Z") },
+          { type: CommunicationEventType.PUBLISHED, message: "Comunicado publicado.", actorName: "Coordenação Operacional", createdAt: new Date("2026-10-01T09:00:00.000Z") },
+          { type: CommunicationEventType.DISPATCHED, message: `${userRecords.length} destinatário(s) receberam o comunicado.`, createdAt: new Date("2026-10-01T09:00:05.000Z") },
+        ],
+      },
+    },
+    include: { audiences: true },
+  });
+  const communicationAudience = seededCommunication.audiences[0];
+  const recipientStates: Array<[number, CommunicationDeliveryStatus, number | null]> = [
+    [0, CommunicationDeliveryStatus.CONFIRMED, 42],
+    [1, CommunicationDeliveryStatus.VIEWED, null],
+    [2, CommunicationDeliveryStatus.DELIVERED, null],
+    [3, CommunicationDeliveryStatus.PENDING, null],
+  ];
+  for (const [index, deliveryStatus, confirmationMinutes] of recipientStates) {
+    const user = userRecords[index];
+    if (!user) continue;
+    const confirmedAt = confirmationMinutes
+      ? new Date(Date.parse("2026-10-01T09:00:00.000Z") + confirmationMinutes * 60_000)
+      : null;
+    await prisma.communicationRecipient.upsert({
+      where: {
+        communicationId_dedupeKey: {
+          communicationId: seededCommunication.id,
+          dedupeKey: `user:${user.id}`,
+        },
+      },
+      update: {},
+      create: {
+        communicationId: seededCommunication.id,
+        audienceId: communicationAudience?.id,
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        roleLabel: user.email.split("@")[0],
+        sourceLabel: "Todos os usuários ativos",
+        deliveryStatus,
+        deliveredAt: new Date("2026-10-01T09:00:05.000Z"),
+        viewedAt:
+          deliveryStatus === CommunicationDeliveryStatus.VIEWED || confirmedAt
+            ? new Date("2026-10-01T09:20:00.000Z")
+            : null,
+        confirmedAt,
+        dedupeKey: `user:${user.id}`,
+      },
+    });
+  }
+  if (!await prisma.communication.findFirst({ where: { code: "COM-00002" } })) {
+    await prisma.communication.create({
+      data: {
+        code: "COM-00002",
+        title: "Reforço de equipe na Zona 76",
+        content: "A Zona 76 receberá reforço de equipe no turno da tarde. Confirme a disponibilidade dos membros designados.",
+        priority: CommunicationPriority.NORMAL,
+        status: CommunicationStatus.SCHEDULED,
+        electionId: election.id,
+        categoryId: communicationCategory("LOGISTICS").id,
+        authorName: "Coordenação Operacional",
+        scheduledAt: new Date("2026-10-04T07:00:00.000Z"),
+        audiences: {
+          create: [{ type: CommunicationAudienceType.ELECTORAL_ZONE, electoralZoneId: places[0].electoralZoneId, label: `Zona ${places[0].electoralZone.number}` }],
+        },
+        timeline: {
+          create: [
+            { type: CommunicationEventType.CREATED, message: "Comunicado criado.", actorName: "Coordenação Operacional" },
+            { type: CommunicationEventType.SCHEDULED, message: "Comunicado agendado para 2026-10-04T07:00:00.000Z.", actorName: "Coordenação Operacional" },
+          ],
+        },
+      },
+    });
+  }
 
   const [zoneCount, placeCount, sectionCount] = await Promise.all([
     prisma.electoralZone.count(),

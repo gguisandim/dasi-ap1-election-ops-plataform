@@ -3,8 +3,9 @@ import { NotificationType, UserStatus } from "@prisma/client";
 import { EventBus, type DomainEvent, type DomainEventName } from "../../../../../packages/event-bus/src";
 import { PrismaService } from "../../../../../packages/database/src";
 
-const names: DomainEventName[] = ["incident.created", "incident.assigned", "incident.resolved", "asset.created", "asset.moved", "asset.status_changed", "user.created", "election.created", "route.created", "route.started", "route.completed", "delivery.completed", "delivery.failed", "transmission.completed", "transmission.failed", "transmission.connectivity_changed", "transmission.alert_created", "field_team.allocated", "field_member.checked_in", "field_member.checked_out"];
-function content(event: DomainEvent): { title: string; message: string; type: NotificationType; entityType: string } {
+const names = ["incident.created", "incident.assigned", "incident.resolved", "asset.created", "asset.moved", "asset.status_changed", "user.created", "election.created", "route.created", "route.started", "route.completed", "delivery.completed", "delivery.failed", "transmission.completed", "transmission.failed", "transmission.connectivity_changed", "transmission.alert_created", "field_team.allocated", "field_member.checked_in", "field_member.checked_out", "communication.published", "communication.cancelled", "communication.expired"] as const satisfies readonly DomainEventName[];
+type SubscribedEventName = (typeof names)[number];
+function content(event: DomainEvent<SubscribedEventName>): { title: string; message: string; type: NotificationType; entityType: string } {
   const payload = event.payload;
   switch (event.name) {
     case "incident.created": return { title: "Novo incidente", message: `${"code" in payload ? payload.code : "Incidente"}: ${"title" in payload ? payload.title : "criado"}.`, type: "severity" in payload && payload.severity === "CRITICAL" ? NotificationType.CRITICAL : NotificationType.WARNING, entityType: "Incident" };
@@ -27,13 +28,16 @@ function content(event: DomainEvent): { title: string; message: string; type: No
     case "field_team.allocated": return { title: "Equipe alocada", message: "Nova alocação de campo registrada.", type: NotificationType.INFO, entityType: "FieldAllocation" };
     case "field_member.checked_in": return { title: "Check-in de campo", message: `${"memberName" in payload ? payload.memberName : "Operador"} iniciou o serviço.`, type: NotificationType.SUCCESS, entityType: "FieldMember" };
     case "field_member.checked_out": return { title: "Check-out de campo", message: `${"memberName" in payload ? payload.memberName : "Operador"} encerrou o serviço.`, type: NotificationType.INFO, entityType: "FieldMember" };
+    case "communication.published": return { title: "Novo comunicado operacional", message: `${"code" in payload ? payload.code : "Comunicado"}: ${"title" in payload ? payload.title : "publicado"} (${"recipientCount" in payload ? payload.recipientCount : 0} destinatário(s)).`, type: "priority" in payload && (payload.priority === "CRITICAL" || payload.priority === "HIGH") ? NotificationType.CRITICAL : NotificationType.INFO, entityType: "Communication" };
+    case "communication.cancelled": return { title: "Comunicado cancelado", message: `${"code" in payload ? payload.code : "Comunicado"}: ${"title" in payload ? payload.title : "cancelado"}.`, type: NotificationType.WARNING, entityType: "Communication" };
+    case "communication.expired": return { title: "Comunicado expirado", message: `${"code" in payload ? payload.code : "Comunicado"}: ${"title" in payload ? payload.title : "expirado"}.`, type: NotificationType.WARNING, entityType: "Communication" };
   }
 }
 @Injectable()
 export class NotificationSubscriber implements OnModuleInit {
   constructor(private readonly eventBus: EventBus, private readonly prisma: PrismaService) {}
   onModuleInit() { for (const name of names) this.eventBus.subscribe(name, (event) => this.handle(event)); }
-  private async handle(event: DomainEvent) {
+  private async handle(event: DomainEvent<SubscribedEventName>) {
     const users = await this.prisma.user.findMany({ where: { status: UserStatus.ACTIVE, notificationPreferences: { none: { eventName: event.name, enabled: false } } }, select: { id: true } });
     if (!users.length) return;
     const details = content(event);

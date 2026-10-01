@@ -19,6 +19,13 @@ export interface DomainEventMap {
   "field_team.allocated": { entityId: string; actorId?: string; teamId?: string; memberId?: string; electionId: string; electoralZoneId?: string; pollingPlaceId?: string; routeId?: string };
   "field_member.checked_in": { entityId: string; actorId?: string; memberId: string; memberName: string; electoralZoneId?: string; pollingPlaceId?: string; occurredAt: string };
   "field_member.checked_out": { entityId: string; actorId?: string; memberId: string; memberName: string; electoralZoneId?: string; pollingPlaceId?: string; occurredAt: string };
+  "communication.created": { entityId: string; actorId?: string; code: string; title: string; priority: string; electionId: string; status: string };
+  "communication.published": { entityId: string; actorId?: string; code: string; title: string; priority: string; electionId: string; recipientCount: number };
+  "communication.cancelled": { entityId: string; actorId?: string; code: string; title: string; reason?: string };
+  "communication.expired": { entityId: string; actorId?: string; code: string; title: string; expiredAt: string };
+  "communication.archived": { entityId: string; actorId?: string; code: string; title: string };
+  "communication.read": { entityId: string; actorId?: string; communicationId: string; recipientId: string; recipientName: string; code: string };
+  "communication.acknowledged": { entityId: string; actorId?: string; communicationId: string; recipientId: string; recipientName: string; code: string; title: string };
 }
 export type DomainEventName = keyof DomainEventMap;
 export interface DomainEvent<K extends DomainEventName = DomainEventName> { name: K; payload: DomainEventMap[K]; occurredAt: Date; }

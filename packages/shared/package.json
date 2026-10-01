@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./auth": "./src/auth.ts",
     "./common": "./src/common.ts",
+    "./communications": "./src/communications.ts",
     "./elections": "./src/elections.ts",
     "./format": "./src/format.ts",
     "./incidents": "./src/incidents.ts",

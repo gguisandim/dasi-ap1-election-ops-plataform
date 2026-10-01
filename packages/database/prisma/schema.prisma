@@ -242,23 +242,70 @@ enum FieldCheckType {
   CHECK_OUT
 }
 
+enum CommunicationPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum CommunicationStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  EXPIRED
+  ARCHIVED
+  CANCELLED
+}
+
+enum CommunicationAudienceType {
+  ALL
+  ELECTORAL_ZONE
+  POLLING_PLACE
+  FIELD_TEAM
+  OPERATIONAL_ROLE
+  USER
+}
+
+enum CommunicationDeliveryStatus {
+  PENDING
+  DELIVERED
+  VIEWED
+  CONFIRMED
+}
+
+enum CommunicationEventType {
+  CREATED
+  UPDATED
+  SCHEDULED
+  PUBLISHED
+  DISPATCHED
+  RECIPIENTS_SYNCED
+  VIEWED
+  CONFIRMED
+  EXPIRED
+  ARCHIVED
+  CANCELLED
+}
+
 model Election {
-  id          String          @id @default(cuid())
-  name        String
-  description String?
-  year        Int
-  type        ElectionType
-  status      ElectionStatus  @default(PLANNING)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  rounds      ElectionRound[]
-  zones       ElectoralZone[]
-  incidents   Incident[]
-  simulations Simulation[]
+  id                 String              @id @default(cuid())
+  name               String
+  description        String?
+  year               Int
+  type               ElectionType
+  status             ElectionStatus      @default(PLANNING)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  rounds             ElectionRound[]
+  zones              ElectoralZone[]
+  incidents          Incident[]
+  simulations        Simulation[]
   distributionRoutes DistributionRoute[]
   transmissionPoints TransmissionPoint[]
   fieldTeams         FieldTeam[]
   fieldAllocations   FieldAllocation[]
+  communications     Communication[]
 
   @@index([year, status])
 }
@@ -278,60 +325,62 @@ model ElectionRound {
 }
 
 model ElectoralZone {
-  id                 String            @id @default(cuid())
-  electionId         String
-  number             Int
-  name               String
-  municipality       String
-  state              String            @db.Char(2)
-  status             ResourceStatus    @default(ACTIVE)
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  election           Election          @relation(fields: [electionId], references: [id], onDelete: Cascade)
-  pollingPlaces      PollingPlace[]
-  incidents          Incident[]
-  assets             Asset[]
-  assetMovementsFrom AssetMovement[]   @relation("AssetMovementFromZone")
-  assetMovementsTo   AssetMovement[]   @relation("AssetMovementToZone")
-  assetAssignments   AssetAssignment[]
-  distributionRoutes DistributionRoute[]
-  transmissionPoints TransmissionPoint[]
-  fieldShifts         FieldShift[]
-  fieldAllocations    FieldAllocation[]
-  fieldChecks         FieldCheckEvent[]
+  id                     String                  @id @default(cuid())
+  electionId             String
+  number                 Int
+  name                   String
+  municipality           String
+  state                  String                  @db.Char(2)
+  status                 ResourceStatus          @default(ACTIVE)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  election               Election                @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  pollingPlaces          PollingPlace[]
+  incidents              Incident[]
+  assets                 Asset[]
+  assetMovementsFrom     AssetMovement[]         @relation("AssetMovementFromZone")
+  assetMovementsTo       AssetMovement[]         @relation("AssetMovementToZone")
+  assetAssignments       AssetAssignment[]
+  distributionRoutes     DistributionRoute[]
+  transmissionPoints     TransmissionPoint[]
+  fieldShifts            FieldShift[]
+  fieldAllocations       FieldAllocation[]
+  fieldChecks            FieldCheckEvent[]
+  communicationAudiences CommunicationAudience[]
 
   @@unique([electionId, number])
   @@index([municipality, state])
 }
 
 model PollingPlace {
-  id                 String            @id @default(cuid())
-  electoralZoneId    String
-  name               String
-  address            String
-  district           String
-  city               String
-  state              String            @db.Char(2)
-  latitude           Decimal?          @db.Decimal(9, 6)
-  longitude          Decimal?          @db.Decimal(9, 6)
-  status             ResourceStatus    @default(ACTIVE)
-  monitoringStatus   MonitoringStatus  @default(NORMAL)
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  electoralZone      ElectoralZone     @relation(fields: [electoralZoneId], references: [id], onDelete: Cascade)
-  sections           PollingSection[]
-  incidents          Incident[]
-  assets             Asset[]
-  assetMovementsFrom AssetMovement[]   @relation("AssetMovementFromPlace")
-  assetMovementsTo   AssetMovement[]   @relation("AssetMovementToPlace")
-  assetAssignments   AssetAssignment[]
-  simulationEvents   SimulationEvent[]
-  routeStops         RouteStop[]
-  deliveries         Delivery[]
-  transmissionPoints TransmissionPoint[]
-  fieldShifts         FieldShift[]
-  fieldAllocations    FieldAllocation[]
-  fieldChecks         FieldCheckEvent[]
+  id                     String                  @id @default(cuid())
+  electoralZoneId        String
+  name                   String
+  address                String
+  district               String
+  city                   String
+  state                  String                  @db.Char(2)
+  latitude               Decimal?                @db.Decimal(9, 6)
+  longitude              Decimal?                @db.Decimal(9, 6)
+  status                 ResourceStatus          @default(ACTIVE)
+  monitoringStatus       MonitoringStatus        @default(NORMAL)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  electoralZone          ElectoralZone           @relation(fields: [electoralZoneId], references: [id], onDelete: Cascade)
+  sections               PollingSection[]
+  incidents              Incident[]
+  assets                 Asset[]
+  assetMovementsFrom     AssetMovement[]         @relation("AssetMovementFromPlace")
+  assetMovementsTo       AssetMovement[]         @relation("AssetMovementToPlace")
+  assetAssignments       AssetAssignment[]
+  simulationEvents       SimulationEvent[]
+  routeStops             RouteStop[]
+  deliveries             Delivery[]
+  transmissionPoints     TransmissionPoint[]
+  fieldShifts            FieldShift[]
+  fieldAllocations       FieldAllocation[]
+  fieldChecks            FieldCheckEvent[]
+  communicationAudiences CommunicationAudience[]
 
   @@index([city, state])
   @@index([electoralZoneId, monitoringStatus])
@@ -532,6 +581,8 @@ model User {
   auditEvents             AuditEvent[]
   notifications           Notification[]
   notificationPreferences NotificationPreference[]
+  communicationAudiences  CommunicationAudience[]  @relation("CommunicationAudienceTarget")
+  communicationRecipients CommunicationRecipient[] @relation("CommunicationRecipientUser")
 
   @@index([status, name])
 }
@@ -669,72 +720,73 @@ model Simulation {
 }
 
 model SimulationEvent {
-  id              String         @id @default(cuid())
-  simulationId    String
-  eventType       String
-  title           String
-  description     String?
-  offsetSeconds   Int
-  payload         Json?
-  incidentId      String?
-  assetId         String?
-  pollingPlaceId  String?
-  createdAt       DateTime       @default(now())
-  simulation      Simulation     @relation(fields: [simulationId], references: [id], onDelete: Cascade)
-  incident        Incident?      @relation(fields: [incidentId], references: [id], onDelete: SetNull)
-  asset           Asset?         @relation(fields: [assetId], references: [id], onDelete: SetNull)
-  pollingPlace    PollingPlace?  @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  id             String        @id @default(cuid())
+  simulationId   String
+  eventType      String
+  title          String
+  description    String?
+  offsetSeconds  Int
+  payload        Json?
+  incidentId     String?
+  assetId        String?
+  pollingPlaceId String?
+  createdAt      DateTime      @default(now())
+  simulation     Simulation    @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  incident       Incident?     @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  asset          Asset?        @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  pollingPlace   PollingPlace? @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+
   @@index([simulationId, offsetSeconds])
   @@index([incidentId])
 }
 
 model Vehicle {
-  id              String        @id @default(cuid())
-  identification  String        @unique
-  plate           String        @unique
+  id              String              @id @default(cuid())
+  identification  String              @unique
+  plate           String              @unique
   model           String
   capacity        Int?
-  status          VehicleStatus @default(AVAILABLE)
+  status          VehicleStatus       @default(AVAILABLE)
   driverName      String?
   responsibleName String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
   routes          DistributionRoute[]
 
   @@index([status])
 }
 
 model DistributionRoute {
-  id               String          @id @default(cuid())
-  code             String          @unique
-  name             String
-  electionId       String
-  electoralZoneId  String
-  description      String?
-  originName       String
-  originLatitude   Decimal?        @db.Decimal(9, 6)
-  originLongitude  Decimal?        @db.Decimal(9, 6)
-  destinationName  String
-  destinationLatitude Decimal?     @db.Decimal(9, 6)
-  destinationLongitude Decimal?    @db.Decimal(9, 6)
-  plannedDeparture DateTime
-  plannedArrival   DateTime
-  actualDeparture  DateTime?
-  actualArrival    DateTime?
-  responsibleName  String
-  driverName       String?
-  vehicleId        String?
-  notes            String?
-  status           RouteStatus     @default(PLANNED)
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  election         Election        @relation(fields: [electionId], references: [id], onDelete: Cascade)
-  electoralZone    ElectoralZone   @relation(fields: [electoralZoneId], references: [id], onDelete: Restrict)
-  vehicle           Vehicle?       @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
-  stops             RouteStop[]
-  deliveries        Delivery[]
-  batches           DeliveryBatch[]
-  history           RouteHistoryEvent[]
+  id                   String              @id @default(cuid())
+  code                 String              @unique
+  name                 String
+  electionId           String
+  electoralZoneId      String
+  description          String?
+  originName           String
+  originLatitude       Decimal?            @db.Decimal(9, 6)
+  originLongitude      Decimal?            @db.Decimal(9, 6)
+  destinationName      String
+  destinationLatitude  Decimal?            @db.Decimal(9, 6)
+  destinationLongitude Decimal?            @db.Decimal(9, 6)
+  plannedDeparture     DateTime
+  plannedArrival       DateTime
+  actualDeparture      DateTime?
+  actualArrival        DateTime?
+  responsibleName      String
+  driverName           String?
+  vehicleId            String?
+  notes                String?
+  status               RouteStatus         @default(PLANNED)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  election             Election            @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  electoralZone        ElectoralZone       @relation(fields: [electoralZoneId], references: [id], onDelete: Restrict)
+  vehicle              Vehicle?            @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  stops                RouteStop[]
+  deliveries           Delivery[]
+  batches              DeliveryBatch[]
+  history              RouteHistoryEvent[]
 
   @@index([electionId, status])
   @@index([electoralZoneId, status])
@@ -743,33 +795,33 @@ model DistributionRoute {
 }
 
 model RouteStop {
-  id              String          @id @default(cuid())
-  routeId         String
-  pollingPlaceId  String?
-  order           Int
-  description     String
-  latitude        Decimal?        @db.Decimal(9, 6)
-  longitude       Decimal?        @db.Decimal(9, 6)
-  eta             DateTime
-  actualAt        DateTime?
-  status          RouteStopStatus @default(PENDING)
-  notes           String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  route           DistributionRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
-  pollingPlace    PollingPlace?    @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  id             String            @id @default(cuid())
+  routeId        String
+  pollingPlaceId String?
+  order          Int
+  description    String
+  latitude       Decimal?          @db.Decimal(9, 6)
+  longitude      Decimal?          @db.Decimal(9, 6)
+  eta            DateTime
+  actualAt       DateTime?
+  status         RouteStopStatus   @default(PENDING)
+  notes          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  route          DistributionRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  pollingPlace   PollingPlace?     @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
 
   @@unique([routeId, order])
   @@index([eta, status])
 }
 
 model DeliveryBatch {
-  id          String   @id @default(cuid())
+  id          String            @id @default(cuid())
   routeId     String
-  code        String   @unique
+  code        String            @unique
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   route       DistributionRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
   deliveries  Delivery[]
 
@@ -777,22 +829,22 @@ model DeliveryBatch {
 }
 
 model Delivery {
-  id                String         @id @default(cuid())
-  routeId           String
-  batchId           String?
-  pollingPlaceId    String
-  status            DeliveryStatus @default(PENDING)
-  receiverName      String?
-  deliveredAt       DateTime?
-  notes             String?
-  proofUrl           String?
-  failureReason      String?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-  route              DistributionRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
-  batch              DeliveryBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
-  pollingPlace       PollingPlace    @relation(fields: [pollingPlaceId], references: [id], onDelete: Restrict)
-  items              DeliveryItem[]
+  id             String            @id @default(cuid())
+  routeId        String
+  batchId        String?
+  pollingPlaceId String
+  status         DeliveryStatus    @default(PENDING)
+  receiverName   String?
+  deliveredAt    DateTime?
+  notes          String?
+  proofUrl       String?
+  failureReason  String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  route          DistributionRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  batch          DeliveryBatch?    @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  pollingPlace   PollingPlace      @relation(fields: [pollingPlaceId], references: [id], onDelete: Restrict)
+  items          DeliveryItem[]
 
   @@index([routeId, status])
   @@index([pollingPlaceId, status])
@@ -827,28 +879,28 @@ model RouteHistoryEvent {
 }
 
 model TransmissionPoint {
-  id                  String             @id @default(cuid())
+  id                  String                      @id @default(cuid())
   electionId          String
   electoralZoneId     String
   pollingPlaceId      String
-  identification      String             @unique
-  status              TransmissionStatus @default(WAITING)
-  connectivity        ConnectivityStatus @default(UNKNOWN)
+  identification      String                      @unique
+  status              TransmissionStatus          @default(WAITING)
+  connectivity        ConnectivityStatus          @default(UNKNOWN)
   lastActivity        DateTime?
   observations        String?
   latencyMs           Int?
   lastCheckedAt       DateTime?
   connectionMethod    String?
-  priority            Int                @default(3)
+  priority            Int                         @default(3)
   queuedAt            DateTime?
   operationalDeadline DateTime?
-  attemptCount        Int                @default(0)
+  attemptCount        Int                         @default(0)
   lastError           String?
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
-  election            Election           @relation(fields: [electionId], references: [id], onDelete: Cascade)
-  electoralZone       ElectoralZone      @relation(fields: [electoralZoneId], references: [id], onDelete: Restrict)
-  pollingPlace        PollingPlace        @relation(fields: [pollingPlaceId], references: [id], onDelete: Restrict)
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+  election            Election                    @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  electoralZone       ElectoralZone               @relation(fields: [electoralZoneId], references: [id], onDelete: Restrict)
+  pollingPlace        PollingPlace                @relation(fields: [pollingPlaceId], references: [id], onDelete: Restrict)
   attempts            TransmissionAttempt[]
   timeline            TransmissionTimelineEvent[]
   alerts              TransmissionAlert[]
@@ -861,16 +913,16 @@ model TransmissionPoint {
 }
 
 model TransmissionAttempt {
-  id          String                    @id @default(cuid())
-  pointId     String
-  number      Int
-  startedAt   DateTime
-  endedAt     DateTime
-  result      TransmissionAttemptResult
-  durationMs  Int
-  error       String?
-  createdAt   DateTime                  @default(now())
-  point       TransmissionPoint         @relation(fields: [pointId], references: [id], onDelete: Cascade)
+  id         String                    @id @default(cuid())
+  pointId    String
+  number     Int
+  startedAt  DateTime
+  endedAt    DateTime
+  result     TransmissionAttemptResult
+  durationMs Int
+  error      String?
+  createdAt  DateTime                  @default(now())
+  point      TransmissionPoint         @relation(fields: [pointId], references: [id], onDelete: Cascade)
 
   @@unique([pointId, number])
   @@index([pointId, startedAt])
@@ -889,48 +941,50 @@ model TransmissionTimelineEvent {
 }
 
 model TransmissionAlert {
-  id        String                  @id @default(cuid())
-  pointId   String
-  type      TransmissionAlertType
-  status    TransmissionAlertStatus @default(OPEN)
-  message   String
-  createdAt DateTime                @default(now())
-  updatedAt DateTime                @updatedAt
+  id         String                  @id @default(cuid())
+  pointId    String
+  type       TransmissionAlertType
+  status     TransmissionAlertStatus @default(OPEN)
+  message    String
+  createdAt  DateTime                @default(now())
+  updatedAt  DateTime                @updatedAt
   resolvedAt DateTime?
-  point     TransmissionPoint       @relation(fields: [pointId], references: [id], onDelete: Cascade)
+  point      TransmissionPoint       @relation(fields: [pointId], references: [id], onDelete: Cascade)
 
   @@index([pointId, status])
   @@index([type, status])
 }
 
 model FieldTeam {
-  id              String          @id @default(cuid())
-  name            String
-  code            String          @unique
-  electionId      String
-  responsibleName String
-  status          FieldTeamStatus @default(ACTIVE)
-  notes           String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  election        Election        @relation(fields: [electionId], references: [id], onDelete: Cascade)
-  members         FieldMember[]
-  shifts          FieldShift[]
-  allocations     FieldAllocation[]
+  id                     String                  @id @default(cuid())
+  name                   String
+  code                   String                  @unique
+  electionId             String
+  responsibleName        String
+  status                 FieldTeamStatus         @default(ACTIVE)
+  notes                  String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  election               Election                @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  members                FieldMember[]
+  shifts                 FieldShift[]
+  allocations            FieldAllocation[]
+  communicationAudiences CommunicationAudience[]
 
   @@index([electionId, status])
   @@index([responsibleName])
 }
 
 model FieldRole {
-  id          String        @id @default(cuid())
-  key         String        @unique
-  name        String
-  description String?
-  active      Boolean       @default(true)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  members     FieldMember[]
+  id                     String                  @id @default(cuid())
+  key                    String                  @unique
+  name                   String
+  description            String?
+  active                 Boolean                 @default(true)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  members                FieldMember[]
+  communicationAudiences CommunicationAudience[]
 
   @@index([active, name])
 }
@@ -949,21 +1003,22 @@ model FieldSpecialty {
 }
 
 model FieldMember {
-  id          String             @id @default(cuid())
-  teamId      String
-  roleId      String
-  name        String
-  phone       String?
-  email       String?
-  status      MemberAvailability @default(AVAILABLE)
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  team        FieldTeam          @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  role        FieldRole          @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  specialties FieldMemberSpecialty[]
-  shifts      FieldShift[]
-  allocations FieldAllocation[]
-  checks      FieldCheckEvent[]
+  id                      String                   @id @default(cuid())
+  teamId                  String
+  roleId                  String
+  name                    String
+  phone                   String?
+  email                   String?
+  status                  MemberAvailability       @default(AVAILABLE)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  team                    FieldTeam                @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  role                    FieldRole                @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  specialties             FieldMemberSpecialty[]
+  shifts                  FieldShift[]
+  allocations             FieldAllocation[]
+  checks                  FieldCheckEvent[]
+  communicationRecipients CommunicationRecipient[]
 
   @@index([teamId, status])
   @@index([roleId])
@@ -994,7 +1049,7 @@ model FieldShift {
   team            FieldTeam      @relation(fields: [teamId], references: [id], onDelete: Cascade)
   member          FieldMember?   @relation(fields: [memberId], references: [id], onDelete: SetNull)
   electoralZone   ElectoralZone? @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
-  pollingPlace    PollingPlace?   @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  pollingPlace    PollingPlace?  @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
 
   @@index([startsAt, endsAt])
   @@index([teamId, startsAt])
@@ -1020,7 +1075,7 @@ model FieldAllocation {
   team            FieldTeam?            @relation(fields: [teamId], references: [id], onDelete: SetNull)
   member          FieldMember?          @relation(fields: [memberId], references: [id], onDelete: SetNull)
   electoralZone   ElectoralZone?        @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
-  pollingPlace    PollingPlace?          @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  pollingPlace    PollingPlace?         @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
 
   @@index([electionId, status])
   @@index([electoralZoneId, status])
@@ -1029,18 +1084,180 @@ model FieldAllocation {
 }
 
 model FieldCheckEvent {
-  id              String          @id @default(cuid())
+  id              String         @id @default(cuid())
   memberId        String
   electoralZoneId String?
   pollingPlaceId  String?
   type            FieldCheckType
-  occurredAt      DateTime        @default(now())
+  occurredAt      DateTime       @default(now())
   notes           String?
-  createdAt       DateTime        @default(now())
-  member          FieldMember     @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  electoralZone   ElectoralZone?  @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
-  pollingPlace    PollingPlace?    @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  createdAt       DateTime       @default(now())
+  member          FieldMember    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  electoralZone   ElectoralZone? @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
+  pollingPlace    PollingPlace?  @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
 
   @@index([memberId, occurredAt])
   @@index([pollingPlaceId, occurredAt])
+}
+
+model CommunicationCategory {
+  id             String                  @id @default(cuid())
+  key            String                  @unique
+  name           String
+  description    String?
+  color          String?
+  active         Boolean                 @default(true)
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  communications Communication[]
+  templates      CommunicationTemplate[]
+
+  @@index([active, name])
+}
+
+model CommunicationTag {
+  id        String                 @id @default(cuid())
+  label     String                 @unique
+  slug      String                 @unique
+  createdAt DateTime               @default(now())
+  links     CommunicationTagLink[]
+
+  @@index([label])
+}
+
+model CommunicationTagLink {
+  id              String           @id @default(cuid())
+  communicationId String
+  tagId           String
+  communication   Communication    @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+  tag             CommunicationTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([communicationId, tagId])
+  @@index([tagId])
+}
+
+model CommunicationTemplate {
+  id           String                 @id @default(cuid())
+  name         String                 @unique
+  description  String?
+  defaultTitle String
+  body         String
+  priority     CommunicationPriority  @default(NORMAL)
+  categoryId   String?
+  active       Boolean                @default(true)
+  createdById  String?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  category     CommunicationCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([active, name])
+  @@index([categoryId])
+}
+
+model Communication {
+  id             String                   @id @default(cuid())
+  code           String                   @unique
+  title          String
+  content        String
+  priority       CommunicationPriority    @default(NORMAL)
+  status         CommunicationStatus      @default(DRAFT)
+  electionId     String
+  categoryId     String?
+  authorId       String?
+  authorName     String
+  observations   String?
+  scheduledAt    DateTime?
+  publishedAt    DateTime?
+  dispatchedAt   DateTime?
+  expiresAt      DateTime?
+  archivedAt     DateTime?
+  cancelledAt    DateTime?
+  recipientCount Int                      @default(0)
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  election       Election                 @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  category       CommunicationCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags           CommunicationTagLink[]
+  audiences      CommunicationAudience[]
+  recipients     CommunicationRecipient[]
+  timeline       CommunicationEvent[]
+
+  @@index([electionId, status])
+  @@index([status, priority])
+  @@index([priority, publishedAt])
+  @@index([categoryId])
+  @@index([publishedAt])
+  @@index([expiresAt])
+}
+
+model CommunicationAudience {
+  id              String                    @id @default(cuid())
+  communicationId String
+  type            CommunicationAudienceType
+  electoralZoneId String?
+  pollingPlaceId  String?
+  fieldTeamId     String?
+  fieldRoleId     String?
+  userId          String?
+  label           String?
+  createdAt       DateTime                  @default(now())
+  communication   Communication             @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+  electoralZone   ElectoralZone?            @relation(fields: [electoralZoneId], references: [id], onDelete: Cascade)
+  pollingPlace    PollingPlace?             @relation(fields: [pollingPlaceId], references: [id], onDelete: Cascade)
+  fieldTeam       FieldTeam?                @relation(fields: [fieldTeamId], references: [id], onDelete: Cascade)
+  fieldRole       FieldRole?                @relation(fields: [fieldRoleId], references: [id], onDelete: Cascade)
+  user            User?                     @relation("CommunicationAudienceTarget", fields: [userId], references: [id], onDelete: Cascade)
+  recipients      CommunicationRecipient[]
+
+  @@index([communicationId, type])
+  @@index([electoralZoneId])
+  @@index([pollingPlaceId])
+  @@index([fieldTeamId])
+  @@index([fieldRoleId])
+  @@index([userId])
+}
+
+model CommunicationRecipient {
+  id               String                      @id @default(cuid())
+  communicationId  String
+  audienceId       String?
+  userId           String?
+  memberId         String?
+  name             String
+  email            String?
+  roleLabel        String?
+  sourceLabel      String?
+  deliveryStatus   CommunicationDeliveryStatus @default(PENDING)
+  deliveredAt      DateTime?
+  viewedAt         DateTime?
+  confirmedAt      DateTime?
+  confirmationNote String?
+  dedupeKey        String
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
+  communication    Communication               @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+  audience         CommunicationAudience?      @relation(fields: [audienceId], references: [id], onDelete: Cascade)
+  user             User?                       @relation("CommunicationRecipientUser", fields: [userId], references: [id], onDelete: SetNull)
+  member           FieldMember?                @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  @@unique([communicationId, dedupeKey])
+  @@index([communicationId, deliveryStatus])
+  @@index([userId, deliveryStatus])
+  @@index([memberId])
+  @@index([audienceId])
+}
+
+model CommunicationEvent {
+  id              String                 @id @default(cuid())
+  communicationId String
+  type            CommunicationEventType
+  message         String
+  actorId         String?
+  actorName       String?
+  metadata        Json?
+  createdAt       DateTime               @default(now())
+  communication   Communication          @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+
+  @@index([communicationId, createdAt])
+  @@index([type, createdAt])
 }
