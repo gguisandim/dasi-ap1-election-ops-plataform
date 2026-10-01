@@ -1,0 +1,16 @@
+{
+  "name": "@eops/plugin-shifts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@eops/api-client": "0.1.0",
+    "@eops/plugin-sdk": "0.1.0",
+    "@eops/security": "0.1.0",
+    "@eops/shared": "0.1.0",
+    "@eops/ui": "0.1.0",
+    "react": "19.3.0",
+    "react-router-dom": "7.18.4"
+  }
+}

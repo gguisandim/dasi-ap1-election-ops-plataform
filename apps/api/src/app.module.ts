@@ -16,6 +16,7 @@ import { RoutesModule } from "../../../plugins/logistics/routes/src/server/route
 import { TransmissionModule } from "../../../plugins/monitoring/transmission/src/server/transmission.module";
 import { ReportsModule } from "../../../plugins/analytics/reports/src/server/reports.module";
 import { FieldTeamsModule } from "../../../plugins/operations/field-teams/src/server/field-teams.module";
+import { ShiftsModule } from "../../../plugins/operations/shifts/src/server/shifts.module";
 import { PreparationChecklistsModule } from "../../../plugins/operations/preparation-checklists/src/server/preparation-checklists.module";
 import { TasksModule } from "../../../plugins/operations/tasks/src/server/tasks.module";
 
@@ -37,6 +38,7 @@ import { TasksModule } from "../../../plugins/operations/tasks/src/server/tasks.
     TransmissionModule,
     ReportsModule,
     FieldTeamsModule,
+    ShiftsModule,
     PreparationChecklistsModule,
     TasksModule,
   ],

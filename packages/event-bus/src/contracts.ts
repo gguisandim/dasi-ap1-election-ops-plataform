@@ -26,6 +26,13 @@ export interface DomainEventMap {
   "task.status_changed": { entityId: string; actorId?: string; title: string; electionId: string; from: string; to: string };
   "task.completed": { entityId: string; actorId?: string; title: string; electionId: string };
   "task.blocked": { entityId: string; actorId?: string; title: string; electionId: string; reason: string };
+  "shift.created": { entityId: string; actorId?: string; name: string; electionId: string; teamId: string; startsAt: string; endsAt: string };
+  "shift.started": { entityId: string; actorId?: string; name: string; electionId: string };
+  "shift.completed": { entityId: string; actorId?: string; name: string; electionId: string };
+  "shift.assignment_changed": { entityId: string; actorId?: string; shiftId: string; electionId: string; memberId: string; memberName: string; change: string };
+  "shift.absence_registered": { entityId: string; actorId?: string; shiftId: string; electionId: string; memberId: string; memberName: string; reason?: string };
+  "shift.replacement_registered": { entityId: string; actorId?: string; shiftId: string; electionId: string; originalMemberId: string; substituteMemberId: string; substituteName: string };
+  "shift.coverage_insufficient": { entityId: string; actorId?: string; name: string; electionId: string; requiredOperators: number; availableOperators: number };
 }
 export type DomainEventName = keyof DomainEventMap;
 export interface DomainEvent<K extends DomainEventName = DomainEventName> { name: K; payload: DomainEventMap[K]; occurredAt: Date; }

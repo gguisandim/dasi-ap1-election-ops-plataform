@@ -3,7 +3,7 @@ import { NotificationType, UserStatus } from "@prisma/client";
 import { EventBus, type DomainEvent, type DomainEventName } from "../../../../../packages/event-bus/src";
 import { PrismaService } from "../../../../../packages/database/src";
 
-const names: DomainEventName[] = ["incident.created", "incident.assigned", "incident.resolved", "asset.created", "asset.moved", "asset.status_changed", "user.created", "election.created", "route.created", "route.started", "route.completed", "delivery.completed", "delivery.failed", "transmission.completed", "transmission.failed", "transmission.connectivity_changed", "transmission.alert_created", "field_team.allocated", "field_member.checked_in", "field_member.checked_out", "preparation_checklist.approved", "preparation_checklist.blocked", "task.created", "task.assigned", "task.status_changed", "task.completed", "task.blocked"];
+const names: DomainEventName[] = ["incident.created", "incident.assigned", "incident.resolved", "asset.created", "asset.moved", "asset.status_changed", "user.created", "election.created", "route.created", "route.started", "route.completed", "delivery.completed", "delivery.failed", "transmission.completed", "transmission.failed", "transmission.connectivity_changed", "transmission.alert_created", "field_team.allocated", "field_member.checked_in", "field_member.checked_out", "preparation_checklist.approved", "preparation_checklist.blocked", "task.created", "task.assigned", "task.status_changed", "task.completed", "task.blocked", "shift.created", "shift.started", "shift.completed", "shift.assignment_changed", "shift.absence_registered", "shift.replacement_registered", "shift.coverage_insufficient"];
 function content(event: DomainEvent): { title: string; message: string; type: NotificationType; entityType: string } {
   const payload = event.payload;
   switch (event.name) {
@@ -34,6 +34,13 @@ function content(event: DomainEvent): { title: string; message: string; type: No
     case "task.status_changed": return { title: "Status de tarefa alterado", message: `${"title" in payload ? payload.title : "Tarefa"}: ${"to" in payload ? payload.to : "novo status"}.`, type: NotificationType.INFO, entityType: "Task" };
     case "task.completed": return { title: "Tarefa concluída", message: `${"title" in payload ? payload.title : "Tarefa"} foi concluída.`, type: NotificationType.SUCCESS, entityType: "Task" };
     case "task.blocked": return { title: "Tarefa bloqueada", message: `${"title" in payload ? payload.title : "Tarefa"}: ${"reason" in payload ? payload.reason : "verifique as dependências"}.`, type: NotificationType.CRITICAL, entityType: "Task" };
+    case "shift.created": return { title: "Turno criado", message: `${"name" in payload ? payload.name : "Um turno"} foi incluído na escala.`, type: NotificationType.INFO, entityType: "FieldShift" };
+    case "shift.started": return { title: "Turno iniciado", message: `${"name" in payload ? payload.name : "Um turno"} está em andamento.`, type: NotificationType.INFO, entityType: "FieldShift" };
+    case "shift.completed": return { title: "Turno concluído", message: `${"name" in payload ? payload.name : "Um turno"} foi concluído.`, type: NotificationType.SUCCESS, entityType: "FieldShift" };
+    case "shift.assignment_changed": return { title: "Escala alterada", message: `${"memberName" in payload ? payload.memberName : "Operador"}: ${"change" in payload ? payload.change : "alocação atualizada"}.`, type: NotificationType.INFO, entityType: "FieldShift" };
+    case "shift.absence_registered": return { title: "Falta registrada", message: `${"memberName" in payload ? payload.memberName : "Operador"} foi marcado como ausente.`, type: NotificationType.WARNING, entityType: "FieldShift" };
+    case "shift.replacement_registered": return { title: "Substituição registrada", message: `${"substituteName" in payload ? payload.substituteName : "Um operador"} assumiu um turno.`, type: NotificationType.INFO, entityType: "FieldShift" };
+    case "shift.coverage_insufficient": return { title: "Cobertura insuficiente", message: `${"name" in payload ? payload.name : "Um turno"}: ${"availableOperators" in payload ? payload.availableOperators : 0}/${"requiredOperators" in payload ? payload.requiredOperators : 0} operadores disponíveis.`, type: NotificationType.CRITICAL, entityType: "FieldShift" };
   }
 }
 @Injectable()

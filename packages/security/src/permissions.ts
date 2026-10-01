@@ -18,6 +18,7 @@ export const PERMISSIONS = {
   transmission: { read: "transmission.read", manage: "transmission.manage" },
   reports: { read: "reports.read", export: "reports.export" },
   fieldTeams: { read: "field-teams.read", manage: "field-teams.manage" },
+  shifts: { read: "shifts.read", manage: "shifts.manage" },
   preparationChecklists: {
     read: "preparation-checklists.read",
     manage: "preparation-checklists.manage",
@@ -50,6 +51,8 @@ export const PLATFORM_PERMISSION_KEYS = [
   PERMISSIONS.reports.export,
   PERMISSIONS.fieldTeams.read,
   PERMISSIONS.fieldTeams.manage,
+  PERMISSIONS.shifts.read,
+  PERMISSIONS.shifts.manage,
   PERMISSIONS.preparationChecklists.read,
   PERMISSIONS.preparationChecklists.manage,
   PERMISSIONS.preparationChecklists.approve,

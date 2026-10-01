@@ -14,6 +14,7 @@ import { accessControlPlugin } from "@eops/plugin-access-control";
 import { notificationsPlugin } from "@eops/plugin-notifications";
 import { operationalSimulatorPlugin } from "@eops/plugin-operational-simulator";
 import { fieldTeamsPlugin } from "@eops/plugin-field-teams";
+import { shiftsPlugin } from "@eops/plugin-shifts";
 import { preparationChecklistsPlugin } from "@eops/plugin-preparation-checklists";
 import { tasksPlugin } from "@eops/plugin-tasks";
 
@@ -23,6 +24,7 @@ export const plugins: PlatformPlugin[] = [
   pollingPlacesPlugin,
   pollingSectionsPlugin,
   fieldTeamsPlugin,
+  shiftsPlugin,
   preparationChecklistsPlugin,
   tasksPlugin,
   routesPlugin,
