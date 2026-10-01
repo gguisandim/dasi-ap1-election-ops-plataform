@@ -18,6 +18,7 @@ export const PERMISSIONS = {
   transmission: { read: "transmission.read", manage: "transmission.manage" },
   reports: { read: "reports.read", export: "reports.export" },
   fieldTeams: { read: "field-teams.read", manage: "field-teams.manage" },
+
   communications: {
     read: "communications.read",
     manage: "communications.manage",
@@ -35,7 +36,22 @@ export const PERMISSIONS = {
     publish: "knowledge.publish",
     execute: "knowledge.execute",
   },
-  risks: { read: "risks.read", manage: "risks.manage", assess: "risks.assess" },
+  risks: {
+    read: "risks.read",
+    manage: "risks.manage",
+    assess: "risks.assess",
+  },
+
+  preparationChecklists: {
+    read: "preparation-checklists.read",
+    manage: "preparation-checklists.manage",
+    approve: "preparation-checklists.approve",
+  },
+  tasks: {
+    read: "tasks.read",
+    manage: "tasks.manage",
+  },
+
   users: { read: "users.read", manage: "users.manage" },
   audit: { read: "audit.read" },
   simulation: { read: "simulation.read", manage: "simulation.manage" },
@@ -44,41 +60,61 @@ export const PERMISSIONS = {
 export const PLATFORM_PERMISSION_KEYS = [
   PERMISSIONS.elections.read,
   PERMISSIONS.elections.manage,
+
   PERMISSIONS.incidents.read,
   PERMISSIONS.incidents.create,
   PERMISSIONS.incidents.assign,
   PERMISSIONS.incidents.update,
   PERMISSIONS.incidents.resolve,
   PERMISSIONS.incidents.close,
+
   PERMISSIONS.inventory.read,
   PERMISSIONS.inventory.create,
   PERMISSIONS.inventory.update,
   PERMISSIONS.inventory.move,
+
   PERMISSIONS.routes.read,
   PERMISSIONS.routes.manage,
+
   PERMISSIONS.transmission.read,
   PERMISSIONS.transmission.manage,
+
   PERMISSIONS.reports.read,
   PERMISSIONS.reports.export,
+
   PERMISSIONS.fieldTeams.read,
   PERMISSIONS.fieldTeams.manage,
+
   PERMISSIONS.communications.read,
   PERMISSIONS.communications.manage,
   PERMISSIONS.communications.publish,
+
   PERMISSIONS.evidence.read,
   PERMISSIONS.evidence.upload,
   PERMISSIONS.evidence.version,
   PERMISSIONS.evidence.manage,
+
   PERMISSIONS.knowledge.read,
   PERMISSIONS.knowledge.manage,
   PERMISSIONS.knowledge.publish,
   PERMISSIONS.knowledge.execute,
+
   PERMISSIONS.risks.read,
   PERMISSIONS.risks.manage,
   PERMISSIONS.risks.assess,
+
+  PERMISSIONS.preparationChecklists.read,
+  PERMISSIONS.preparationChecklists.manage,
+  PERMISSIONS.preparationChecklists.approve,
+
+  PERMISSIONS.tasks.read,
+  PERMISSIONS.tasks.manage,
+
   PERMISSIONS.users.read,
   PERMISSIONS.users.manage,
+
   PERMISSIONS.audit.read,
+
   PERMISSIONS.simulation.read,
   PERMISSIONS.simulation.manage,
 ] as const;

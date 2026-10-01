@@ -20,6 +20,8 @@ import { CommunicationsModule } from "../../../plugins/operations/communications
 import { DocumentsEvidenceModule } from "../../../plugins/operations/documents-evidence/src/server/evidence.module";
 import { KnowledgeRunbooksModule } from "../../../plugins/operations/knowledge-runbooks/src/server/knowledge.module";
 import { RiskManagementModule } from "../../../plugins/operations/risk-management/src/server/risk.module";
+import { PreparationChecklistsModule } from "../../../plugins/operations/preparation-checklists/src/server/preparation-checklists.module";
+import { TasksModule } from "../../../plugins/operations/tasks/src/server/tasks.module";
 
 @Module({
   imports: [
@@ -43,6 +45,8 @@ import { RiskManagementModule } from "../../../plugins/operations/risk-managemen
     DocumentsEvidenceModule,
     KnowledgeRunbooksModule,
     RiskManagementModule,
+    PreparationChecklistsModule,
+    TasksModule,
   ],
   controllers: [HealthController],
 })

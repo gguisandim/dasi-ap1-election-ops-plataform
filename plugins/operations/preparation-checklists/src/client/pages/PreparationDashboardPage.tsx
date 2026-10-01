@@ -1,0 +1,15 @@
+import { Badge, Card, ErrorState, Loading, Select, useAsync } from "@eops/ui";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { PreparationNav } from "../components/PreparationNav";
+import { preparationChecklistsService } from "../services/preparationChecklistsService";
+import { CHECKLIST_STATUS_LABELS } from "../status";
+import styles from "../styles/preparationChecklists.module.css";
+
+export function PreparationDashboardPage() {
+  const [electionId, setElectionId] = useState("");
+  const references = useAsync(preparationChecklistsService.references, []);
+  const dashboard = useAsync(() => preparationChecklistsService.dashboard({ electionId: electionId || undefined }), [electionId]);
+  return <section className={styles.page}><PreparationNav /><header className={styles.header}><div><span>OPERAÇÕES</span><h1>Checklist de Preparação</h1><p>Prontidão dos locais de votação, pendências e aprovações.</p></div><Select aria-label="Pleito" value={electionId} onChange={(event) => setElectionId(event.target.value)}><option value="">Todos os pleitos</option>{references.data?.elections.map((election) => <option key={election.id} value={election.id}>{election.name}</option>)}</Select></header>
+    {dashboard.loading && <Loading label="Carregando preparação…" />}{dashboard.error && <ErrorState error={dashboard.error} onRetry={dashboard.reload} />}{dashboard.data && <><div className={styles.metrics}><Card><span>Checklists</span><strong>{dashboard.data.totalChecklists}</strong></Card><Card><span>Locais aprovados</span><strong>{dashboard.data.approvedPlaces}</strong></Card><Card><span>Aguardando aprovação</span><strong>{dashboard.data.awaitingApproval}</strong></Card><Card><span>Bloqueados</span><strong>{dashboard.data.blockedPlaces}</strong></Card><Card><span>Progresso médio</span><strong>{dashboard.data.averageProgress}%</strong></Card></div><Card><header className={styles.sectionHeader}><h2>Pendências críticas</h2><Badge tone={dashboard.data.criticalPending ? "danger" : "success"}>{dashboard.data.criticalPending}</Badge></header>{dashboard.data.criticalChecklists.length ? <div className={styles.tableWrap}><table><thead><tr><th>Local</th><th>Pleito / zona</th><th>Responsável</th><th>Progresso</th><th>Status</th></tr></thead><tbody>{dashboard.data.criticalChecklists.map((checklist) => <tr key={checklist.id}><td><Link to={`/preparation-checklists/${checklist.id}`}>{checklist.pollingPlace.name}</Link></td><td>{checklist.election.name}<small>Zona {checklist.electoralZone.number}</small></td><td>{checklist.assignee?.name ?? "Sem responsável"}</td><td>{checklist.progress}%<small>{checklist.totals.requiredPending} item(ns) obrigatório(s) pendente(s)</small></td><td><Badge tone={checklist.status === "BLOCKED" ? "danger" : "warning"}>{CHECKLIST_STATUS_LABELS[checklist.status]}</Badge></td></tr>)}</tbody></table></div> : <p className={styles.empty}>Nenhuma pendência crítica neste recorte.</p>}</Card></>}</section>;
+}
