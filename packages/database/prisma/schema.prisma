@@ -317,6 +317,24 @@ enum EvidenceLinkType {
   OTHER
 }
 
+enum KnowledgeArticleKind {
+  ARTICLE
+  RUNBOOK
+}
+
+enum KnowledgeArticleStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum RunbookUsageOutcome {
+  RESOLVED
+  PARTIALLY_RESOLVED
+  NOT_RESOLVED
+}
+
 enum EvidenceEventType {
   CREATED
   UPLOADED
@@ -1409,4 +1427,149 @@ model EvidenceEvent {
 
   @@index([evidenceId, createdAt])
   @@index([type, createdAt])
+}
+
+model KnowledgeCategory {
+  id          String             @id @default(cuid())
+  key         String             @unique
+  name        String
+  description String?
+  color       String?
+  active      Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  articles    KnowledgeArticle[]
+
+  @@index([active, name])
+}
+
+model KnowledgeTag {
+  id        String             @id @default(cuid())
+  label     String             @unique
+  slug      String             @unique
+  createdAt DateTime           @default(now())
+  links     KnowledgeTagLink[]
+
+  @@index([label])
+}
+
+model KnowledgeTagLink {
+  id        String           @id @default(cuid())
+  articleId String
+  tagId     String
+  article   KnowledgeArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag       KnowledgeTag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, tagId])
+  @@index([tagId])
+}
+
+model KnowledgeArticle {
+  id                  String                    @id @default(cuid())
+  code                String                    @unique
+  kind                KnowledgeArticleKind      @default(ARTICLE)
+  title               String
+  summary             String
+  content             String?
+  status              KnowledgeArticleStatus    @default(DRAFT)
+  categoryId          String?
+  authorId            String?
+  authorName          String
+  currentVersion      Int                       @default(1)
+  versionCount        Int                       @default(1)
+  views               Int                       @default(0)
+  usageCount          Int                       @default(0)
+  resolvedCount       Int                       @default(0)
+  // Associação para recomendação determinística a partir de um incidente.
+  incidentCategoryKey String?
+  incidentSeverity    IncidentSeverity?
+  assetTypeKey        String?
+  keywords            String[]                  @default([])
+  // Campos exclusivos de runbook.
+  problem             String?
+  symptoms            String?
+  diagnosis           String?
+  prerequisites       String?
+  validation          String?
+  rollback            String?
+  escalation          String?
+  references          String?
+  publishedAt         DateTime?
+  reviewedAt          DateTime?
+  archivedAt          DateTime?
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  category            KnowledgeCategory?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags                KnowledgeTagLink[]
+  steps               RunbookStep[]
+  versions            KnowledgeArticleVersion[]
+  usages              RunbookUsage[]
+
+  @@index([kind, status])
+  @@index([status, categoryId])
+  @@index([incidentCategoryKey, status])
+  @@index([incidentSeverity, status])
+  @@index([updatedAt])
+  @@index([publishedAt])
+}
+
+model RunbookStep {
+  id          String           @id @default(cuid())
+  articleId   String
+  order       Int
+  title       String
+  instruction String
+  expected    String?
+  required    Boolean          @default(true)
+  warning     String?
+  notes       String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  article     KnowledgeArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, order])
+  @@index([articleId])
+}
+
+model KnowledgeArticleVersion {
+  id         String           @id @default(cuid())
+  articleId  String
+  number     Int
+  title      String
+  summary    String
+  content    String?
+  /**
+   * Instantâneo dos passos no momento da versão.
+   */
+  steps      Json?
+  note       String
+  authorId   String?
+  authorName String
+  createdAt  DateTime         @default(now())
+  article    KnowledgeArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, number])
+  @@index([articleId, createdAt])
+}
+
+model RunbookUsage {
+  id             String              @id @default(cuid())
+  articleId      String
+  incidentId     String?
+  incidentCode   String?
+  userId         String?
+  userName       String
+  outcome        RunbookUsageOutcome
+  resolved       Boolean             @default(false)
+  stepsCompleted Int?
+  notes          String?
+  startedAt      DateTime            @default(now())
+  finishedAt     DateTime?
+  createdAt      DateTime            @default(now())
+  article        KnowledgeArticle    @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId, createdAt])
+  @@index([incidentId])
+  @@index([outcome])
+  @@index([userId, createdAt])
 }

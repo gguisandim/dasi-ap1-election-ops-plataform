@@ -13,6 +13,9 @@ import {
   EvidenceEventType,
   EvidenceLinkType,
   EvidenceType,
+  KnowledgeArticleKind,
+  KnowledgeArticleStatus,
+  RunbookUsageOutcome,
   ElectionType,
   IncidentEventType,
   IncidentSeverity,
@@ -102,6 +105,37 @@ const communicationTemplates = [
 /** Conteúdo textual do arquivo demonstrativo de evidência (o seed não embute binários). */
 const EVIDENCE_DEMO_CONTENT =
   "Registro demonstrativo de evidencia fotografica: urna com etiqueta de identificacao parcialmente ilegivel.\n";
+const knowledgeCategories = [
+  ["CONNECTIVITY", "Conectividade"],
+  ["HARDWARE", "Hardware"],
+  ["TRANSMISSION", "Transmissão"],
+  ["POWER", "Energia"],
+  ["LOGISTICS", "Logística"],
+  ["SOFTWARE", "Software"],
+  ["AUTHENTICATION", "Autenticação"],
+] as const;
+/** Runbook demonstrativo: problema, passos ordenados e associação ao incidente. */
+const demoRunbook = {
+  code: "KB-00001",
+  title: "Reconectar enlace de rede após queda",
+  summary: "Restabelece o enlace principal e valida a conectividade do local.",
+  problem: "O enlace de dados do local cai e não reconecta sozinho.",
+  symptoms: "Monitor de transmissão em OFFLINE, perda de pacotes e falha de envio.",
+  diagnosis: "Verificar primeiro a alimentação do roteador, depois a porta do switch e por fim o provedor.",
+  prerequisites: "Acesso ao rack do local e credenciais de administração do roteador.",
+  validation: "Monitor de transmissão volta a ONLINE e uma transmissão de teste conclui com sucesso.",
+  rollback: "Se o enlace não voltar em 15 minutos, restaurar a configuração anterior do roteador e escalonar.",
+  escalation: "Acionar a equipe de redes regional se o provedor confirmar falha externa.",
+  references: "Procedimento interno de conectividade, revisão 2026.",
+  keywords: ["enlace", "rede", "timeout", "conectividade", "offline"],
+  steps: [
+    ["Confirmar o sintoma no monitor de transmissão", "Abrir o ponto do local e registrar o estado atual.", "Ponto marcado como OFFLINE", true, null],
+    ["Verificar alimentação do roteador", "Conferir LED de energia e, se necessário, reiniciar o equipamento.", "Roteador ligado e respondendo", true, null],
+    ["Testar a porta do switch", "Mover o cabo para uma porta alternativa e observar o link.", "Link ativo na porta alternativa", true, "Não forçar o conector: danos na porta geram novo incidente."],
+    ["Reiniciar o enlace do provedor", "Acionar o provedor e confirmar o restabelecimento do circuito.", "Circuito restabelecido", true, null],
+    ["Validar transmissão de teste", "Executar uma transmissão de teste e conferir o resultado.", "Transmissão concluída com sucesso", true, null],
+  ],
+} as const;
 const permissions = PLATFORM_PERMISSION_KEYS;
 const roles = [
   ["ADMIN", "Administrador"], ["SUPERVISOR", "Supervisor"], ["OPERATOR", "Operador"],
@@ -123,8 +157,8 @@ async function main() {
     const allowed = permissionRecords.filter((permission) => {
       if (key === "ADMIN") return true;
       if (key === "SUPERVISOR") return permission.key !== PERMISSIONS.users.manage;
-      if (key === "OPERATOR") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.create, PERMISSIONS.incidents.update, PERMISSIONS.inventory.read, PERMISSIONS.routes.read, PERMISSIONS.routes.manage, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.communications.read, PERMISSIONS.communications.manage, PERMISSIONS.communications.publish, PERMISSIONS.evidence.read, PERMISSIONS.evidence.upload, PERMISSIONS.evidence.version, PERMISSIONS.simulation.read, PERMISSIONS.simulation.manage]).has(permission.key);
-      if (key === "TECHNICIAN") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.update, PERMISSIONS.incidents.resolve, PERMISSIONS.inventory.read, PERMISSIONS.inventory.update, PERMISSIONS.inventory.move, PERMISSIONS.routes.read, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.communications.read, PERMISSIONS.evidence.read, PERMISSIONS.evidence.upload, PERMISSIONS.simulation.read]).has(permission.key);
+      if (key === "OPERATOR") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.create, PERMISSIONS.incidents.update, PERMISSIONS.inventory.read, PERMISSIONS.routes.read, PERMISSIONS.routes.manage, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.communications.read, PERMISSIONS.communications.manage, PERMISSIONS.communications.publish, PERMISSIONS.evidence.read, PERMISSIONS.evidence.upload, PERMISSIONS.evidence.version, PERMISSIONS.knowledge.read, PERMISSIONS.knowledge.manage, PERMISSIONS.knowledge.execute, PERMISSIONS.simulation.read, PERMISSIONS.simulation.manage]).has(permission.key);
+      if (key === "TECHNICIAN") return new Set<string>([PERMISSIONS.elections.read, PERMISSIONS.incidents.read, PERMISSIONS.incidents.update, PERMISSIONS.incidents.resolve, PERMISSIONS.inventory.read, PERMISSIONS.inventory.update, PERMISSIONS.inventory.move, PERMISSIONS.routes.read, PERMISSIONS.transmission.read, PERMISSIONS.transmission.manage, PERMISSIONS.reports.read, PERMISSIONS.fieldTeams.read, PERMISSIONS.fieldTeams.manage, PERMISSIONS.communications.read, PERMISSIONS.evidence.read, PERMISSIONS.evidence.upload, PERMISSIONS.knowledge.read, PERMISSIONS.knowledge.execute, PERMISSIONS.simulation.read]).has(permission.key);
       return permission.key.endsWith(".read");
     });
     for (const permission of allowed) {
@@ -579,6 +613,119 @@ async function main() {
           ],
         },
       },
+    });
+  }
+
+  const knowledgeCategoryRecords = [];
+  for (const [key, name] of knowledgeCategories) {
+    knowledgeCategoryRecords.push(
+      await prisma.knowledgeCategory.upsert({
+        where: { key },
+        update: { name, active: true },
+        create: { key, name, description: `Categoria de conhecimento: ${name}.` },
+      }),
+    );
+  }
+  const seededRunbook = await prisma.knowledgeArticle.findUnique({
+    where: { code: demoRunbook.code },
+  });
+  if (!seededRunbook) {
+    const connectivityCategory = knowledgeCategoryRecords.find((item) => item.key === "CONNECTIVITY")!;
+    await prisma.knowledgeArticle.create({
+      data: {
+        code: demoRunbook.code,
+        kind: KnowledgeArticleKind.RUNBOOK,
+        title: demoRunbook.title,
+        summary: demoRunbook.summary,
+        status: KnowledgeArticleStatus.PUBLISHED,
+        categoryId: connectivityCategory.id,
+        authorName: "Curadoria Operacional",
+        incidentCategoryKey: "CONNECTIVITY",
+        incidentSeverity: "HIGH",
+        assetTypeKey: "ROUTER",
+        keywords: [...demoRunbook.keywords],
+        problem: demoRunbook.problem,
+        symptoms: demoRunbook.symptoms,
+        diagnosis: demoRunbook.diagnosis,
+        prerequisites: demoRunbook.prerequisites,
+        validation: demoRunbook.validation,
+        rollback: demoRunbook.rollback,
+        escalation: demoRunbook.escalation,
+        references: demoRunbook.references,
+        publishedAt: new Date("2026-09-28T10:00:00.000Z"),
+        currentVersion: 1,
+        versionCount: 1,
+        tags: {
+          create: [
+            {
+              tag: {
+                connect: {
+                  id: (
+                    await prisma.knowledgeTag.upsert({
+                      where: { label: "conectividade" },
+                      update: {},
+                      create: { label: "conectividade", slug: "conectividade" },
+                    })
+                  ).id,
+                },
+              },
+            },
+          ],
+        },
+        steps: {
+          create: demoRunbook.steps.map(([title, instruction, expected, required, warning], index) => ({
+            order: index + 1,
+            title,
+            instruction,
+            expected,
+            required,
+            warning: warning ?? undefined,
+          })),
+        },
+        versions: {
+          create: {
+            number: 1,
+            title: demoRunbook.title,
+            summary: demoRunbook.summary,
+            steps: demoRunbook.steps.map(([title, instruction, expected], index) => ({
+              order: index + 1,
+              title,
+              instruction,
+              expected,
+            })),
+            note: "Versão inicial.",
+            authorName: "Curadoria Operacional",
+          },
+        },
+      },
+    });
+  }
+  // Execução demonstrativa: dá base às métricas de uso e sucesso do runbook.
+  const runbookRecord = await prisma.knowledgeArticle.findUnique({
+    where: { code: demoRunbook.code },
+    select: { id: true },
+  });
+  if (
+    runbookRecord &&
+    (await prisma.runbookUsage.count({ where: { articleId: runbookRecord.id } })) === 0
+  ) {
+    await prisma.runbookUsage.create({
+      data: {
+        articleId: runbookRecord.id,
+        incidentId: connectivityIncident?.id,
+        incidentCode: "INC-00001",
+        userName: "Técnica Demo",
+        outcome: RunbookUsageOutcome.RESOLVED,
+        resolved: true,
+        stepsCompleted: demoRunbook.steps.length,
+        notes: "Enlace restabelecido após reinício do equipamento.",
+        startedAt: new Date("2026-09-30T12:00:00.000Z"),
+        finishedAt: new Date("2026-09-30T12:26:00.000Z"),
+      },
+    });
+    await prisma.knowledgeArticle.update({
+      where: { id: runbookRecord.id },
+      data: { usageCount: 1, resolvedCount: 1 },
     });
   }
 

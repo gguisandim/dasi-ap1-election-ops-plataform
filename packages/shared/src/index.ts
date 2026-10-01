@@ -6,4 +6,5 @@ export * from "./evidence";
 export * from "./format";
 export * from "./incidents";
 export * from "./inventory";
+export * from "./knowledge";
 export * from "./simulation";

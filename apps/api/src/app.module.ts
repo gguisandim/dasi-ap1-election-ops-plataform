@@ -18,6 +18,7 @@ import { ReportsModule } from "../../../plugins/analytics/reports/src/server/rep
 import { FieldTeamsModule } from "../../../plugins/operations/field-teams/src/server/field-teams.module";
 import { CommunicationsModule } from "../../../plugins/operations/communications/src/server/communications.module";
 import { DocumentsEvidenceModule } from "../../../plugins/operations/documents-evidence/src/server/evidence.module";
+import { KnowledgeRunbooksModule } from "../../../plugins/operations/knowledge-runbooks/src/server/knowledge.module";
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { DocumentsEvidenceModule } from "../../../plugins/operations/documents-e
     FieldTeamsModule,
     CommunicationsModule,
     DocumentsEvidenceModule,
+    KnowledgeRunbooksModule,
   ],
   controllers: [HealthController],
 })

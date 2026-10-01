@@ -1,0 +1,184 @@
+.page { max-width: 1320px; margin: 0 auto; }
+.header { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 22px; flex-wrap: wrap; }
+.header h1 { margin: 7px 0; }
+.header p { color: #8ca0b6; margin: 0; max-width: 780px; }
+.headerActions { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+.eyebrow { color: #72aee6; font-size: 11px; letter-spacing: .13em; font-weight: 700; }
+.summary { color: #a6b9cc; margin: 8px 0 0; max-width: 780px; }
+
+/* ------------------------------------------------------------- indicadores */
+
+.summaryCards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 18px; }
+.summaryCard span { color: #8296ad; font-size: 12px; }
+.summaryCard strong { display: block; font-size: 26px; margin: 8px 0 4px; }
+.summaryCard small { color: #6f8399; font-size: 11px; }
+.summaryCardAlert { border-color: #74582a; box-shadow: inset 3px 0 0 #d8ad4a; }
+
+.outcomeCards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+.outcomeCards span { color: #8296ad; font-size: 12px; }
+.outcomeCards strong { display: block; font-size: 24px; margin: 8px 0 4px; }
+.outcomeCards small { color: #6f8399; font-size: 11px; }
+
+.metricsGrid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start; }
+.metricsGrid h2 { margin-top: 0; font-size: 16px; }
+
+.rateBar, .coverageBar { height: 7px; border-radius: 999px; background: #16233a; overflow: hidden; margin-bottom: 4px; }
+.rateBar span { display: block; height: 100%; background: #35c88b; }
+.coverageBar span { display: block; height: 100%; background: #4f9ae8; }
+.coverageList { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.coverageList li { display: grid; grid-template-columns: 1fr 120px 32px; gap: 10px; align-items: center; font-size: 12px; }
+.coverageList strong { text-align: right; }
+.simpleList { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.simpleList li { padding: 9px 11px; border: 1px solid #1a2a41; border-radius: 8px; background: #091525; font-size: 13px; }
+.simpleList small { display: block; color: #7d93aa; font-size: 11px; margin-top: 3px; }
+
+/* ----------------------------------------------------------------- filtros */
+
+.filters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-bottom: 18px; align-items: end; }
+.filterActions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+.checkbox { display: flex; gap: 7px; align-items: center; color: #a3b7cb; font-size: 12px; }
+
+/* ----------------------------------------------------------------- tabelas */
+
+.tableWrap { overflow-x: auto; background: #0d1a2b; border: 1px solid #1a2a41; border-radius: 12px; margin-bottom: 16px; }
+.tableWrap table { width: 100%; border-collapse: collapse; }
+.tableWrap th, .tableWrap td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #1a2a41; vertical-align: top; }
+.tableWrap th { color: #778da5; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.tableWrap td small { display: block; color: #788ca3; margin-top: 4px; }
+.tableWrap a { color: #8fc6f4; text-decoration: none; }
+.tableWrap tr:last-child td { border-bottom: none; }
+.staleRow { box-shadow: inset 3px 0 0 #d8ad4a; }
+.currentRow { box-shadow: inset 3px 0 0 #35c88b; }
+.inactiveRow { opacity: .55; }
+.rowActions { display: flex; gap: 7px; flex-wrap: wrap; }
+.linkButton { background: none; border: none; color: #8fc6f4; cursor: pointer; font-size: 12px; padding: 0; }
+
+/* ------------------------------------------------------------------ badges */
+
+.badges { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.badge { display: inline-flex; gap: 5px; align-items: center; padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid transparent; white-space: nowrap; }
+.neutral { color: #9fb2c6; border-color: #2b3d55; background: #14202f; }
+.info { color: #8fc6f4; border-color: #274a6d; background: #10233a; }
+.success { color: #79e0b4; border-color: #276b52; background: #0f2b21; }
+.warning { color: #f2cf85; border-color: #74582a; background: #2a2213; }
+.danger { color: #ff9aa6; border-color: #7a3b46; background: #2b1418; }
+.chip { display: inline-flex; gap: 5px; align-items: center; padding: 3px 8px; border-radius: 6px; font-size: 11px; color: #9fb2c6; border: 1px solid #2b3d55; background: #14202f; }
+.code { color: #72aee6; font-size: 11px; letter-spacing: .06em; }
+
+/* ------------------------------------------------------------------ cartões */
+
+.card { display: grid; gap: 9px; padding: 14px; border: 1px solid #1a2a41; border-radius: 11px; background: #0d1a2b; }
+.card header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.card h3 { margin: 0; font-size: 15px; }
+.card h3 a { color: inherit; text-decoration: none; }
+.card footer { display: flex; justify-content: space-between; color: #788ca3; font-size: 11px; }
+.cardBadges { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+.cardStale { border-color: #74582a; }
+.clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; color: #a6b9cc; margin: 0; font-size: 13px; }
+
+/* ------------------------------------------------------------------ detalhe */
+
+.detailGrid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; align-items: start; }
+.detailMain, .detailSide { display: grid; gap: 16px; }
+.detailGrid h2, .detailSide h2 { margin-top: 0; font-size: 16px; }
+.metaList { display: grid; grid-template-columns: 140px 1fr; gap: 8px; margin: 0 0 10px; font-size: 13px; }
+.metaList dt { color: #7f94aa; }
+.metaList dd { margin: 0; word-break: break-word; }
+.content { white-space: pre-line; color: #cfe0f1; margin: 0 0 10px; }
+.actions { display: grid; gap: 9px; }
+
+/* ------------------------------------------------------------------- passos */
+
+.stepsEditor { display: grid; gap: 12px; }
+.sectionTitle { display: grid; gap: 6px; }
+.sectionTitle h2 { margin: 0; font-size: 16px; }
+.stepEditor { display: grid; gap: 10px; padding: 14px; border: 1px solid #1a2a41; border-radius: 10px; background: #091525; }
+.stepHeader { display: grid; grid-template-columns: 32px 1fr auto auto auto; gap: 8px; align-items: center; }
+.stepOrder { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #10233a; color: #8fc6f4; font-size: 13px; }
+.stepGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-items: start; }
+
+.stepList { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.stepList li { padding: 12px 14px; border: 1px solid #1a2a41; border-left: 3px solid #274a6d; border-radius: 9px; background: #091525; }
+.stepList li p { margin: 6px 0; color: #cfe0f1; }
+.stepList li small { display: block; }
+.stepDone { border-left-color: #35c88b !important; opacity: .78; }
+.stepDone strong { text-decoration: line-through; }
+.stepListHeader { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+.expected { color: #79e0b4; }
+
+/* --------------------------------------------------------------- execução */
+
+.executionGrid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; align-items: start; }
+.executionProgress { margin-bottom: 14px; }
+.executionBar { height: 9px; border-radius: 999px; background: #16233a; overflow: hidden; margin-bottom: 6px; }
+.executionBar span { display: block; height: 100%; transition: width .2s ease; }
+.executionBar .success { background: #35c88b; }
+.executionBar .info { background: #4f9ae8; }
+.executionBar .warning { background: #d8ad4a; }
+.executionBar .neutral { background: #3d4d66; }
+
+/* ------------------------------------------------------------ recomendações */
+
+.recommendationGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; align-items: start; }
+.recommendationGrid h2 { margin-top: 0; font-size: 16px; }
+.recommendationList { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.recommendationList li { padding: 14px; border: 1px solid #1a2a41; border-radius: 10px; background: #091525; display: grid; gap: 8px; }
+.recommendationList header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.recommendationList header strong { display: block; margin-top: 4px; font-size: 15px; }
+.recommendationList header a { color: inherit; text-decoration: none; }
+.recommendationList footer { display: flex; justify-content: space-between; gap: 12px; color: #788ca3; font-size: 11px; flex-wrap: wrap; }
+.score { font-size: 22px; color: #8fc6f4; font-weight: 700; white-space: nowrap; }
+.score small { font-size: 11px; color: #6f8399; }
+.reasonList { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.reasonList li { font-size: 12px; color: #a3b7cb; padding: 0; border: none; background: none; }
+.reasonList li::before { content: "• "; color: #4f9ae8; }
+.weights { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; margin: 0; font-size: 12px; }
+.weights dt { color: #a3b7cb; }
+.weights dd { margin: 0; text-align: right; color: #8fc6f4; font-weight: 600; }
+.testResult { margin-top: 10px; }
+.testResult strong { font-size: 20px; color: #8fc6f4; }
+.incidentSelect { width: 100%; padding: 11px; color: #d9e6f3; background: #091525; border: 1px solid #263b53; border-radius: 7px; margin-bottom: 9px; }
+
+/* ------------------------------------------------------------- formulários */
+
+.form { display: grid; gap: 16px; padding: 20px; border: 1px solid #1a2a41; border-radius: 12px; background: #0d1a2b; margin-bottom: 16px; }
+.form h2 { margin: 0; font-size: 16px; }
+.formGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: start; }
+.textarea { min-height: 170px; resize: vertical; padding: 11px; color: #d9e6f3; background: #091525; border: 1px solid #263b53; border-radius: 7px; width: 100%; font-family: inherit; }
+.textareaSmall { min-height: 92px; resize: vertical; padding: 11px; color: #d9e6f3; background: #091525; border: 1px solid #263b53; border-radius: 7px; width: 100%; font-family: inherit; }
+.formFooter { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+.keywordBlock { display: grid; gap: 9px; }
+.categoryManager { display: grid; gap: 6px; }
+
+/* --------------------------------------------------------------- etiquetas */
+
+.tagInput { display: grid; gap: 9px; }
+.tagList { display: flex; flex-wrap: wrap; gap: 7px; }
+.tag { display: inline-flex; gap: 6px; align-items: center; padding: 4px 9px; border-radius: 999px; border: 1px solid #274a6d; background: #10233a; color: #8fc6f4; font-size: 11px; text-decoration: none; }
+.tag button { background: none; border: none; color: inherit; cursor: pointer; font-size: 13px; line-height: 1; padding: 0; }
+.tagEntry { display: grid; grid-template-columns: 1fr auto; gap: 9px; }
+.tagSuggestions { display: flex; flex-wrap: wrap; gap: 7px; }
+.tagSuggestions button { background: none; border: 1px dashed #2b3d55; color: #93a7bd; border-radius: 999px; padding: 3px 9px; font-size: 11px; cursor: pointer; }
+.tagSuggestions button:hover { color: #cfe0f1; border-color: #3c5a7d; }
+
+/* ------------------------------------------------------------------- textos */
+
+.mutedText { color: #7d93aa; font-size: 12px; }
+.dangerText { color: #ff8d9a; font-weight: 700; font-size: 12px; }
+.successText { color: #79e0b4; font-size: 12px; }
+.warningText { color: #f2cf85; font-size: 12px; }
+.inlineLink { color: #8fc6f4; font-size: 12px; }
+
+@media (max-width: 1100px) {
+  .summaryCards { grid-template-columns: repeat(2, 1fr); }
+  .metricsGrid, .detailGrid, .executionGrid, .recommendationGrid, .outcomeCards { grid-template-columns: 1fr; }
+  .filters { grid-template-columns: repeat(2, 1fr); }
+  .formGrid, .stepGrid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+  .header { flex-direction: column; }
+  .summaryCards, .filters, .formGrid, .stepGrid { grid-template-columns: 1fr; }
+  .stepHeader { grid-template-columns: 32px 1fr; }
+  .coverageList li { grid-template-columns: 1fr 60px 28px; }
+}
