@@ -1,0 +1,57 @@
+.page { max-width: 1380px; display: grid; gap: 18px; }
+.nav { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid #1a2a41; }
+.nav a { padding: 8px 11px; border-radius: 6px; color: #8298ae; text-decoration: none; font-size: 13px; }
+.nav a:hover, .nav .active { color: #eef7ff; background: #14243a; }
+.header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.header > div > span { color: #6ee7b7; font-size: 10px; font-weight: 700; }
+.header h1 { margin: 7px 0 8px; font-size: 30px; }
+.header p, .item > p, .empty { margin: 0; color: #8194aa; }
+.metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 11px; }
+.metrics > section > span { display: block; color: #7f91a7; font-size: 12px; }
+.metrics strong { display: block; margin: 8px 0; font-size: 21px; }
+.sectionHeader, .ownerRow, .itemHeading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sectionHeader h2, .sectionHeader h3, .ownerRow h2 { margin: 0; }
+.sectionHeader h3 { font-size: 16px; }
+.tableWrap { overflow-x: auto; }
+.tableWrap table { width: 100%; border-collapse: collapse; }
+.tableWrap th, .tableWrap td { text-align: left; padding: 11px; border-bottom: 1px solid #1a2a41; vertical-align: top; }
+.tableWrap th { color: #7f91a7; font-size: 11px; text-transform: uppercase; }
+.tableWrap small, .evidenceList small { display: block; color: #7f91a7; margin-top: 4px; }
+.tableWrap a, .breadcrumb a { color: #9ad8c2; }
+.progressTrack { height: 6px; min-width: 100px; overflow: hidden; border-radius: 3px; background: #1a2a41; }
+.progressTrack span { display: block; height: 100%; background: #44c79a; }
+.filters { display: grid; grid-template-columns: repeat(5, minmax(120px, 1fr)); gap: 12px; }
+.filters label, .itemControls label { display: grid; gap: 6px; color: #8fa1b5; font-size: 12px; }
+.primaryLink { padding: 10px 14px; background: #158567; color: white; border-radius: 5px; text-decoration: none; white-space: nowrap; }
+.formCard { max-width: 760px; }
+.form { display: grid; gap: 14px; }
+.formCard form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.formCard form > button { align-self: end; }
+.formActions { display: flex; gap: 8px; flex-wrap: wrap; }
+.breadcrumb { color: #8298ae; margin: 0; }
+.detailGrid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, .8fr); gap: 14px; align-items: start; }
+.itemList, .sideColumn { display: grid; gap: 12px; align-content: start; }
+.itemList > h2 { margin: 0; }
+.item { padding: 15px; border: 1px solid #1a2a41; border-radius: 6px; display: grid; gap: 12px; background: #0d1a2a; }
+.itemHeading h3 { display: inline; margin: 0 0 0 10px; font-size: 16px; }
+.itemOrder { color: #6ee7b7; font-variant-numeric: tabular-nums; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.itemControls { display: grid; grid-template-columns: minmax(120px, .8fr) minmax(150px, 1fr) minmax(150px, 1.5fr) auto; gap: 10px; align-items: end; }
+.observation { min-width: 120px; }
+.evidenceList { display: grid; gap: 6px; }
+.evidenceList a { padding: 8px 10px; border-left: 2px solid #44c79a; background: #101f30; color: #d8e5ef; text-decoration: none; overflow-wrap: anywhere; }
+.evidenceForm { display: grid; grid-template-columns: 1fr 1.2fr auto; gap: 10px; align-items: end; }
+.ownerRow p { color: #8194aa; margin-bottom: 0; }
+.ownerRow select { min-width: 230px; }
+.history { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 12px; }
+.history li { padding-left: 12px; border-left: 2px solid #31516a; }
+.history p { margin: 4px 0; color: #c0cedb; }
+.history small, .templateList small { color: #8194aa; }
+.draftItem { display: grid; gap: 9px; padding: 12px; border: 1px solid #1a2a41; border-radius: 5px; }
+.check { display: flex; align-items: center; gap: 7px; color: #b8c7d4; font-size: 13px; }
+.templateList { display: grid; gap: 12px; }
+.templateList article { padding: 13px 0; border-bottom: 1px solid #1a2a41; }
+.templateList p { color: #9aabbb; }
+.templateList ul { padding-left: 18px; color: #b8c7d4; }
+@media (max-width: 1000px) { .metrics { grid-template-columns: repeat(3, 1fr); } .filters { grid-template-columns: repeat(2, minmax(120px, 1fr)); } .detailGrid { grid-template-columns: 1fr; } .itemControls { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .header { flex-direction: column; } .metrics { grid-template-columns: repeat(2, 1fr); } .filters, .formCard form, .evidenceForm, .itemControls { grid-template-columns: 1fr; } .itemHeading, .ownerRow { align-items: flex-start; flex-direction: column; } .badges { justify-content: flex-start; } .ownerRow select { min-width: 0; width: 100%; } }

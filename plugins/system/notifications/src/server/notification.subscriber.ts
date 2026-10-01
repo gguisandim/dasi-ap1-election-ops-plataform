@@ -3,7 +3,7 @@ import { NotificationType, UserStatus } from "@prisma/client";
 import { EventBus, type DomainEvent, type DomainEventName } from "../../../../../packages/event-bus/src";
 import { PrismaService } from "../../../../../packages/database/src";
 
-const names: DomainEventName[] = ["incident.created", "incident.assigned", "incident.resolved", "asset.created", "asset.moved", "asset.status_changed", "user.created", "election.created", "route.created", "route.started", "route.completed", "delivery.completed", "delivery.failed", "transmission.completed", "transmission.failed", "transmission.connectivity_changed", "transmission.alert_created", "field_team.allocated", "field_member.checked_in", "field_member.checked_out"];
+const names: DomainEventName[] = ["incident.created", "incident.assigned", "incident.resolved", "asset.created", "asset.moved", "asset.status_changed", "user.created", "election.created", "route.created", "route.started", "route.completed", "delivery.completed", "delivery.failed", "transmission.completed", "transmission.failed", "transmission.connectivity_changed", "transmission.alert_created", "field_team.allocated", "field_member.checked_in", "field_member.checked_out", "preparation_checklist.approved", "preparation_checklist.blocked"];
 function content(event: DomainEvent): { title: string; message: string; type: NotificationType; entityType: string } {
   const payload = event.payload;
   switch (event.name) {
@@ -27,6 +27,8 @@ function content(event: DomainEvent): { title: string; message: string; type: No
     case "field_team.allocated": return { title: "Equipe alocada", message: "Nova alocação de campo registrada.", type: NotificationType.INFO, entityType: "FieldAllocation" };
     case "field_member.checked_in": return { title: "Check-in de campo", message: `${"memberName" in payload ? payload.memberName : "Operador"} iniciou o serviço.`, type: NotificationType.SUCCESS, entityType: "FieldMember" };
     case "field_member.checked_out": return { title: "Check-out de campo", message: `${"memberName" in payload ? payload.memberName : "Operador"} encerrou o serviço.`, type: NotificationType.INFO, entityType: "FieldMember" };
+    case "preparation_checklist.approved": return { title: "Local preparado", message: "Um local de votação foi aprovado para a operação.", type: NotificationType.SUCCESS, entityType: "PreparationChecklist" };
+    case "preparation_checklist.blocked": return { title: "Checklist bloqueado", message: `Pendência crítica: ${"reason" in payload ? payload.reason : "verifique os itens obrigatórios"}.`, type: NotificationType.CRITICAL, entityType: "PreparationChecklist" };
   }
 }
 @Injectable()

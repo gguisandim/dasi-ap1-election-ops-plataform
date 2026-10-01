@@ -1,0 +1,23 @@
+import { Badge, Button, Card, ErrorState, Field, Input, Loading, useAsync } from "@eops/ui";
+import { useState, type FormEvent } from "react";
+import { PreparationNav } from "../components/PreparationNav";
+import { preparationChecklistsService } from "../services/preparationChecklistsService";
+import styles from "../styles/preparationChecklists.module.css";
+
+interface DraftItem { title: string; description: string; required: boolean; evidenceRequired: boolean; }
+const emptyItem = (): DraftItem => ({ title: "", description: "", required: true, evidenceRequired: false });
+
+export function TemplatesPage() {
+  const templates = useAsync(() => preparationChecklistsService.templates(), []);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [items, setItems] = useState<DraftItem[]>([emptyItem()]);
+  const [error, setError] = useState<Error>();
+  async function submit(event: FormEvent) {
+    event.preventDefault(); setError(undefined);
+    try { await preparationChecklistsService.createTemplate({ name, description: description || undefined, items: items.map((item, index) => ({ ...item, description: item.description || undefined, order: index + 1 })) }); setName(""); setDescription(""); setItems([emptyItem()]); templates.reload(); }
+    catch (reason) { setError(reason instanceof Error ? reason : new Error("Não foi possível salvar o modelo.")); }
+  }
+  async function toggle(id: string, active: boolean) { try { await preparationChecklistsService.setTemplateActive(id, active); templates.reload(); } catch (reason) { setError(reason instanceof Error ? reason : new Error("Não foi possível atualizar o modelo.")); } }
+  return <section className={styles.page}><PreparationNav /><header className={styles.header}><div><span>CONFIGURAÇÃO</span><h1>Modelos de checklist</h1><p>Defina itens obrigatórios e evidências para os locais de votação.</p></div></header>{error && <ErrorState error={error} />}{templates.loading && <Loading />}{templates.error && <ErrorState error={templates.error} onRetry={templates.reload} />}<div className={styles.detailGrid}><Card><h2>Novo modelo</h2><form className={styles.form} onSubmit={submit}><Field label="Nome"><Input required minLength={2} maxLength={160} value={name} onChange={(event) => setName(event.target.value)} /></Field><Field label="Descrição"><Input maxLength={1000} value={description} onChange={(event) => setDescription(event.target.value)} /></Field><h3>Itens</h3>{items.map((item, index) => <div className={styles.draftItem} key={index}><Field label={`Item ${index + 1}`}><Input required minLength={2} maxLength={180} value={item.title} onChange={(event) => setItems((current) => current.map((entry, entryIndex) => entryIndex === index ? { ...entry, title: event.target.value } : entry))} /></Field><Field label="Descrição"><Input value={item.description} maxLength={1000} onChange={(event) => setItems((current) => current.map((entry, entryIndex) => entryIndex === index ? { ...entry, description: event.target.value } : entry))} /></Field><label className={styles.check}><input type="checkbox" checked={item.required} onChange={(event) => setItems((current) => current.map((entry, entryIndex) => entryIndex === index ? { ...entry, required: event.target.checked } : entry))} /> Obrigatório</label><label className={styles.check}><input type="checkbox" checked={item.evidenceRequired} onChange={(event) => setItems((current) => current.map((entry, entryIndex) => entryIndex === index ? { ...entry, evidenceRequired: event.target.checked } : entry))} /> Exige evidência</label></div>)}<div className={styles.formActions}><Button type="button" onClick={() => setItems((current) => [...current, emptyItem()])}>Adicionar item</Button><Button type="submit">Criar modelo</Button></div></form></Card><Card><h2>Modelos cadastrados</h2><div className={styles.templateList}>{templates.data?.map((template) => <article key={template.id}><div className={styles.sectionHeader}><h3>{template.name}</h3><Badge tone={template.active ? "success" : "neutral"}>{template.active ? "Ativo" : "Inativo"}</Badge></div>{template.description && <p>{template.description}</p>}<small>{template.items.length} item(ns) · Local de votação</small><ul>{template.items.map((item) => <li key={item.id}>{item.title}{item.required ? " · obrigatório" : " · opcional"}{item.evidenceRequired ? " · exige evidência" : ""}</li>)}</ul><Button onClick={() => void toggle(template.id, !template.active)}>{template.active ? "Desativar" : "Ativar"}</Button></article>)}</div></Card></div></section>;
+}

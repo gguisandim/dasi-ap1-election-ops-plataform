@@ -19,6 +19,8 @@ export interface DomainEventMap {
   "field_team.allocated": { entityId: string; actorId?: string; teamId?: string; memberId?: string; electionId: string; electoralZoneId?: string; pollingPlaceId?: string; routeId?: string };
   "field_member.checked_in": { entityId: string; actorId?: string; memberId: string; memberName: string; electoralZoneId?: string; pollingPlaceId?: string; occurredAt: string };
   "field_member.checked_out": { entityId: string; actorId?: string; memberId: string; memberName: string; electoralZoneId?: string; pollingPlaceId?: string; occurredAt: string };
+  "preparation_checklist.approved": { entityId: string; actorId?: string; checklistId: string; electionId: string; electoralZoneId: string; pollingPlaceId: string; approvedBy: string; approvedAt: string };
+  "preparation_checklist.blocked": { entityId: string; actorId?: string; checklistId: string; electionId: string; pollingPlaceId: string; reason: string };
 }
 export type DomainEventName = keyof DomainEventMap;
 export interface DomainEvent<K extends DomainEventName = DomainEventName> { name: K; payload: DomainEventMap[K]; occurredAt: Date; }

@@ -29,6 +29,7 @@
     "@eops/plugin-access-control": "0.1.0",
     "@eops/plugin-notifications": "0.1.0",
     "@eops/plugin-operational-simulator": "0.1.0",
+    "@eops/plugin-preparation-checklists": "0.1.0",
     "@vitejs/plugin-react": "6.1.1",
     "vite": "8.3.1",
     "typescript": "6.0.3",
