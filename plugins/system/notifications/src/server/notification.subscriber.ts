@@ -46,6 +46,13 @@ const names = [
   "task.status_changed",
   "task.completed",
   "task.blocked",
+  "shift.created",
+  "shift.started",
+  "shift.completed",
+  "shift.assignment_changed",
+  "shift.absence_registered",
+  "shift.replacement_registered",
+  "shift.coverage_insufficient",
 ] as const satisfies readonly DomainEventName[];
 
 type SubscribedEventName = (typeof names)[number];
@@ -419,6 +426,59 @@ function content(
         }.`,
         type: NotificationType.CRITICAL,
         entityType: "Task",
+      };
+    case "shift.created":
+      return {
+        title: "Turno criado",
+        message: `${"name" in payload ? payload.name : "Um turno"} foi incluído na escala.`,
+        type: NotificationType.INFO,
+        entityType: "FieldShift",
+      };
+    case "shift.started":
+      return {
+        title: "Turno iniciado",
+        message: `${"name" in payload ? payload.name : "Um turno"} está em andamento.`,
+        type: NotificationType.INFO,
+        entityType: "FieldShift",
+      };
+    case "shift.completed":
+      return {
+        title: "Turno concluído",
+        message: `${"name" in payload ? payload.name : "Um turno"} foi concluído.`,
+        type: NotificationType.SUCCESS,
+        entityType: "FieldShift",
+      };
+    case "shift.assignment_changed":
+      return {
+        title: "Escala alterada",
+        message: `${"memberName" in payload ? payload.memberName : "Operador"}: ${
+          "change" in payload ? payload.change : "alocação atualizada"
+        }.`,
+        type: NotificationType.INFO,
+        entityType: "FieldShift",
+      };
+    case "shift.absence_registered":
+      return {
+        title: "Falta registrada",
+        message: `${"memberName" in payload ? payload.memberName : "Operador"} foi marcado como ausente.`,
+        type: NotificationType.WARNING,
+        entityType: "FieldShift",
+      };
+    case "shift.replacement_registered":
+      return {
+        title: "Substituição registrada",
+        message: `${"substituteName" in payload ? payload.substituteName : "Um operador"} assumiu um turno.`,
+        type: NotificationType.INFO,
+        entityType: "FieldShift",
+      };
+    case "shift.coverage_insufficient":
+      return {
+        title: "Cobertura insuficiente",
+        message: `${"name" in payload ? payload.name : "Um turno"}: ${
+          "availableOperators" in payload ? payload.availableOperators : 0
+        }/${"requiredOperators" in payload ? payload.requiredOperators : 0} operadores disponíveis.`,
+        type: NotificationType.CRITICAL,
+        entityType: "FieldShift",
       };
   }
 }

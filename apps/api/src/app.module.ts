@@ -20,6 +20,7 @@ import { CommunicationsModule } from "../../../plugins/operations/communications
 import { DocumentsEvidenceModule } from "../../../plugins/operations/documents-evidence/src/server/evidence.module";
 import { KnowledgeRunbooksModule } from "../../../plugins/operations/knowledge-runbooks/src/server/knowledge.module";
 import { RiskManagementModule } from "../../../plugins/operations/risk-management/src/server/risk.module";
+import { ShiftsModule } from "../../../plugins/operations/shifts/src/server/shifts.module";
 import { PreparationChecklistsModule } from "../../../plugins/operations/preparation-checklists/src/server/preparation-checklists.module";
 import { TasksModule } from "../../../plugins/operations/tasks/src/server/tasks.module";
 
@@ -45,6 +46,7 @@ import { TasksModule } from "../../../plugins/operations/tasks/src/server/tasks.
     DocumentsEvidenceModule,
     KnowledgeRunbooksModule,
     RiskManagementModule,
+    ShiftsModule,
     PreparationChecklistsModule,
     TasksModule,
   ],

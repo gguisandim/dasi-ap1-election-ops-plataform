@@ -42,6 +42,8 @@ export const PERMISSIONS = {
     assess: "risks.assess",
   },
 
+  shifts: { read: "shifts.read", manage: "shifts.manage" },
+
   preparationChecklists: {
     read: "preparation-checklists.read",
     manage: "preparation-checklists.manage",
@@ -102,6 +104,9 @@ export const PLATFORM_PERMISSION_KEYS = [
   PERMISSIONS.risks.read,
   PERMISSIONS.risks.manage,
   PERMISSIONS.risks.assess,
+
+  PERMISSIONS.shifts.read,
+  PERMISSIONS.shifts.manage,
 
   PERMISSIONS.preparationChecklists.read,
   PERMISSIONS.preparationChecklists.manage,

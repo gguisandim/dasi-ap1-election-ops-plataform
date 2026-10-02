@@ -34,6 +34,7 @@
     "@eops/plugin-documents-evidence": "0.1.0",
     "@eops/plugin-knowledge-runbooks": "0.1.0",
     "@eops/plugin-risk-management": "0.1.0",
+    "@eops/plugin-shifts": "0.1.0",
     "@eops/plugin-preparation-checklists": "0.1.0",
     "@eops/plugin-tasks": "0.1.0",
     "@vitejs/plugin-react": "6.1.1",

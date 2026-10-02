@@ -51,13 +51,15 @@ export function Field({
   label,
   error,
   children,
+  className = "",
 }: {
   label: string;
   error?: string;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <label className={styles.field}>
+    <label className={`${styles.field} ${className}`.trim()}>
       <span>{label}</span>
       {children}
       {error && <small>{error}</small>}

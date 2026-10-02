@@ -237,6 +237,36 @@ enum FieldAllocationStatus {
   CANCELLED
 }
 
+enum FieldShiftStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum FieldShiftAssignmentStatus {
+  SCHEDULED
+  PRESENT
+  ABSENT
+  REPLACED
+  ON_CALL
+}
+
+enum FieldShiftHistoryAction {
+  CREATED
+  UPDATED
+  ASSIGNED
+  PRESENCE_REGISTERED
+  ABSENCE_REGISTERED
+  ON_CALL_REGISTERED
+  ON_CALL_ACTIVATED
+  REPLACED
+  STARTED
+  COMPLETED
+  CANCELLED
+  COVERAGE_INSUFFICIENT
+}
+
 enum FieldCheckType {
   CHECK_IN
   CHECK_OUT
@@ -775,6 +805,8 @@ model User {
   createdTasks                              Task[]                            @relation("TaskCreator")
   taskComments                              TaskComment[]
   taskHistory                               TaskHistory[]                     @relation("TaskHistoryActor")
+  shiftHistory                              FieldShiftHistory[]               @relation("FieldShiftHistoryActor")
+  shiftReplacements                         FieldShiftReplacement[]           @relation("FieldShiftReplacementActor")
 
   @@index([status, name])
 }
@@ -1168,15 +1200,16 @@ model FieldTeam {
 }
 
 model FieldRole {
-  id                     String                  @id @default(cuid())
-  key                    String                  @unique
+  id                     String                   @id @default(cuid())
+  key                    String                   @unique
   name                   String
   description            String?
-  active                 Boolean                 @default(true)
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
+  active                 Boolean                  @default(true)
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
   members                FieldMember[]
   communicationAudiences CommunicationAudience[]
+  shiftAssignments       FieldShiftAssignment[]
 
   @@index([active, name])
 }
@@ -1208,6 +1241,7 @@ model FieldMember {
   role                    FieldRole                @relation(fields: [roleId], references: [id], onDelete: Restrict)
   specialties             FieldMemberSpecialty[]
   shifts                  FieldShift[]
+  shiftAssignments        FieldShiftAssignment[]
   allocations             FieldAllocation[]
   checks                  FieldCheckEvent[]
   communicationRecipients CommunicationRecipient[]
@@ -1229,23 +1263,92 @@ model FieldMemberSpecialty {
 }
 
 model FieldShift {
-  id              String         @id @default(cuid())
-  teamId          String
-  memberId        String?
-  electoralZoneId String?
-  pollingPlaceId  String?
-  startsAt        DateTime
-  endsAt          DateTime
-  notes           String?
-  createdAt       DateTime       @default(now())
-  team            FieldTeam      @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  member          FieldMember?   @relation(fields: [memberId], references: [id], onDelete: SetNull)
-  electoralZone   ElectoralZone? @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
-  pollingPlace    PollingPlace?  @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  id                String          @id @default(cuid())
+  teamId            String
+  memberId          String?
+  electoralZoneId   String?
+  pollingPlaceId    String?
+  name              String?
+  requiredOperators Int             @default(1)
+  status            FieldShiftStatus @default(SCHEDULED)
+  startsAt          DateTime
+  endsAt            DateTime
+  notes             String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  team              FieldTeam       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  member            FieldMember?    @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  electoralZone     ElectoralZone?  @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
+  pollingPlace      PollingPlace?   @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  assignments       FieldShiftAssignment[]
+  replacements      FieldShiftReplacement[]
+  history           FieldShiftHistory[]
 
   @@index([startsAt, endsAt])
   @@index([teamId, startsAt])
   @@index([memberId, startsAt])
+  @@index([status, startsAt])
+  @@index([electoralZoneId, startsAt])
+  @@index([pollingPlaceId, startsAt])
+}
+
+model FieldShiftAssignment {
+  id                    String                       @id @default(cuid())
+  shiftId               String
+  memberId              String
+  roleId                String?
+  status                FieldShiftAssignmentStatus   @default(SCHEDULED)
+  startsAt              DateTime
+  endsAt                DateTime
+  presentAt             DateTime?
+  absenceReason         String?                      @db.Text
+  absenceRecordedAt     DateTime?
+  onCallActivatedAt     DateTime?
+  notes                 String?                      @db.Text
+  createdAt             DateTime                     @default(now())
+  updatedAt             DateTime                     @updatedAt
+  shift                 FieldShift                   @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  member                FieldMember                  @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  role                  FieldRole?                   @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  replacementsAsOriginal FieldShiftReplacement[]     @relation("ShiftOriginalAssignment")
+  replacementsAsSubstitute FieldShiftReplacement[]    @relation("ShiftSubstituteAssignment")
+  history               FieldShiftHistory[]
+
+  @@index([shiftId, status])
+  @@index([memberId, startsAt, endsAt])
+}
+
+model FieldShiftReplacement {
+  id                     String               @id @default(cuid())
+  shiftId                String
+  originalAssignmentId   String               @unique
+  substituteAssignmentId String               @unique
+  replacedById           String?
+  reason                 String?              @db.Text
+  createdAt              DateTime             @default(now())
+  shift                  FieldShift           @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  originalAssignment     FieldShiftAssignment @relation("ShiftOriginalAssignment", fields: [originalAssignmentId], references: [id], onDelete: Cascade)
+  substituteAssignment   FieldShiftAssignment @relation("ShiftSubstituteAssignment", fields: [substituteAssignmentId], references: [id], onDelete: Cascade)
+  replacedBy             User?                @relation("FieldShiftReplacementActor", fields: [replacedById], references: [id], onDelete: SetNull)
+
+  @@index([shiftId, createdAt])
+}
+
+model FieldShiftHistory {
+  id           String                  @id @default(cuid())
+  shiftId      String
+  assignmentId String?
+  actorId      String?
+  action       FieldShiftHistoryAction
+  description  String                  @db.Text
+  metadata     Json?
+  createdAt    DateTime                @default(now())
+  shift        FieldShift              @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  assignment   FieldShiftAssignment?   @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  actor        User?                   @relation("FieldShiftHistoryActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([shiftId, createdAt])
+  @@index([actorId, createdAt])
 }
 
 model FieldAllocation {

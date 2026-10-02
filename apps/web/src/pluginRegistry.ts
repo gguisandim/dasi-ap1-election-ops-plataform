@@ -18,6 +18,7 @@ import { communicationsPlugin } from "@eops/plugin-communications";
 import { documentsEvidencePlugin } from "@eops/plugin-documents-evidence";
 import { knowledgeRunbooksPlugin } from "@eops/plugin-knowledge-runbooks";
 import { riskManagementPlugin } from "@eops/plugin-risk-management";
+import { shiftsPlugin } from "@eops/plugin-shifts";
 import { preparationChecklistsPlugin } from "@eops/plugin-preparation-checklists";
 import { tasksPlugin } from "@eops/plugin-tasks";
 
@@ -31,6 +32,7 @@ export const plugins: PlatformPlugin[] = [
   documentsEvidencePlugin,
   knowledgeRunbooksPlugin,
   riskManagementPlugin,
+  shiftsPlugin,
   preparationChecklistsPlugin,
   tasksPlugin,
   routesPlugin,
