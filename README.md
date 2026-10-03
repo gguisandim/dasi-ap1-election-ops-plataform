@@ -8,6 +8,7 @@ Plataforma acadêmica modular para gestão, acompanhamento e simulação de oper
 - **Aplicação pública:** `PENDENTE — inserir URL antes da entrega/apresentação`.
 - **Integrantes:** `PENDENTE — preencher nomes completos da dupla`.
 - **Specs:** consulte [`SPEC/`](SPEC/README.md). As specs iniciais reconstruídas retroativamente são marcadas como tal; novas specs devem ser commitadas antes do código.
+- **Commits:** siga [`docs/COMMIT-GUIDE.md`](docs/COMMIT-GUIDE.md) para formato, escopo e trailers de rastreabilidade.
 - **Prompts/sessões:** consulte [`prompts/sessoes/`](prompts/sessoes/README.md).
 - **Ferramentas de IA registradas:** ChatGPT (GPT-5.6 Sol, quando explicitamente identificado) e Codex (modelo registrado somente quando a ferramenta/registro o expôs). Não inferimos modelos/tokens ausentes.
 - **Histórico:** execute `powershell -ExecutionPolicy Bypass -File scripts/exportar-historico-git.ps1` para gerar um snapshot literal do Git.
@@ -31,7 +32,7 @@ cloc . --vcs=git \
 2. commit da spec;
 3. prompt para IA planejar tarefas;
 4. implementação;
-5. commit de implementação com trailers `Agent:` e `Spec:`;
+5. commit de implementação no formato `tipo(escopo): resumo`, com trailers `Agent:` e `Spec:`;
 6. exportar a sessão literal para `prompts/sessoes/`;
 7. não fazer rebase/squash/force-push para fabricar anterioridade.
 
