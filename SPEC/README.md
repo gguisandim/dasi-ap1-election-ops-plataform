@@ -10,12 +10,17 @@ Para qualquer funcionalidade nova:
 2. fazer commit da spec **antes** do código;
 3. gerar plano/tarefas com a IA;
 4. implementar;
-5. usar trailers no commit de implementação:
+5. seguir `docs/COMMIT-GUIDE.md`;
+6. usar título `tipo(escopo): resumo` e trailers no commit de implementação:
 
 ```text
+feat(<escopo>): <resumo objetivo>
+
 Agent: codex/<modelo-real-ou-indisponivel>
 Spec: SPEC/<arquivo>.md
 ```
+
+Commits devem ser atômicos e respeitar o isolamento por plugin/domínio. A SPEC deve aparecer no histórico antes do primeiro commit de implementação correspondente.
 
 ## Material retroativo
 
