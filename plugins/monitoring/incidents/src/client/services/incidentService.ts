@@ -1,6 +1,6 @@
 import { apiClient } from "@eops/api-client";
 import type { ElectionSummary, ElectoralZoneSummary, PollingPlaceSummary } from "@eops/shared/elections";
-import type { IncidentCategorySummary, IncidentDashboard, IncidentSeverity, IncidentStatus, IncidentSummary } from "@eops/shared/incidents";
+import type { IncidentCategorySummary, IncidentDashboard, IncidentQueueItem, IncidentSeverity, IncidentStatus, IncidentSummary } from "@eops/shared/incidents";
 import type { Paginated } from "@eops/shared/common";
 import type { AssetSummary } from "@eops/shared/inventory";
 
@@ -33,6 +33,7 @@ export interface IncidentInput {
 
 export const incidentService = {
   list: (query: IncidentFilters = {}) => apiClient.get<Paginated<IncidentSummary>>("/incidents", { query }),
+  queue: (query: Pick<IncidentFilters, "page" | "pageSize" | "search" | "categoryId"> = {}) => apiClient.get<Paginated<IncidentQueueItem>>("/incidents/queue", { query }),
   dashboard: () => apiClient.get<IncidentDashboard>("/incidents/dashboard"),
   categories: () => apiClient.get<IncidentCategorySummary[]>("/incidents/categories"),
   get: (id: string) => apiClient.get<IncidentSummary>(`/incidents/${id}`),
@@ -44,6 +45,13 @@ export const incidentService = {
   assign: (id: string, assignedToName: string, reason?: string) =>
     apiClient.post<IncidentSummary, { assignedToName: string; reason?: string }>(`/incidents/${id}/assignments`, { assignedToName, reason }),
   comment: (id: string, message: string) => apiClient.post(`/incidents/${id}/comments`, { message }),
+  acknowledge: (id: string) => apiClient.post<IncidentSummary, Record<string, never>>(`/incidents/${id}/acknowledge`, {}),
+  escalate: (id: string, level: number, reason: string) => apiClient.post<IncidentSummary, { level: number; reason: string }>(`/incidents/${id}/escalate`, { level, reason }),
+  resolve: (id: string, reason?: string) => apiClient.post<IncidentSummary, { reason?: string }>(`/incidents/${id}/resolve`, { reason }),
+  reopen: (id: string, reason?: string) => apiClient.post<IncidentSummary, { reason?: string }>(`/incidents/${id}/reopen`, { reason }),
+  close: (id: string, reason?: string) => apiClient.post<IncidentSummary, { reason?: string }>(`/incidents/${id}/close`, { reason }),
+  createCategory: (input: { key: string; name: string; description?: string }) => apiClient.post<IncidentCategorySummary, typeof input>("/incidents/categories", input),
+  updateCategory: (id: string, input: { name?: string; description?: string; active?: boolean }) => apiClient.patch<IncidentCategorySummary, typeof input>(`/incidents/categories/${id}`, input),
   remove: (id: string) => apiClient.delete(`/incidents/${id}`),
   referenceData: async () => {
     const [elections, zones, places, assets] = await Promise.all([

@@ -19,7 +19,7 @@ export function IncidentListPage() {
     <section className={styles.page}>
       <header className={styles.header}>
         <div><span className={styles.eyebrow}>MONITORAMENTO</span><h1>Central de Incidentes</h1><p>Triagem, atendimento, SLA e histórico operacional.</p></div>
-        <LinkButton to="/incidents/new">Novo incidente</LinkButton>
+        <div className={styles.headerActions}><LinkButton secondary to="/incidents/queue">Fila operacional</LinkButton><LinkButton secondary to="/incidents/categories">Categorias</LinkButton><LinkButton to="/incidents/new">Novo incidente</LinkButton></div>
       </header>
       {dashboard.data && <div className={styles.metrics}>
         <Card><span>Abertos</span><strong>{dashboard.data.open}</strong></Card>

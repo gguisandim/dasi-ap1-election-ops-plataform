@@ -53,6 +53,15 @@ export class ChangeIncidentStatusDto {
   @IsString() @Length(3, 500) @IsOptional() comment?: string;
 }
 
+export class IncidentActionDto {
+  @IsString() @Length(3, 500) @IsOptional() reason?: string;
+}
+
+export class EscalateIncidentDto {
+  @Type(() => Number) @IsInt() @Min(1) @Max(3) level!: number;
+  @IsString() @Length(3, 500) reason!: string;
+}
+
 export class AssignIncidentDto {
   @IsString() @IsOptional() assignedToId?: string;
   @IsString() @Length(2, 160) assignedToName!: string;

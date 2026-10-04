@@ -60,6 +60,9 @@ enum IncidentStatus {
 
 enum IncidentEventType {
   INCIDENT_CREATED
+  UPDATED
+  ACKNOWLEDGED
+  ESCALATED
   STATUS_CHANGED
   ASSIGNED
   COMMENT_ADDED
@@ -67,6 +70,7 @@ enum IncidentEventType {
   RESOLVED
   REOPENED
   CLOSED
+  CANCELLED
 }
 
 enum AssetStatus {
@@ -644,6 +648,12 @@ model Incident {
   resolvedAt       DateTime?
   closedAt         DateTime?
   slaDeadline      DateTime?
+  acknowledgedAt   DateTime?
+  acknowledgedById String?
+  escalationLevel  Int                  @default(0)
+  escalatedAt       DateTime?
+  escalatedById     String?
+  escalationReason String?
   isSimulated      Boolean              @default(false)
   simulationId     String?
   assetId          String?
@@ -664,6 +674,7 @@ model Incident {
   @@index([pollingPlaceId, status])
   @@index([severity, status])
   @@index([slaDeadline])
+  @@index([status, escalationLevel, slaDeadline])
   @@index([assetId])
   @@index([simulationId])
 }
@@ -858,6 +869,7 @@ model RolePermission {
 model AuditEvent {
   id         String      @id @default(cuid())
   actorId    String?
+  eventName  String?
   action     AuditAction
   entityType String
   entityId   String?
@@ -869,6 +881,7 @@ model AuditEvent {
 
   @@index([actorId, createdAt])
   @@index([action, createdAt])
+  @@index([eventName, createdAt])
   @@index([entityType, entityId])
 }
 
