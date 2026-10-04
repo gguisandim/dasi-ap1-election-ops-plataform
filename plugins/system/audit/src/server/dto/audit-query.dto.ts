@@ -6,6 +6,8 @@ export class AuditQueryDto {
   @IsEnum(AuditAction) @IsOptional() action?: AuditAction;
   @IsString() @IsOptional() entityType?: string;
   @IsString() @IsOptional() entityId?: string;
+  @IsString() @IsOptional() eventName?: string;
+  @IsString() @IsOptional() search?: string;
   @IsDateString() @IsOptional() from?: string;
   @IsDateString() @IsOptional() to?: string;
   @Type(() => Number) @IsInt() @Min(1) @IsOptional() page = 1;
