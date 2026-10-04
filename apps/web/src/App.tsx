@@ -1,5 +1,41 @@
-import { useEffect, useMemo, useState } from "react";
-import { CATEGORY_LABELS, type PluginCategory } from "@eops/plugin-sdk";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  CATEGORY_LABELS,
+  NAVIGATION_GROUP_LABELS,
+  NAVIGATION_GROUP_ORDER,
+  type PlatformPlugin,
+  type PluginCategory,
+  type PluginNavigationIcon,
+} from "@eops/plugin-sdk";
+import {
+  Archive,
+  Bell,
+  BookOpen,
+  Boxes,
+  CalendarClock,
+  ChartNoAxesCombined,
+  ChevronDown,
+  ClipboardCheck,
+  FileCheck2,
+  Landmark,
+  LayoutDashboard,
+  ListTodo,
+  Map as MapIcon,
+  MapPin,
+  Menu,
+  MessageSquare,
+  RadioTower,
+  Route as RouteIcon,
+  ScrollText,
+  ShieldCheck,
+  Siren,
+  SlidersHorizontal,
+  TriangleAlert,
+  Users,
+  Vote,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { LoginPage, useAuth } from "@eops/plugin-access-control";
 import { Loading } from "@eops/ui";
@@ -8,6 +44,40 @@ import { plugins } from "./pluginRegistry";
 import { HomeDashboard } from "./components/HomeDashboard";
 import "./styles/global.css";
 
+const navigationIcons: Record<PluginNavigationIcon, LucideIcon> = {
+  archive: Archive,
+  bell: Bell,
+  "book-open": BookOpen,
+  boxes: Boxes,
+  "calendar-clock": CalendarClock,
+  chart: ChartNoAxesCombined,
+  "clipboard-check": ClipboardCheck,
+  "file-check": FileCheck2,
+  landmark: Landmark,
+  "list-todo": ListTodo,
+  map: MapIcon,
+  "map-pin": MapPin,
+  "message-square": MessageSquare,
+  "radio-tower": RadioTower,
+  route: RouteIcon,
+  "scroll-text": ScrollText,
+  "shield-check": ShieldCheck,
+  siren: Siren,
+  sliders: SlidersHorizontal,
+  "triangle-alert": TriangleAlert,
+  users: Users,
+  vote: Vote,
+};
+
+function PluginIcon({ plugin }: { plugin: PlatformPlugin }) {
+  const Icon = plugin.manifest.navigationIcon
+    ? navigationIcons[plugin.manifest.navigationIcon]
+    : null;
+
+  if (Icon) return <Icon aria-hidden="true" size={17} strokeWidth={1.8} />;
+  return <span aria-hidden="true">{plugin.manifest.icon}</span>;
+}
+
 export default function App() {
   const location = useLocation();
   const { user, loading: authLoading, logout } = useAuth();
@@ -15,6 +85,10 @@ export default function App() {
     Record<string, boolean>
   >({ operations: true });
   const [navigationOpen, setNavigationOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const logoutButtonRef = useRef<HTMLButtonElement>(null);
   const accessiblePlugins = useMemo(
     () =>
       plugins.filter((plugin) =>
@@ -47,7 +121,32 @@ export default function App() {
 
   useEffect(() => {
     setNavigationOpen(false);
+    setUserMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!userMenuRef.current?.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setUserMenuOpen(false);
+        userMenuButtonRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    logoutButtonRef.current?.focus();
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [userMenuOpen]);
 
   if (authLoading) return <Loading label="Validando sessão…" />;
   if (location.pathname === "/login") {
@@ -66,6 +165,20 @@ export default function App() {
   }
   if (!user)
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+
+  const renderPluginLink = (plugin: PlatformPlugin) => (
+    <NavLink
+      className={({ isActive }) => (isActive ? "active" : "")}
+      key={plugin.manifest.id}
+      onClick={() => setNavigationOpen(false)}
+      to={plugin.manifest.route}
+    >
+      <span className="plugin-icon">
+        <PluginIcon plugin={plugin} />
+      </span>
+      <span>{plugin.manifest.shortName}</span>
+    </NavLink>
+  );
 
   return (
     <div className="app-shell">
@@ -95,7 +208,8 @@ export default function App() {
           onClick={() => setNavigationOpen(false)}
           to="/"
         >
-          <span aria-hidden="true">◫</span> Visão geral
+          <LayoutDashboard aria-hidden="true" size={17} strokeWidth={1.8} />
+          Visão geral
         </NavLink>
         <nav aria-label="Módulos da plataforma" className="plugin-nav">
           {[...grouped.entries()].map(([category, categoryPlugins]) => {
@@ -103,6 +217,21 @@ export default function App() {
             const expanded =
               containsActiveRoute || Boolean(expandedCategories[category]);
             const regionId = `category-${category}`;
+            const sortedPlugins = [...categoryPlugins].sort(
+              (left, right) =>
+                (left.manifest.navigationOrder ?? 100) -
+                (right.manifest.navigationOrder ?? 100),
+            );
+            const groupedPluginIds = new Set(
+              category === "operations"
+                ? sortedPlugins
+                    .filter((plugin) => plugin.manifest.navigationGroup)
+                    .map((plugin) => plugin.manifest.id)
+                : [],
+            );
+            const ungroupedPlugins = sortedPlugins.filter(
+              (plugin) => !groupedPluginIds.has(plugin.manifest.id),
+            );
 
             return (
               <section className="plugin-category" key={category}>
@@ -119,25 +248,31 @@ export default function App() {
                   type="button"
                 >
                   <span>{CATEGORY_LABELS[category]}</span>
-                  <span aria-hidden="true" className="category-chevron">
-                    ⌄
-                  </span>
+                  <ChevronDown
+                    aria-hidden="true"
+                    className="category-chevron"
+                    size={15}
+                  />
                 </button>
                 {expanded && (
                   <div className="category-items" id={regionId}>
-                    {categoryPlugins.map((plugin) => (
-                      <NavLink
-                        className={({ isActive }) => (isActive ? "active" : "")}
-                        key={plugin.manifest.id}
-                        onClick={() => setNavigationOpen(false)}
-                        to={plugin.manifest.route}
-                      >
-                        <span aria-hidden="true" className="plugin-icon">
-                          {plugin.manifest.icon}
-                        </span>
-                        <span>{plugin.manifest.shortName}</span>
-                      </NavLink>
-                    ))}
+                    {category === "operations" &&
+                      NAVIGATION_GROUP_ORDER.map((navigationGroup) => {
+                        const groupPlugins = sortedPlugins.filter(
+                          (plugin) =>
+                            plugin.manifest.navigationGroup === navigationGroup,
+                        );
+                        if (!groupPlugins.length) return null;
+                        return (
+                          <div className="navigation-subgroup" key={navigationGroup}>
+                            <span className="navigation-subgroup-label">
+                              {NAVIGATION_GROUP_LABELS[navigationGroup]}
+                            </span>
+                            {groupPlugins.map(renderPluginLink)}
+                          </div>
+                        );
+                      })}
+                    {ungroupedPlugins.map(renderPluginLink)}
                   </div>
                 )}
               </section>
@@ -145,11 +280,8 @@ export default function App() {
           })}
         </nav>
         <footer className="sidebar-footer">
-          <span className="sidebar-system-status">
-            <span aria-hidden="true" className="status-dot" />
-            Sistema ativo
-          </span>
-          <small>v0.2.0</small>
+          <span>Election Ops</span>
+          <small>v0.2.0 · Desenvolvimento</small>
         </footer>
       </aside>
       <main className="workspace">
@@ -158,43 +290,67 @@ export default function App() {
             <button
               aria-controls="primary-navigation"
               aria-expanded={navigationOpen}
-              aria-label="Abrir menu de navegação"
+              aria-label={
+                navigationOpen
+                  ? "Fechar menu de navegação"
+                  : "Abrir menu de navegação"
+              }
               className="mobile-menu-toggle"
               onClick={() => setNavigationOpen((open) => !open)}
               type="button"
             >
-              <span />
-              <span />
-              <span />
+              {navigationOpen ? (
+                <X aria-hidden="true" size={19} />
+              ) : (
+                <Menu aria-hidden="true" size={19} />
+              )}
             </button>
             <div>
-              <strong>
-                {activePlugin?.manifest.name ?? "Centro de Operações"}
-              </strong>
+              <strong>{activePlugin?.manifest.name ?? "Visão geral"}</strong>
               <span>
                 {activePlugin?.manifest.description ??
-                  "Gestão modular de operações eleitorais"}
+                  "Situação operacional e prioridades"}
               </span>
             </div>
           </div>
           <div className="topbar-actions">
             <NotificationBell />
-            <div
-              aria-label={`Sessão ativa: ${user.name}`}
-              className="user-session"
-            >
-              <span aria-hidden="true" className="user-avatar">
-                {userInitials || "U"}
-              </span>
-              <span className="user-name">{user.name}</span>
+            <div className="user-menu" ref={userMenuRef}>
+              <button
+                aria-expanded={userMenuOpen}
+                aria-haspopup="menu"
+                aria-label={`Abrir menu de ${user.name}`}
+                className="user-menu-trigger"
+                onClick={() => setUserMenuOpen((open) => !open)}
+                ref={userMenuButtonRef}
+                type="button"
+              >
+                <span aria-hidden="true" className="user-avatar">
+                  {userInitials || "U"}
+                </span>
+                <span className="user-name">{user.name}</span>
+                <ChevronDown aria-hidden="true" size={14} />
+              </button>
+              {userMenuOpen && (
+                <div aria-label="Menu do usuário" className="user-menu-popover" role="menu">
+                  <div className="user-menu-identity">
+                    <strong>{user.name}</strong>
+                    <span>Sessão autenticada</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      void logout();
+                    }}
+                    ref={logoutButtonRef}
+                    role="menuitem"
+                    type="button"
+                  >
+                    Sair
+                  </button>
+                </div>
+              )}
             </div>
-            <button
-              className="logout-button"
-              onClick={() => void logout()}
-              type="button"
-            >
-              Sair
-            </button>
           </div>
         </header>
         <div className="workspace-content">

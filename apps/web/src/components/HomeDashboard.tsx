@@ -12,12 +12,11 @@ import type {
   IncidentStatus,
   IncidentSummary,
 } from "@eops/shared/incidents";
-import {
-  INCIDENT_SEVERITY_LABELS,
-} from "@eops/shared/incidents";
+import { INCIDENT_SEVERITY_LABELS } from "@eops/shared/incidents";
 import type { Paginated } from "@eops/shared/common";
 import { EmptyState, ErrorState, Loading, useAsync } from "@eops/ui";
 import { Link } from "react-router-dom";
+import { MiniOperationalMap } from "./MiniOperationalMap";
 
 interface Props {
   plugins: PlatformPlugin[];
@@ -142,38 +141,6 @@ function monitoringTone(status: MonitoringStatus): Tone {
   return "success";
 }
 
-function mapPoints(places: PollingPlaceSummary[]) {
-  const located = places.filter(
-    (
-      place,
-    ): place is PollingPlaceSummary & { latitude: number; longitude: number } =>
-      typeof place.latitude === "number" &&
-      typeof place.longitude === "number",
-  );
-  if (!located.length) return [];
-
-  const latitudes = located.map((place) => place.latitude);
-  const longitudes = located.map((place) => place.longitude);
-  const minLatitude = Math.min(...latitudes);
-  const maxLatitude = Math.max(...latitudes);
-  const minLongitude = Math.min(...longitudes);
-  const maxLongitude = Math.max(...longitudes);
-  const latitudeRange = maxLatitude - minLatitude;
-  const longitudeRange = maxLongitude - minLongitude;
-
-  return located.map((place) => ({
-    place,
-    x:
-      longitudeRange === 0
-        ? 50
-        : 8 + ((place.longitude - minLongitude) / longitudeRange) * 84,
-    y:
-      latitudeRange === 0
-        ? 50
-        : 8 + (1 - (place.latitude - minLatitude) / latitudeRange) * 84,
-  }));
-}
-
 export function HomeDashboard({ plugins }: Props) {
   const [attentionFilter, setAttentionFilter] =
     useState<AttentionFilter>("all");
@@ -262,7 +229,6 @@ export function HomeDashboard({ plugins }: Props) {
     election?.rounds.find((round) => round.status === "IN_PROGRESS") ??
     election?.rounds.find((round) => round.status === "SCHEDULED");
   const places = data.mappedPlaces.data ?? [];
-  const points = mapPoints(places);
   const incidents = data.incidents.data?.items ?? [];
   const notifications = data.notifications.data?.items ?? [];
   const activeIncidentStatuses: IncidentStatus[] = [
@@ -523,6 +489,23 @@ export function HomeDashboard({ plugins }: Props) {
         </div>
       )}
 
+      {incidentPlugin &&
+        (data.incidentDashboard.data?.critical ?? 0) > 0 && (
+          <div className="critical-incident-alert" role="alert">
+            <span aria-hidden="true">!</span>
+            <strong>
+              {data.incidentDashboard.data!.critical}{" "}
+              {data.incidentDashboard.data!.critical === 1
+                ? "ocorrência crítica precisa"
+                : "ocorrências críticas precisam"}{" "}
+              de atenção
+            </strong>
+            <Link to={incidentPlugin.manifest.route}>
+              Ver ocorrências <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+        )}
+
       <section aria-label="Indicadores principais" className="metric-grid">
         {metrics.slice(0, 4).map((metric) => (
           <article className={`metric-card tone-${metric.tone}`} key={metric.label}>
@@ -555,29 +538,8 @@ export function HomeDashboard({ plugins }: Props) {
               error={data.mappedPlaces.error}
               onRetry={summary.reload}
             />
-          ) : points.length ? (
-            <div
-              aria-label={`${points.length} locais georreferenciados exibidos por coordenadas reais`}
-              className="operational-map-visual"
-              role="img"
-            >
-              <div aria-hidden="true" className="map-grid-lines" />
-              {points.map(({ place, x, y }) => (
-                <span
-                  aria-label={`${place.name}: ${STATUS_LABELS[place.monitoringStatus]}`}
-                  className={`map-marker tone-${monitoringTone(place.monitoringStatus)}`}
-                  key={place.id}
-                  style={{ left: `${x}%`, top: `${y}%` }}
-                  title={`${place.name} · ${STATUS_LABELS[place.monitoringStatus]}`}
-                />
-              ))}
-              <span aria-hidden="true" className="map-coordinate-label map-north">
-                N
-              </span>
-              <span aria-hidden="true" className="map-coordinate-label map-south">
-                S
-              </span>
-            </div>
+          ) : places.length ? (
+            <MiniOperationalMap places={places} />
           ) : (
             <EmptyState
               title={mapPlugin ? "Sem locais georreferenciados" : "Mapa indisponível"}
@@ -621,9 +583,9 @@ export function HomeDashboard({ plugins }: Props) {
             <div aria-label="Filtrar prioridades" className="attention-filters">
               {(
                 [
-                  ["all", "Todas"],
-                  ["critical", "Críticas"],
-                  ["inProgress", "Em tratamento"],
+                  ["all", "Todos"],
+                  ["critical", "Críticos"],
+                  ["inProgress", "Em atendimento"],
                 ] as Array<[AttentionFilter, string]>
               ).map(([filter, label]) => (
                 <button
@@ -657,6 +619,7 @@ export function HomeDashboard({ plugins }: Props) {
                   <span className={`status-tag tone-${item.tone}`}>
                     {item.tag}
                   </span>
+                  <span aria-hidden="true" className="attention-arrow">→</span>
                 </Link>
               ))}
             </div>
