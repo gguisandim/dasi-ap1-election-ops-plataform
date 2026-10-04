@@ -58,6 +58,32 @@ Spec: SPEC/<arquivo>.md
 
 O commit da SPEC deve aparecer no histórico antes do primeiro commit de implementação correspondente. Não reescreva o histórico para fabricar anterioridade.
 
+## Enforcement técnico
+
+Execute:
+
+```bash
+npm run spec:check
+```
+
+O checker analisa `HEAD` por padrão. Para validar mais de um commit:
+
+```bash
+npm run spec:check -- <base>..HEAD
+```
+
+Na V1, commits `feat`, `fix`, `refactor` e `perf` exigem exatamente um trailer `Agent:` e um `Spec:`. O caminho de SPEC deve seguir `SPEC/<arquivo>.md`, estar versionado no commit e já existir em seu primeiro pai.
+
+Uma isenção explícita usa:
+
+```text
+Agent: <identificador>
+Spec: EXEMPT
+Spec-Exempt-Reason: <justificativa curta>
+```
+
+O checker exige a justificativa, mas não avalia sua qualidade semântica. Commits de outros tipos podem omitir trailers; se declararem qualquer trailer da política, o conjunto inteiro será validado. A V1 não infere intenção pelo diff nem prova todos os casos de `UPDATE_SPEC`. A regra normativa completa está em `SPEC/2026-10-04-spec-traceability-enforcement.md`.
+
 ## Status
 
 Toda SPEC deve declarar um destes estados:

@@ -92,6 +92,8 @@ A ordem do histórico importa. Se o requisito mudar durante a implementação, a
 
 Uma autorização para commitar a SPEC é limitada ao que o usuário autorizou. Ela não autoriza commit da implementação, push ou reescrita do histórico. A entrega deve incluir o bloco `SPEC COMPLIANCE` definido em `SPEC/README.md`.
 
+Após existir um commit de implementação, valide seus trailers e a anterioridade da SPEC com `npm run spec:check` ou `npm run spec:check -- <base>..HEAD`. O checker é objetivo e não substitui a classificação humana do SPEC Gate.
+
 ## 4. Contrato visual obrigatório para frontend
 
 Toda alteração de UI deve obedecer a:

@@ -158,6 +158,18 @@ Mesmo nesses casos, não use `Spec: none` para esconder uma mudança funcional. 
 
 Quando houver uma SPEC relacionada mesmo em manutenção técnica, referencie-a normalmente.
 
+### Isenção explícita
+
+Na política automatizada V1, commits `feat`, `fix`, `refactor` e `perf` exigem `Agent:` e `Spec:`. Quando um desses commits for legitimamente `SPEC_EXEMPT`, use:
+
+```text
+Agent: <identificador>
+Spec: EXEMPT
+Spec-Exempt-Reason: <justificativa curta>
+```
+
+Não use `EXEMPT` como substituto de uma SPEC necessária. O checker valida a presença da justificativa, não seu mérito.
+
 ## 9. Antes de criar o commit
 
 Verifique:
@@ -169,6 +181,15 @@ Verifique:
 - validações compatíveis foram executadas;
 - o título descreve a entrega real;
 - trailers `Agent:` e `Spec:` estão corretos quando exigidos.
+
+Valide a rastreabilidade do commit ou range pretendido:
+
+```bash
+npm run spec:check
+npm run spec:check -- <base>..HEAD
+```
+
+O primeiro comando analisa `HEAD`. O segundo é apropriado para uma série local ou futura integração em CI.
 
 Para mudanças relevantes, execute conforme o escopo:
 

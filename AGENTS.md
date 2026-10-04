@@ -56,6 +56,7 @@ Para dados agregados na home, use APIs públicas e contratos compartilhados. Nã
 Após implementar, execute o conjunto compatível com a mudança:
 
 ```bash
+npm run spec:check
 npm run check:boundaries
 npm run typecheck
 npm run lint
@@ -64,6 +65,8 @@ npm run build
 ```
 
 Se algum comando depender de infraestrutura indisponível, registre exatamente o que não pôde ser validado; não invente sucesso.
+
+`npm run spec:check` valida `HEAD` por padrão. Para uma sequência de commits, use `npm run spec:check -- <base>..HEAD`. A política objetiva e as limitações da V1 estão em `SPEC/README.md`.
 
 ## Handoff obrigatório
 
