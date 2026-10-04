@@ -6,6 +6,7 @@ export const manifest: PluginManifest = {
   shortName: 'Inventário',
   description: 'Equipamentos e materiais operacionais.',
   category: 'logistics',
+  navigationIcon: 'boxes',
   icon: '▤',
   version: '0.1.0',
   status: 'beta',

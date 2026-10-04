@@ -5,6 +5,7 @@ export const manifest: PluginManifest = {
   shortName: "Mapa",
   description: "Visão geográfica dos locais de votação.",
   category: "monitoring",
+  navigationIcon: "map",
   icon: "◉",
   version: "0.1.0",
   status: "beta",

@@ -6,6 +6,7 @@ export const manifest: PluginManifest = {
   shortName: 'Rotas',
   description: 'Planejamento logístico de rotas e entregas.',
   category: 'logistics',
+  navigationIcon: 'route',
   icon: '⇢',
   version: '0.1.0',
   status: 'beta',

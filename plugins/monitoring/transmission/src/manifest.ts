@@ -6,6 +6,7 @@ export const manifest: PluginManifest = {
   shortName: 'Transmissão',
   description: 'Monitoramento de pontos e eventos de transmissão.',
   category: 'monitoring',
+  navigationIcon: 'radio-tower',
   icon: '◉',
   version: '0.1.0',
   status: 'beta',

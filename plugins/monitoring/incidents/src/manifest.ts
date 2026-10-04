@@ -6,6 +6,7 @@ export const manifest: PluginManifest = {
   shortName: 'Incidentes',
   description: 'Registro e tratamento de incidentes.',
   category: 'monitoring',
+  navigationIcon: 'siren',
   icon: '!',
   version: '0.1.0',
   status: 'beta',

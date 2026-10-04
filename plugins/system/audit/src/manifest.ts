@@ -6,6 +6,7 @@ export const manifest: PluginManifest = {
   shortName: 'Auditoria',
   description: 'Rastreabilidade das alterações da plataforma.',
   category: 'system',
+  navigationIcon: 'scroll-text',
   icon: '≡',
   version: '0.1.0',
   status: 'beta',

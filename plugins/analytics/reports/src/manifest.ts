@@ -6,6 +6,7 @@ export const manifest: PluginManifest = {
   shortName: 'Relatórios',
   description: 'Indicadores, relatórios e análises.',
   category: 'analytics',
+  navigationIcon: 'chart',
   icon: '▥',
   version: '0.1.0',
   status: 'beta',

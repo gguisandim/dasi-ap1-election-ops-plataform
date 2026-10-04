@@ -6,6 +6,7 @@ export const manifest: PluginManifest = {
   shortName: "Usuários",
   description: "Autenticação, usuários, perfis e permissões.",
   category: "system",
+  navigationIcon: "shield-check",
   icon: "◎",
   version: "0.1.0",
   status: "beta",
