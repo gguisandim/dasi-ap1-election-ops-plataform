@@ -273,3 +273,7 @@ feat(shell): redesign home and collapsible sidebar
 Agent: codex/model-unavailable
 Spec: SPEC/2026-10-03-operational-shell-ui.md
 ```
+
+## 12. Feedback de execução
+
+Quando uma execução revelar uma deficiência estrutural de prompt, SPEC, guide, ambiente, dependência, ferramenta ou validação, siga `docs/execution-issues/README.md`. Registre somente problemas com valor para execuções futuras, aplique correções documentais claras quando forem seguras e nunca silencie divergências. Debugging trivial corrigido durante a própria tarefa não deve virar execution issue.

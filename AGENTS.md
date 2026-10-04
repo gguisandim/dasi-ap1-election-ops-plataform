@@ -54,6 +54,10 @@ npm run build
 
 Se algum comando depender de infraestrutura indisponível, registre exatamente o que não pôde ser validado; não invente sucesso.
 
+## Feedback de execução
+
+Problemas estruturais encontrados durante uma tarefa devem seguir `docs/execution-issues/README.md`. Registre divergências relevantes de prompt, SPEC, guides, repositório, ambiente, dependências ou validação; não esconda falhas. Não registre debugging trivial ou erros intermediários corrigidos na própria execução.
+
 
 ## Commits e rastreabilidade
 
