@@ -14,7 +14,7 @@
     "dev:api": "npm run build:security && npm run start:dev -w @eops/api",
     "build": "npm run build:api && npm run build:web",
     "build:web": "npm run build -w @eops/web",
-    "build:api": "npm run build:security && npm run build -w @eops/api && npm run build:server-exports",
+    "build:api": "npm run build:security && npm run build:event-bus && npm run build -w @eops/api && npm run build:server-exports",
     "build:server-exports": "node scripts/sync-server-workspace-dist.mjs",
     "typecheck": "npm run typecheck -w @eops/api && npm run typecheck -w @eops/web",
     "lint": "eslint apps packages plugins",
@@ -29,7 +29,8 @@
     "db:validate": "prisma validate --schema packages/database/prisma/schema.prisma",
     "count:loc": "node scripts/count-loc.mjs",
     "build:security": "npm run build -w @eops/security",
-    "pretest": "npm run build:security"
+    "build:event-bus": "npm run build -w @eops/event-bus",
+    "pretest": "npm run build:security && npm run build:event-bus"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
