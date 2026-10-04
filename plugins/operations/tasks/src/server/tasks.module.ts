@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { EventBusModule } from "../../../../../packages/event-bus/src";
+import { EventBusModule } from "@eops/event-bus";
 import { TasksController } from "./tasks.controller";
 import { TasksService } from "./tasks.service";
 

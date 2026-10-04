@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { Prisma, RiskEventType, RiskMitigationStatus } from "@prisma/client";
-import { PrismaService } from "../../../../../packages/database/src";
+import { PrismaService } from "@eops/database";
 import type { RiskMitigationSummary } from "@eops/shared/risks";
 import { isMitigationOverdue } from "./helpers/risk-scoring";
 import { RiskTimelineService } from "./risk-timeline.service";

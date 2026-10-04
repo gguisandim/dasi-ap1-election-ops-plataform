@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { EvidenceEventType, EvidenceStatus, EvidenceType } from "@prisma/client";
-import { PrismaService } from "../../../../../packages/database/src";
+import { PrismaService } from "@eops/database";
 import { validateFileForType } from "./helpers/evidence-type";
 import { storageDirectory } from "./helpers/file-metadata";
 import { StorageService } from "./storage/storage.service";

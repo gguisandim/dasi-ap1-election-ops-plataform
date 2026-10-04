@@ -6,8 +6,8 @@ import {
   Prisma,
   UserStatus,
 } from "@prisma/client";
-import { PrismaService } from "../../../../../packages/database/src";
-import { EventBus } from "../../../../../packages/event-bus/src";
+import { PrismaService } from "@eops/database";
+import { EventBus } from "@eops/event-bus";
 import {
   AddTemplateItemDto,
   CreateChecklistDto,

@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { AssetCondition, AssetStatus, FailureProbability, IncidentEventType, IncidentSeverity, IncidentStatus, Prisma, SimulationStatus } from "@prisma/client";
-import { EventBus } from "../../../../../packages/event-bus/src";
-import { PrismaService } from "../../../../../packages/database/src";
+import { EventBus } from "@eops/event-bus";
+import { PrismaService } from "@eops/database";
 import { CreateSimulationDto } from "./dto/simulation.dto";
 
 const activeIncidentStatuses = [IncidentStatus.NEW, IncidentStatus.TRIAGED, IncidentStatus.ASSIGNED, IncidentStatus.IN_PROGRESS];

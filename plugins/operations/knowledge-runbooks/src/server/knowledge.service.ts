@@ -9,8 +9,8 @@ import {
   KnowledgeArticleStatus,
   Prisma,
 } from "@prisma/client";
-import { EventBus } from "../../../../../packages/event-bus/src";
-import { PrismaService } from "../../../../../packages/database/src";
+import { EventBus } from "@eops/event-bus";
+import { PrismaService } from "@eops/database";
 import {
   KnowledgeArticleSummary,
   RUNBOOK_STALE_DAYS,

@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { FieldShiftAssignmentStatus, FieldShiftHistoryAction, FieldShiftStatus, Prisma } from "@prisma/client";
-import { PrismaService } from "../../../../../packages/database/src";
-import { EventBus } from "../../../../../packages/event-bus/src";
+import { PrismaService } from "@eops/database";
+import { EventBus } from "@eops/event-bus";
 import { CreateShiftAssignmentDto, CreateShiftDto, ReplaceAssignmentDto, ShiftsQueryDto, UpdateShiftDto } from "./dto/shifts.dto";
 import { hasScheduleConflict, planReplacement, type ScheduleInterval } from "./shift-rules";
 

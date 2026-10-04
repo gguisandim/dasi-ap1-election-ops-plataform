@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { PrismaService } from "../../../../../packages/database/src";
+import type { PrismaService } from "@eops/database";
 import { ReportsService } from "./reports.service";
 
 const report = {

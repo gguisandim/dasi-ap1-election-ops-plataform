@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { AuditAction, UserStatus } from "@prisma/client";
-import { PrismaService } from "../../../../../packages/database/src";
+import { PrismaService } from "@eops/database";
 import { LoginDto } from "./dto/auth.dto";
 import { signToken, verifyPassword } from "./security";
 

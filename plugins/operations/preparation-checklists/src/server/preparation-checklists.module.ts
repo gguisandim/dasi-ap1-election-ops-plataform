@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { EventBusModule } from "../../../../../packages/event-bus/src";
+import { EventBusModule } from "@eops/event-bus";
 import { PreparationChecklistsController } from "./preparation-checklists.controller";
 import { PreparationChecklistsService } from "./preparation-checklists.service";
 

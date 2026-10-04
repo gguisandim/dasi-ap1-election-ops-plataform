@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { Prisma, RiskEventType } from "@prisma/client";
-import { PrismaService } from "../../../../../packages/database/src";
+import { PrismaService } from "@eops/database";
 
 export interface RiskTimelineEntry {
   type: RiskEventType;

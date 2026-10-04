@@ -1,5 +1,5 @@
 import { ConflictException, Injectable } from "@nestjs/common";
-import { PrismaService } from "../../../../../packages/database/src";
+import { PrismaService } from "@eops/database";
 import { normalizeTagLabels, slugifyTag } from "./helpers/tag-slug";
 
 /**

@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
-import { PrismaService } from "../../../../../packages/database/src";
+import { PrismaService } from "@eops/database";
 import { CreateRiskCategoryDto, UpdateRiskCategoryDto } from "./dto/risk.dto";
 
 function isUniqueViolation(error: unknown): boolean {

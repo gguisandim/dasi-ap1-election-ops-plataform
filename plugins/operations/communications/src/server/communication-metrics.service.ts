@@ -5,7 +5,7 @@ import {
   CommunicationStatus,
   Prisma,
 } from "@prisma/client";
-import { PrismaService } from "../../../../../packages/database/src";
+import { PrismaService } from "@eops/database";
 import type {
   CommunicationDashboard,
   CommunicationMetrics,

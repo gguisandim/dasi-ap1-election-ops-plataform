@@ -4,8 +4,8 @@ import {
   KnowledgeArticleStatus,
 } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
-import type { PrismaService } from "../../../../../packages/database/src";
-import type { EventBus } from "../../../../../packages/event-bus/src";
+import type { PrismaService } from "@eops/database";
+import type { EventBus } from "@eops/event-bus";
 import type { KnowledgeCatalogService } from "./knowledge-catalog.service";
 import { KnowledgeService } from "./knowledge.service";
 

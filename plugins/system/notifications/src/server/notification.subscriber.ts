@@ -5,8 +5,8 @@ import {
   EventBus,
   type DomainEvent,
   type DomainEventName,
-} from "../../../../../packages/event-bus/src";
-import { PrismaService } from "../../../../../packages/database/src";
+} from "@eops/event-bus";
+import { PrismaService } from "@eops/database";
 
 const names = [
   "incident.created",

@@ -1,6 +1,6 @@
 import { AssetCondition, AssetStatus } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
-import type { PrismaService } from "../../../../../packages/database/src";
+import type { PrismaService } from "@eops/database";
 import { InventoryService } from "./inventory.service";
 
 const asset = {

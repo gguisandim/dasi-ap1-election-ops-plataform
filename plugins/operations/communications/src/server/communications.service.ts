@@ -10,8 +10,8 @@ import {
   CommunicationStatus,
   Prisma,
 } from "@prisma/client";
-import { EventBus } from "../../../../../packages/event-bus/src";
-import { PrismaService } from "../../../../../packages/database/src";
+import { EventBus } from "@eops/event-bus";
+import { PrismaService } from "@eops/database";
 import type { CommunicationMetrics, CommunicationSummary } from "@eops/shared/communications";
 import {
   CancelCommunicationDto,

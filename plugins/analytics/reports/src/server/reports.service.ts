@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { AssetCondition, AssetStatus, IncidentStatus, MonitoringStatus, RouteStatus, TransmissionStatus } from "@prisma/client";
 import PDFDocument from "pdfkit";
-import { PrismaService } from "../../../../../packages/database/src";
+import { PrismaService } from "@eops/database";
 import { ReportQueryDto } from "./dto/report-query.dto";
 
 function countBy<T>(items: T[], key: (item: T) => string) {

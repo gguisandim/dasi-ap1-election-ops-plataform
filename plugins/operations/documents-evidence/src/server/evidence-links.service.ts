@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { EvidenceEventType, EvidenceLinkType } from "@prisma/client";
-import { PrismaService } from "../../../../../packages/database/src";
+import { PrismaService } from "@eops/database";
 import { describeTarget, dedupeLinks, RESOLVABLE_LINK_TYPES } from "./helpers/evidence-link";
 import { EvidenceTimelineService } from "./evidence-timeline.service";
 import type { EvidenceActor, ResolvedLink } from "./types";

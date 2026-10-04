@@ -51,6 +51,16 @@ Leia:
 
 Para dados agregados na home, use APIs públicas e contratos compartilhados. Não importe services/components internos de plugins.
 
+## Fronteiras entre workspaces
+
+- nenhum workspace pode importar fisicamente `src/` de outro workspace;
+- imports cross-workspace devem usar o nome público do package, como `@eops/database`, `@eops/event-bus`, `@eops/security`, `@eops/shared`, `@eops/plugin-sdk` e `@eops/ui`;
+- `apps/api` é o composition root server-side e registra plugins exclusivamente pelo entrypoint público `@eops/plugin-<slug>/server`;
+- imports relativos que escapem do workspace produtor são proibidos, ainda que o arquivo alvo esteja exportado por outro caminho;
+- alterações em barrels e `exports` devem manter a superfície pública mínima e intencional.
+
+A convenção completa está em `docs/PLUGIN_ARCHITECTURE.md` e é verificada por `npm run check:boundaries`.
+
 ## Validação
 
 Após implementar, execute o conjunto compatível com a mudança:

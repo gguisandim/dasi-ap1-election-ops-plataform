@@ -1,7 +1,7 @@
 import { DeliveryStatus, RouteStatus } from "@prisma/client";
 import { BadRequestException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
-import type { PrismaService } from "../../../../../packages/database/src";
+import type { PrismaService } from "@eops/database";
 import { RoutesService } from "./routes.service";
 
 describe("RoutesService", () => {

@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma, TaskHistoryAction, TaskPriority, TaskStatus, UserStatus } from "@prisma/client";
-import { PrismaService } from "../../../../../packages/database/src";
-import { EventBus } from "../../../../../packages/event-bus/src";
+import { PrismaService } from "@eops/database";
+import { EventBus } from "@eops/event-bus";
 import { CreateTaskCommentDto, CreateTaskDependencyDto, CreateTaskDto, TasksQueryDto, UpdateTaskDto } from "./dto/tasks.dto";
 
 const taskInclude = {

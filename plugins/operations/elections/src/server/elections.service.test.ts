@@ -1,6 +1,6 @@
 import { NotFoundException } from "@nestjs/common";
 import { describe, expect, it, vi } from "vitest";
-import type { PrismaService } from "../../../../../packages/database/src";
+import type { PrismaService } from "@eops/database";
 import { ElectionsService } from "./elections.service";
 
 describe("ElectionsService", () => {

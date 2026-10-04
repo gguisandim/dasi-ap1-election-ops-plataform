@@ -87,7 +87,7 @@ Em 2026-10-04, `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/chec
 - `test-results/ presente`;
 - `backup de runtime presente`.
 
-Os diretórios já existiam antes das alterações desta tarefa e não aparecem como mudanças rastreadas no Git.
+Os diretórios já existiam antes das alterações desta tarefa. A inspeção posterior com `git ls-files` confirmou que `test-results/.last-run.json` e os arquivos de `backup-security-runtime-20261001-041211/` estão versionados, apesar de os dois padrões também constarem no `.gitignore`.
 
 ### O que era esperado
 
@@ -99,11 +99,11 @@ Não invalida as mudanças documentais nem o `check:boundaries`, mas impede decl
 
 ### Contorno utilizado
 
-Nenhum arquivo foi removido, pois os artefatos preexistentes pertencem ao workspace do usuário e a tarefa não autoriza limpeza destrutiva.
+Nenhum arquivo foi removido: a política desta execução proíbe apagar arquivos versionados, e o `.gitignore` não deixa de rastrear conteúdo já presente no índice.
 
 ### Correção estrutural sugerida
 
-Revisar os artefatos e removê-los ou movê-los de forma segura em uma tarefa de limpeza explicitamente autorizada; depois, executar novamente `scripts/check-ap1.ps1`.
+Decidir explicitamente se esses artefatos devem sair do histórico corrente. Se a remoção for autorizada, removê-los do índice e do worktree em mudança versionada própria; depois, executar novamente `scripts/check-ap1.ps1`.
 
 ### Estado
 

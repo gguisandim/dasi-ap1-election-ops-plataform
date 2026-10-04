@@ -6,8 +6,8 @@ import {
   CommunicationStatus,
 } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
-import type { PrismaService } from "../../../../../packages/database/src";
-import type { EventBus } from "../../../../../packages/event-bus/src";
+import type { PrismaService } from "@eops/database";
+import type { EventBus } from "@eops/event-bus";
 import { CommunicationRecipientsService } from "./communication-recipients.service";
 import type { CommunicationTimelineService } from "./communication-timeline.service";
 

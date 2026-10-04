@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { DeliveryStatus, LogisticsEventType, Prisma, RouteStatus, RouteStopStatus, VehicleStatus } from "@prisma/client";
-import { PrismaService } from "../../../../../packages/database/src";
-import { EventBus } from "../../../../../packages/event-bus/src";
+import { PrismaService } from "@eops/database";
+import { EventBus } from "@eops/event-bus";
 import { CreateBatchDto, CreateDeliveryDto, CreateRouteDto, CreateVehicleDto, RouteQueryDto, UpdateDeliveryDto, UpdateRouteDto, UpdateStopDto } from "./dto/routes.dto";
 
 const routeInclude = {

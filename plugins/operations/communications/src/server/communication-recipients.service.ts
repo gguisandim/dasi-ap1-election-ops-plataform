@@ -9,8 +9,8 @@ import {
   Prisma,
   UserStatus,
 } from "@prisma/client";
-import { EventBus } from "../../../../../packages/event-bus/src";
-import { PrismaService } from "../../../../../packages/database/src";
+import { EventBus } from "@eops/event-bus";
+import { PrismaService } from "@eops/database";
 import { CommunicationEventSummary, CommunicationRecipientSummary } from "@eops/shared/communications";
 import { CommunicationRecipientQueryDto } from "./dto/communication.dto";
 import { describeAudience, recipientDedupeKey } from "./helpers/audience";

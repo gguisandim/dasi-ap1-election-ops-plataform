@@ -4,8 +4,8 @@ import {
   PreparationChecklistStatus,
 } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
-import type { PrismaService } from "../../../../../packages/database/src";
-import { PERMISSIONS, PLATFORM_PERMISSION_KEYS } from "../../../../../packages/security/src/permissions";
+import type { PrismaService } from "@eops/database";
+import { PERMISSIONS, PLATFORM_PERMISSION_KEYS } from "@eops/security";
 import {
   calculateChecklistProgress,
   deriveChecklistStatus,

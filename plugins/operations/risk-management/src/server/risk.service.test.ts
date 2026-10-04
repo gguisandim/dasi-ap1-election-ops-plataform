@@ -1,8 +1,8 @@
 import { BadRequestException } from "@nestjs/common";
 import { RiskImpact, RiskLevel, RiskProbability, RiskStatus } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
-import type { PrismaService } from "../../../../../packages/database/src";
-import type { EventBus } from "../../../../../packages/event-bus/src";
+import type { PrismaService } from "@eops/database";
+import type { EventBus } from "@eops/event-bus";
 import type { RiskCatalogService } from "./risk-catalog.service";
 import type { RiskMitigationService } from "./risk-mitigation.service";
 import { RiskService } from "./risk.service";

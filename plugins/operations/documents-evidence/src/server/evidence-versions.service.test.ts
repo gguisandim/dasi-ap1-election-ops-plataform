@@ -1,7 +1,7 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { EvidenceType } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
-import type { PrismaService } from "../../../../../packages/database/src";
+import type { PrismaService } from "@eops/database";
 import { EvidenceVersionsService } from "./evidence-versions.service";
 import type { StorageService } from "./storage/storage.service";
 import type { EvidenceTimelineService } from "./evidence-timeline.service";

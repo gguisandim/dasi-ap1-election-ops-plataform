@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { ConnectivityStatus, Prisma, TransmissionAlertStatus, TransmissionAlertType, TransmissionAttemptResult, TransmissionEventType, TransmissionStatus } from "@prisma/client";
-import { PrismaService } from "../../../../../packages/database/src";
-import { EventBus } from "../../../../../packages/event-bus/src";
+import { PrismaService } from "@eops/database";
+import { EventBus } from "@eops/event-bus";
 import { CreateTransmissionPointDto, RegisterAttemptDto, TransmissionQueryDto, UpdateAlertDto, UpdateConnectivityDto, UpdateTransmissionPointDto } from "./dto/transmission.dto";
 
 const pointInclude = {

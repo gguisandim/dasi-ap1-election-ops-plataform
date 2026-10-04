@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { EvidenceEventType, Prisma } from "@prisma/client";
-import { PrismaService } from "../../../../../packages/database/src";
+import { PrismaService } from "@eops/database";
 
 export interface TimelineEntry {
   type: EvidenceEventType;

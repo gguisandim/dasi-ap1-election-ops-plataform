@@ -1,7 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { IncidentSeverity, IncidentStatus } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
-import type { PrismaService } from "../../../../../packages/database/src";
+import type { PrismaService } from "@eops/database";
 import { IncidentsService } from "./incidents.service";
 
 function incident(overrides: Record<string, unknown> = {}) {

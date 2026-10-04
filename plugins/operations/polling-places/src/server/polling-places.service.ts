@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { IncidentStatus, Prisma } from "@prisma/client";
-import { PrismaService } from "../../../../../packages/database/src";
+import { PrismaService } from "@eops/database";
 import {
   CreatePollingPlaceDto,
   PollingPlaceQueryDto,

@@ -24,16 +24,18 @@ Documentação em `docs/modules/` não substitui a SPEC normativa. Se o gate res
 - segurança usa `@eops/security`;
 - contratos comuns usam `@eops/shared/<dominio>`;
 - comunicação cross-domain usa API pública, Event Bus ou contrato neutro;
+- dependências de packages usam seus nomes públicos, nunca caminhos relativos para `packages/*/src`;
 - nunca importe `plugins/<outra-categoria>/<outro-plugin>/src/...`;
+- o entrypoint server público de um plugin é `@eops/plugin-<slug>/server` e seu consumidor permitido é o composition root `apps/api`;
 - não mova regra de negócio para `apps/web` ou `apps/api`;
 - não altere o shell para resolver problema estritamente interno do plugin.
 
 ## Pontos globais permitidos quando realmente necessários
 
 - `packages/database/prisma/*` para persistência/migrations/seed;
-- `packages/security/src/permissions.ts` para novas permissões;
-- `packages/event-bus/src/contracts.ts` para eventos cross-domain;
-- `packages/shared/src/<dominio>.ts` para contratos compartilhados;
+- `packages/security/src/permissions.ts` para editar o catálogo de novas permissões; consumidores importam `@eops/security`;
+- `packages/event-bus/src/contracts.ts` para editar eventos cross-domain; consumidores importam `@eops/event-bus` ou seu subpath público;
+- `packages/shared/src/<dominio>.ts` para editar contratos compartilhados; consumidores importam o subpath público do domínio;
 - `apps/web/src/pluginRegistry.ts` para registrar plugin;
 - `apps/api/src/app.module.ts` para registrar módulo NestJS.
 

@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit } from "@nestjs/common";
 import { AuditAction } from "@prisma/client";
-import { EventBus, type DomainEvent, type DomainEventName } from "../../../../../packages/event-bus/src";
-import { PrismaService } from "../../../../../packages/database/src";
+import { EventBus, type DomainEvent, type DomainEventName } from "@eops/event-bus";
+import { PrismaService } from "@eops/database";
 const names: DomainEventName[] = ["incident.created", "incident.assigned", "incident.resolved", "asset.created", "asset.moved", "asset.status_changed", "user.created", "election.created", "route.created", "route.started", "route.completed", "delivery.completed", "delivery.failed", "transmission.completed", "transmission.failed", "transmission.connectivity_changed", "transmission.alert_created", "field_team.allocated", "field_member.checked_in", "field_member.checked_out", "preparation_checklist.approved", "preparation_checklist.blocked", "task.created", "task.assigned", "task.status_changed", "task.completed", "task.blocked", "shift.created", "shift.started", "shift.completed", "shift.assignment_changed", "shift.absence_registered", "shift.replacement_registered", "shift.coverage_insufficient"];
 @Injectable()
 export class AuditSubscriber implements OnModuleInit {

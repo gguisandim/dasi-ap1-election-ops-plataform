@@ -1,7 +1,7 @@
 import { RunbookUsageOutcome } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
-import type { PrismaService } from "../../../../../packages/database/src";
-import type { EventBus } from "../../../../../packages/event-bus/src";
+import type { PrismaService } from "@eops/database";
+import type { EventBus } from "@eops/event-bus";
 import type { KnowledgeService } from "./knowledge.service";
 import { RunbookService } from "./runbook.service";
 

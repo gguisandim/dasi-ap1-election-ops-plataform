@@ -6,8 +6,8 @@ import {
   EvidenceType,
   Prisma,
 } from "@prisma/client";
-import { EventBus } from "../../../../../packages/event-bus/src";
-import { PrismaService } from "../../../../../packages/database/src";
+import { EventBus } from "@eops/event-bus";
+import { PrismaService } from "@eops/database";
 import type { EvidenceDashboard, EvidenceSummary } from "@eops/shared/evidence";
 import {
   CreateEvidenceDto,

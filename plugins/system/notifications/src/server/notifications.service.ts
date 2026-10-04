@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../../../../../packages/database/src";
+import { PrismaService } from "@eops/database";
 @Injectable()
 export class NotificationsService {
   constructor(private readonly prisma: PrismaService) {}

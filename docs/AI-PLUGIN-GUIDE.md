@@ -153,7 +153,17 @@ A sidebar deve consumir metadata pública dos manifests. Não criar um segundo c
 
 ### Backend
 
-`apps/api/src/app.module.ts` apenas registra módulos NestJS. Regras de negócio permanecem no plugin.
+`apps/api/src/app.module.ts` apenas registra módulos NestJS. Regras de negócio permanecem no plugin. Plugins com backend expõem um entrypoint mínimo `@eops/plugin-<slug>/server`; o composition root não importa `plugins/**/src/**`.
+
+### Fronteiras públicas de workspace
+
+Um workspace nunca importa o diretório `src/` de outro workspace, nem por caminho relativo nem por caminho físico bare. Use somente APIs declaradas no `package.json` produtor:
+
+- packages compartilhados por seu nome `@eops/*` e subpaths explicitamente exportados;
+- manifests/client de plugins pelo entrypoint raiz já registrado no frontend;
+- módulos NestJS de plugins pelo subpath público `/server`, somente em `apps/api`.
+
+O build da API materializa os entrypoints server-side consumidos em runtime. A composição continua estática; isso não introduz loader dinâmico, microfrontend ou descoberta de plugins em runtime. Consulte `docs/PLUGIN_ARCHITECTURE.md` para o contrato completo.
 
 ### Contratos
 
@@ -192,7 +202,7 @@ Execute:
 npm run check:boundaries
 ```
 
-para detectar imports diretos entre plugins.
+para detectar imports cross-workspace relativos, acessos físicos a `src/`, subpaths não exportados e imports diretos entre plugins.
 
 ## 7. Home e agregação sem quebrar isolamento
 

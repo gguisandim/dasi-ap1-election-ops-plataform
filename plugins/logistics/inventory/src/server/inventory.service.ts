@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { AssetCondition, AssetStatus, IncidentStatus, Prisma } from "@prisma/client";
-import { PrismaService } from "../../../../../packages/database/src";
-import { EventBus } from "../../../../../packages/event-bus/src";
+import { PrismaService } from "@eops/database";
+import { EventBus } from "@eops/event-bus";
 import { AssetQueryDto, CreateAssetDto, CreateAssetTypeDto, MoveAssetDto, UpdateAssetDto, UpdateAssetTypeDto } from "./dto/asset.dto";
 
 const includeLocation = {

@@ -1,7 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { ConnectivityStatus, TransmissionAttemptResult, TransmissionStatus } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
-import type { PrismaService } from "../../../../../packages/database/src";
+import type { PrismaService } from "@eops/database";
 import { TransmissionService } from "./transmission.service";
 
 const point = { id: "p-1", identification: "TX-001", electionId: "e-1", electoralZoneId: "z-1", pollingPlaceId: "l-1", status: TransmissionStatus.QUEUED, connectivity: ConnectivityStatus.ONLINE, attemptCount: 0, operationalDeadline: null, attempts: [], timeline: [], alerts: [], election: {}, electoralZone: {}, pollingPlace: {} };

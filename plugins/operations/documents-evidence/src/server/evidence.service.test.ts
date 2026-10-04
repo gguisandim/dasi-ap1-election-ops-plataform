@@ -1,8 +1,8 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { EvidenceLinkType, EvidenceStatus, EvidenceType } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
-import type { PrismaService } from "../../../../../packages/database/src";
-import type { EventBus } from "../../../../../packages/event-bus/src";
+import type { PrismaService } from "@eops/database";
+import type { EventBus } from "@eops/event-bus";
 import { EvidenceLinksService } from "./evidence-links.service";
 import { EvidenceService } from "./evidence.service";
 import type { EvidenceTagsService } from "./evidence-tags.service";

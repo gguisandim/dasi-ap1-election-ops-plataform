@@ -1,6 +1,6 @@
 import { AssetCondition, AssetStatus, FailureProbability, IncidentSeverity, SimulationStatus } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
-import type { PrismaService } from "../../../../../packages/database/src";
+import type { PrismaService } from "@eops/database";
 import { SimulatorService } from "./simulator.service";
 
 function simulation(overrides: Record<string, unknown> = {}) {

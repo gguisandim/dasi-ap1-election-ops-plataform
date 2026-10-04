@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { FieldAllocationStatus, FieldCheckType, FieldTeamStatus, MemberAvailability, Prisma } from "@prisma/client";
-import { PrismaService } from "../../../../../packages/database/src";
-import { EventBus } from "../../../../../packages/event-bus/src";
+import { PrismaService } from "@eops/database";
+import { EventBus } from "@eops/event-bus";
 import { CreateAllocationDto, CreateCheckDto, CreateMemberDto, CreateRoleDto, CreateShiftDto, CreateSpecialtyDto, CreateTeamDto, FieldTeamsQueryDto, UpdateCatalogDto, UpdateMemberDto, UpdateTeamDto } from "./dto/field-teams.dto";
 
 const memberInclude = { role: true, specialties: { include: { specialty: true } } } satisfies Prisma.FieldMemberInclude;
