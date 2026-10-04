@@ -4,7 +4,7 @@ export const manifest: PluginManifest = {
   id: "field-teams",
   name: "Equipes de Campo",
   shortName: "Equipes",
-  description: "Pessoal, escalas, alocações e presença operacional.",
+  description: "Pessoal, capacidades, disponibilidade e presença operacional.",
   category: "operations",
   navigationGroup: "field-support",
   navigationIcon: "users",

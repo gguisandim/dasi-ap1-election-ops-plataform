@@ -1,5 +1,19 @@
-import { FieldAllocationStatus, FieldCheckType, FieldTeamStatus, MemberAvailability } from "@prisma/client";
-import { IsArray, IsBoolean, IsDateString, IsEmail, IsEnum, IsOptional, IsString, Length } from "class-validator";
+import {
+  FieldAllocationStatus,
+  FieldCheckType,
+  FieldTeamStatus,
+  MemberAvailability,
+} from "@prisma/client";
+import {
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  Length,
+} from "class-validator";
 
 export class FieldTeamsQueryDto {
   @IsString() @IsOptional() electionId?: string;
@@ -50,13 +64,21 @@ export class UpdateMemberDto {
   @IsEnum(MemberAvailability) @IsOptional() status?: MemberAvailability;
   @IsArray() @IsString({ each: true }) @IsOptional() specialtyIds?: string[];
 }
-export class CreateShiftDto {
-  @IsString() teamId!: string;
-  @IsString() @IsOptional() memberId?: string;
-  @IsString() @IsOptional() electoralZoneId?: string;
-  @IsString() @IsOptional() pollingPlaceId?: string;
+export class AvailabilityQueryDto {
+  @IsString() @IsOptional() teamId?: string;
+  @IsDateString() @IsOptional() startsAt?: string;
+  @IsDateString() @IsOptional() endsAt?: string;
+}
+export class CreateUnavailabilityDto {
   @IsDateString() startsAt!: string;
   @IsDateString() endsAt!: string;
+  @IsString() @Length(2, 160) reason!: string;
+  @IsString() @IsOptional() notes?: string;
+}
+export class UpdateUnavailabilityDto {
+  @IsDateString() @IsOptional() startsAt?: string;
+  @IsDateString() @IsOptional() endsAt?: string;
+  @IsString() @Length(2, 160) @IsOptional() reason?: string;
   @IsString() @IsOptional() notes?: string;
 }
 export class CreateAllocationDto {

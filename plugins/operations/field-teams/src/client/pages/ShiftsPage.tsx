@@ -1,13 +1,67 @@
-import { useState, type FormEvent } from "react";
-import { Button, Card, ErrorState, Field, Input, Select, useAsync } from "@eops/ui";
-import { FieldNav } from "../components/FieldNav";
+import {
+  Card,
+  EmptyState,
+  ErrorState,
+  LinkButton,
+  Loading,
+  useAsync,
+} from "@eops/ui";
 import { fieldTeamsService } from "../services/fieldTeamsService";
+import { FieldNav } from "../components/FieldNav";
 import styles from "../styles/fieldTeams.module.css";
 
 export function ShiftsPage() {
-  const shifts = useAsync(fieldTeamsService.shifts, []); const teams = useAsync(fieldTeamsService.teams, []); const members = useAsync(fieldTeamsService.members, []); const references = useAsync(fieldTeamsService.references, []);
-  const [form, setForm] = useState({ teamId: "", memberId: "", electoralZoneId: "", pollingPlaceId: "", startsAt: "", endsAt: "", notes: "" }); const [error, setError] = useState<Error>();
-  const teamMembers = members.data?.filter((item) => item.teamId === form.teamId) ?? []; const places = references.data?.places.filter((item) => !form.electoralZoneId || item.electoralZoneId === form.electoralZoneId) ?? [];
-  async function submit(event: FormEvent) { event.preventDefault(); try { await fieldTeamsService.createShift({ ...form, memberId: form.memberId || undefined, electoralZoneId: form.electoralZoneId || undefined, pollingPlaceId: form.pollingPlaceId || undefined, startsAt: new Date(form.startsAt).toISOString(), endsAt: new Date(form.endsAt).toISOString(), notes: form.notes || undefined }); setForm({ teamId: "", memberId: "", electoralZoneId: "", pollingPlaceId: "", startsAt: "", endsAt: "", notes: "" }); shifts.reload(); } catch (reason) { setError(reason instanceof Error ? reason : new Error("Falha ao criar turno.")); } }
-  return <section className={styles.page}><FieldNav /><header className={styles.header}><div><span>ESCALAS</span><h1>Turnos operacionais</h1><p>Visualização diária por equipe, membro e local.</p></div></header>{error && <ErrorState error={error} />}<div className={styles.columns}><Card><h2>Novo turno</h2><form className={styles.form} onSubmit={submit}><Field label="Equipe"><Select required value={form.teamId} onChange={(event) => setForm((value) => ({ ...value, teamId: event.target.value, memberId: "" }))}><option value="">Selecione</option>{teams.data?.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select></Field><Field label="Membro (opcional)"><Select value={form.memberId} onChange={(event) => setForm((value) => ({ ...value, memberId: event.target.value }))}><option value="">Equipe completa</option>{teamMembers.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select></Field><Field label="Zona"><Select value={form.electoralZoneId} onChange={(event) => setForm((value) => ({ ...value, electoralZoneId: event.target.value, pollingPlaceId: "" }))}><option value="">Sem zona</option>{references.data?.zones.map((item) => <option key={item.id} value={item.id}>Zona {item.number} · {item.name}</option>)}</Select></Field><Field label="Local"><Select value={form.pollingPlaceId} onChange={(event) => setForm((value) => ({ ...value, pollingPlaceId: event.target.value }))}><option value="">Sem local</option>{places.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select></Field><Field label="Início"><Input required type="datetime-local" value={form.startsAt} onChange={(event) => setForm((value) => ({ ...value, startsAt: event.target.value }))} /></Field><Field label="Fim"><Input required type="datetime-local" value={form.endsAt} onChange={(event) => setForm((value) => ({ ...value, endsAt: event.target.value }))} /></Field><Field label="Observação"><Input value={form.notes} onChange={(event) => setForm((value) => ({ ...value, notes: event.target.value }))} /></Field><Button type="submit">Criar turno</Button></form></Card><Card><h2>Agenda</h2><div className={styles.schedule}>{shifts.data?.map((shift) => <article key={shift.id}><time>{new Date(shift.startsAt).toLocaleDateString("pt-BR")}<strong>{new Date(shift.startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}–{new Date(shift.endsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</strong></time><div><strong>{shift.team.name}</strong><span>{shift.member?.name ?? "Equipe completa"}</span><small>{shift.pollingPlace?.name ?? (shift.electoralZone ? `Zona ${shift.electoralZone.number}` : "Sem local definido")}</small></div></article>)}</div></Card></div></section>;
+  const now = new Date();
+  const end = new Date(now.getTime() + 7 * 86400000);
+  const shifts = useAsync(
+    () =>
+      fieldTeamsService.upcomingShifts({
+        startsFrom: now.toISOString(),
+        startsTo: end.toISOString(),
+      }),
+    [],
+  );
+  return (
+    <section className={styles.page}>
+      <FieldNav />
+      <header className={styles.header}>
+        <div>
+          <span>CONTRATO READ-ONLY</span>
+          <h1>Próximos turnos</h1>
+          <p>Shifts é o owner de criação, assignments e lifecycle.</p>
+        </div>
+        <LinkButton to="/shifts/calendar">
+          Abrir calendário de Shifts
+        </LinkButton>
+      </header>
+      {shifts.loading && <Loading label="Carregando turnos…" />}
+      {shifts.error && (
+        <ErrorState error={shifts.error} onRetry={shifts.reload} />
+      )}
+      {shifts.data?.length === 0 && (
+        <EmptyState
+          title="Nenhum turno nos próximos sete dias"
+          description="Crie e administre turnos no módulo Escalas e Turnos."
+        />
+      )}
+      {!!shifts.data?.length && (
+        <Card>
+          <div className={styles.schedule}>
+            {shifts.data.map((shift) => (
+              <article key={shift.id}>
+                <time>{new Date(shift.startsAt).toLocaleString("pt-BR")}</time>
+                <div>
+                  <strong>{shift.name ?? "Turno operacional"}</strong>
+                  <span>
+                    {shift.coverage.availableOperators}/
+                    {shift.requiredOperators} pessoas · {shift.coverage.state}
+                  </span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </Card>
+      )}
+    </section>
+  );
 }
