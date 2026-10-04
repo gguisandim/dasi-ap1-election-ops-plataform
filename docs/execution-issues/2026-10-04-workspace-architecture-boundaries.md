@@ -95,3 +95,9 @@ not-actionable
 ### Decisão e reavaliação
 
 Corrigir o trailer do commit existente exigiria reescrever histórico publicado, ação fora do escopo e explicitamente não autorizada. O checker deve continuar reportando a divergência; reavaliar somente se houver política e autorização específicas para migração do histórico.
+
+### Reconciliação em 2026-10-04
+
+`git show -s --format=%B 10fe72b` mostra as linhas `Agent: codex/model-unavailable` e `Spec: SPEC/2026-10-04-spec-traceability-enforcement.md`, mas elas estão separadas por uma linha em branco. Pelas regras do Git, somente o bloco terminal é interpretado como trailers; `git interpret-trailers --parse` retorna apenas `Spec:`. Por isso, `npm run spec:check -- 10fe72b` continua falhando com `expected exactly one Agent trailer, found 0`.
+
+A SPEC do checker exige extração do bloco final segundo as regras do Git, portanto não há defeito no checker a corrigir. O estado permanece `not-actionable`: a condição é histórica, sua correção exigiria reescrita não autorizada e ela não bloqueia novos commits ou o desenvolvimento dos plugins.

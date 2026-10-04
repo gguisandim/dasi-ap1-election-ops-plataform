@@ -16,6 +16,12 @@
 - Fora de escopo: `<lista curta>`
 - Restrições e contratos: `<itens essenciais>`
 
+## Execution Issues Preflight
+
+| Issue | Estado inicial | Classificação |
+| --- | --- | --- |
+| `<issue relevante>` | `open | partially-resolved | resolved | accepted-risk | not-actionable` | `BLOCKS_CURRENT_TASK | RELATED_NON_BLOCKING | OUT_OF_SCOPE` |
+
 ## Aceite e validação
 
 - Critérios: `<resultados verificáveis>`
@@ -30,4 +36,9 @@ SPEC Gate: <classificação>
 SPEC: <caminho ou justificativa>
 Evidence: <commits, arquivos, comandos e resultados>
 Deviations: <nenhuma ou lista objetiva>
+```
+
+```text
+EXECUTION ISSUES RECONCILIATION
+| Issue | Antes | Depois | Ação | Evidência | Bloqueia próxima fase? |
 ```

@@ -107,8 +107,8 @@ Decidir explicitamente se esses artefatos devem sair do histórico corrente. Se 
 
 ### Estado
 
-open
+resolved
 
 ### Decisão e reavaliação
 
-Reavaliar após limpeza autorizada do workspace. Esta falha deve continuar explícita no handoff atual.
+Em 2026-10-04, a remoção foi autorizada após auditoria. `test-results/.last-run.json` continha somente estado gerado de testes, e `backup-security-runtime-20261001-041211/` era uma cópia local antiga e incompleta de `packages/security`, sem consumidores. Ambos já estavam cobertos pelo `.gitignore` e foram removidos do índice e do worktree com `git rm -r`. `powershell -ExecutionPolicy Bypass -File scripts/check-ap1.ps1` passou após a limpeza. A causa estrutural foi eliminada; reabrir somente se artefatos equivalentes voltarem a ser versionados.

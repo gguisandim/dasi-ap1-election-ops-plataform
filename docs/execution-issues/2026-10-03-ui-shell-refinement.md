@@ -62,6 +62,8 @@ open
 
 O issue permanece `open`: não houve aceitação explícita do risco e a correção sugerida pelo npm é destrutiva/incompatível para esta tarefa. Reavaliar em uma tarefa própria de dependências quando houver versão compatível do Prisma/@prisma/config ou plano de validação de migrations, geração do client, API, testes e build.
 
+Revalidação em 2026-10-04 confirmou a mesma cadeia (`prisma@6.19.3` → `@prisma/config@6.19.3` → `deepmerge-ts@7.1.5`) e três vulnerabilidades altas. Trata-se de dependência transitiva conhecida; permanece `open`, classificada como `RELATED_NON_BLOCKING`, e não bloqueia a próxima fase de desenvolvimento funcional dos plugins.
+
 ---
 
 ## ISSUE-002

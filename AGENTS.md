@@ -86,6 +86,8 @@ Toda entrega de implementação deve incluir `SPEC COMPLIANCE` com resultado `PA
 
 Problemas estruturais encontrados durante uma tarefa devem seguir `docs/execution-issues/README.md`. Registre divergências relevantes de prompt, SPEC, guides, repositório, ambiente, dependências ou validação; não esconda falhas. Não registre debugging trivial ou erros intermediários corrigidos na própria execução.
 
+Antes de implementação material, classifique os execution issues relevantes como `BLOCKS_CURRENT_TASK`, `RELATED_NON_BLOCKING` ou `OUT_OF_SCOPE`. Todo handoff material deve conter `EXECUTION ISSUES RECONCILIATION`, comparando estado anterior e final, ação, evidência e impacto na próxima fase. A definição normativa e o formato canônico permanecem centralizados em `docs/execution-issues/README.md`.
+
 
 ## Commits e rastreabilidade
 

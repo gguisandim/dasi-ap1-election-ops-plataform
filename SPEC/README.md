@@ -123,6 +123,8 @@ Deviations: <nenhuma ou lista objetiva>
 - `FAIL`: requisito aplicável não foi atendido ou validação necessária falhou;
 - `N/A`: somente para tarefa legitimamente isenta ou sem implementação.
 
+Quando houver execution issues relevantes, o handoff também deve incluir o preflight e a reconciliação definidos em `docs/execution-issues/README.md`. Esse diagnóstico complementa `SPEC COMPLIANCE` e não altera sua classificação.
+
 ## Material retroativo existente
 
 As SPECs reconstruídas em 2026-10-01 a partir de código e request logs são retroativas. Elas não devem ser usadas para alegar que antecederam commits já realizados.
