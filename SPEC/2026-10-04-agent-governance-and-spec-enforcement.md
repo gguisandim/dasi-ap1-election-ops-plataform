@@ -2,7 +2,7 @@
 
 ## Status
 
-`proposed`
+`approved`
 
 ## Contexto
 
@@ -31,6 +31,8 @@ Sem um gate obrigatório e uma hierarquia documental inequívoca, agentes podem:
 - tornar o fluxo compatível com diferentes agentes sem duplicar regras por ferramenta;
 - exigir um diagnóstico `SPEC COMPLIANCE` no handoff final;
 - auditar a rastreabilidade do módulo Passagem de Turno e os execution issues existentes.
+- exigir preflight e reconciliação explícitos dos execution issues relevantes em toda execução material;
+- tornar o handoff capaz de distinguir issues resolvidos, não bloqueantes e fora de escopo sem transformar toda pendência em blocker.
 
 ## Escopo
 
@@ -43,6 +45,9 @@ Sem um gate obrigatório e uma hierarquia documental inequívoca, agentes podem:
 - auditoria documental de `docs/modules/shift-handover.md`, `SPEC/` e `prompts/sessoes/`;
 - verificação da árvore de dependências associada ao issue conhecido de Prisma/deepmerge-ts;
 - definição do handoff de conformidade com SPEC.
+- reconciliação dos issues ativos ou historicamente não acionáveis relevantes à execução;
+- saneamento controlado de artefatos versionados que impedem `check-ap1.ps1`;
+- verificação objetiva da rastreabilidade do commit `10fe72b` sem reescrita de histórico.
 
 ## Fora de escopo
 
@@ -64,6 +69,33 @@ Sem um gate obrigatório e uma hierarquia documental inequívoca, agentes podem:
 6. Se os requisitos mudarem materialmente durante a execução, atualizar e commitar a SPEC antes de continuar a implementação afetada.
 7. Não usar documentação descritiva, prompt ou código existente para alegar que uma SPEC normativa antecedeu uma implementação antiga.
 8. Encerrar a tarefa com `SPEC COMPLIANCE`, evidências de validação e execution issues relevantes.
+
+## Execution Issues Preflight
+
+Antes da implementação material, cada execution issue relevante deve ser classificado em exatamente uma categoria operacional:
+
+- `BLOCKS_CURRENT_TASK`: afeta correção, segurança aplicável, integridade arquitetural, validação necessária, SPEC aplicável ou dados indispensáveis. A implementação material não prossegue até resolução ou orientação explícita;
+- `RELATED_NON_BLOCKING`: relaciona-se à tarefa e deve aparecer no handoff, mas não impede sua execução segura;
+- `OUT_OF_SCOPE`: é real e permanece preservado, porém não deve ser resolvido incidentalmente nem bloquear a tarefa atual.
+
+Um estado persistente como `open` não implica automaticamente `BLOCKS_CURRENT_TASK`. A classificação operacional considera o impacto concreto na execução atual.
+
+## Execution Issue Reconciliation
+
+Toda execução material deve terminar com uma reconciliação explícita dos issues relevantes, contendo pelo menos:
+
+| Campo | Conteúdo obrigatório |
+| --- | --- |
+| Issue | identificação estável ou descrição inequívoca |
+| Estado antes | estado registrado no início da execução |
+| Estado depois | estado verificável ao final |
+| Ação executada | correção, preservação ou ausência justificada de ação |
+| Evidência | comando, arquivo ou resultado verificável |
+| Bloqueia próxima fase? | `sim` ou `não`, com escopo quando necessário |
+
+Um issue somente pode ser marcado como `resolved` quando há evidência de que a causa estrutural foi corrigida ou de que o estado verificável atual elimina a condição registrada. Ausência de nova ocorrência, falha não reproduzida sem investigação ou falta de impacto na tarefa não bastam para resolução.
+
+Issues históricos permanecem registrados. A reconciliação atualiza decisão e evidência sem apagar o relato original.
 
 ## SPEC Gate
 
@@ -198,6 +230,16 @@ Semântica:
 - `FAIL`: requisito aplicável não foi atendido ou validação necessária falhou;
 - `N/A`: somente quando a tarefa for legitimamente `SPEC_EXEMPT` ou não envolver implementação.
 
+## Execution issues no handoff
+
+Além de `SPEC COMPLIANCE`, toda execução material deve incluir a seção `EXECUTION ISSUES RECONCILIATION` em tabela equivalente a:
+
+```text
+| Issue | Antes | Depois | Ação | Evidência | Bloqueia próxima fase? |
+```
+
+O handoff deve declarar separadamente o gate da próxima fase quando a tarefa definir um. Issues `RELATED_NON_BLOCKING` e `OUT_OF_SCOPE` podem permanecer `open` sem tornar o gate bloqueado, desde que essa decisão e sua evidência estejam explícitas.
+
 ## Critérios de aceite
 
 1. O `SPEC Gate` está definido de forma consistente em `AGENTS.md`, `SPEC/README.md` e `docs/AI-PLUGIN-GUIDE.md`.
@@ -214,6 +256,12 @@ Semântica:
 12. O handoff `SPEC COMPLIANCE` está documentado com estados e evidências obrigatórias.
 13. Nenhum script ou job de enforcement automático é criado nesta entrega.
 14. Nenhuma funcionalidade de produto, banco, frontend ou plugin é alterada.
+15. O protocolo exige `EXECUTION ISSUES PREFLIGHT` com as classificações `BLOCKS_CURRENT_TASK`, `RELATED_NON_BLOCKING` e `OUT_OF_SCOPE`.
+16. O handoff de execução material exige `EXECUTION ISSUES RECONCILIATION` com estado anterior, estado final, ação, evidência e impacto na próxima fase.
+17. A regra de honestidade impede resolver issue sem correção estrutural ou evidência verificável da eliminação da condição.
+18. O issue dos artefatos AP1 é resolvido somente após remoção controlada dos artefatos descartáveis e `check-ap1.ps1` aprovado.
+19. A inconsistência de `10fe72b` é reconciliada pelo conteúdo atual do commit e pelo resultado de `spec:check`, sem modificar histórico.
+20. Issues de Prisma, Shift Handover e limitações históricas recebem classificação operacional explícita sem bloquear genericamente o desenvolvimento de plugins.
 
 ## Validação
 
@@ -224,3 +272,6 @@ Semântica:
 - executar `npm audit` e `npm ls deepmerge-ts` somente para reproduzir o issue de dependência;
 - registrar comandos não executados ou dependentes de infraestrutura sem inventar sucesso;
 - revisar o diff final para confirmar que não há mudanças de produto, automação de CI ou scripts de enforcement.
+- executar `npm run spec:check -- 10fe72b` e registrar os trailers observados;
+- executar `powershell -ExecutionPolicy Bypass -File scripts/check-ap1.ps1` após a limpeza controlada;
+- apresentar a reconciliação dos execution issues e o gate explícito para a próxima fase.
