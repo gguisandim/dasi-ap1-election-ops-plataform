@@ -3,6 +3,7 @@ import { NotificationType, UserStatus } from "@prisma/client";
 
 import {
   EventBus,
+  requiredPermissionForEvent,
   type DomainEvent,
   type DomainEventName,
 } from "@eops/event-bus";
@@ -10,8 +11,17 @@ import { PrismaService } from "@eops/database";
 
 const names = [
   "incident.created",
+  "incident.updated",
+  "incident.acknowledged",
   "incident.assigned",
+  "incident.status_changed",
+  "incident.severity_changed",
+  "incident.escalated",
+  "incident.comment_added",
   "incident.resolved",
+  "incident.reopened",
+  "incident.closed",
+  "incident.cancelled",
   "asset.created",
   "asset.moved",
   "asset.status_changed",
@@ -96,6 +106,78 @@ function content(
         title: "Incidente resolvido",
         message: `${"code" in payload ? payload.code : "Incidente"} foi resolvido.`,
         type: NotificationType.SUCCESS,
+        entityType: "Incident",
+      };
+
+    case "incident.updated":
+      return {
+        title: "Incidente atualizado",
+        message: `${"code" in payload ? payload.code : "Incidente"} teve seus dados atualizados.`,
+        type: NotificationType.INFO,
+        entityType: "Incident",
+      };
+
+    case "incident.acknowledged":
+      return {
+        title: "Incidente reconhecido",
+        message: `${"code" in payload ? payload.code : "Incidente"} foi reconhecido por um operador.`,
+        type: NotificationType.INFO,
+        entityType: "Incident",
+      };
+
+    case "incident.status_changed":
+      return {
+        title: "Status de incidente alterado",
+        message: `${"code" in payload ? payload.code : "Incidente"} mudou para ${"to" in payload ? payload.to : "novo status"}.`,
+        type: NotificationType.INFO,
+        entityType: "Incident",
+      };
+
+    case "incident.severity_changed":
+      return {
+        title: "Severidade de incidente alterada",
+        message: `${"code" in payload ? payload.code : "Incidente"} mudou para ${"to" in payload ? payload.to : "nova severidade"}.`,
+        type: "to" in payload && payload.to === "CRITICAL" ? NotificationType.CRITICAL : NotificationType.WARNING,
+        entityType: "Incident",
+      };
+
+    case "incident.escalated":
+      return {
+        title: "Incidente escalado",
+        message: `${"code" in payload ? payload.code : "Incidente"} foi escalado para o nível ${"to" in payload ? payload.to : "superior"}.`,
+        type: NotificationType.CRITICAL,
+        entityType: "Incident",
+      };
+
+    case "incident.comment_added":
+      return {
+        title: "Novo comentário em incidente",
+        message: `${"code" in payload ? payload.code : "Incidente"} recebeu um comentário operacional.`,
+        type: NotificationType.INFO,
+        entityType: "Incident",
+      };
+
+    case "incident.reopened":
+      return {
+        title: "Incidente reaberto",
+        message: `${"code" in payload ? payload.code : "Incidente"} retornou ao atendimento.`,
+        type: NotificationType.WARNING,
+        entityType: "Incident",
+      };
+
+    case "incident.closed":
+      return {
+        title: "Incidente fechado",
+        message: `${"code" in payload ? payload.code : "Incidente"} foi encerrado.`,
+        type: NotificationType.SUCCESS,
+        entityType: "Incident",
+      };
+
+    case "incident.cancelled":
+      return {
+        title: "Incidente cancelado",
+        message: `${"code" in payload ? payload.code : "Incidente"} foi cancelado.`,
+        type: NotificationType.WARNING,
         entityType: "Incident",
       };
 
@@ -497,9 +579,20 @@ export class NotificationSubscriber implements OnModuleInit {
   }
 
   private async handle(event: DomainEvent<SubscribedEventName>) {
+    const requiredPermission = requiredPermissionForEvent(event.name);
+    if (!requiredPermission) return;
     const users = await this.prisma.user.findMany({
       where: {
         status: UserStatus.ACTIVE,
+        roles: {
+          some: {
+            role: {
+              permissions: {
+                some: { permission: { key: requiredPermission } },
+              },
+            },
+          },
+        },
         notificationPreferences: {
           none: { eventName: event.name, enabled: false },
         },
