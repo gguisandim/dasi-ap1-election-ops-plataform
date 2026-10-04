@@ -18,7 +18,9 @@ function runGit(args, { cwd, input } = {}) {
     });
   } catch (error) {
     const detail = String(error.stderr || error.message || error).trim();
-    throw new Error(`git ${args.join(" ")} failed${detail ? `: ${detail}` : ""}`);
+    throw new Error(
+      `git ${args.join(" ")} failed${detail ? `: ${detail}` : ""}`,
+    );
   }
 }
 
@@ -27,7 +29,10 @@ function parseCommitType(subject) {
 }
 
 function parseTrailers(message, cwd) {
-  const parsed = runGit(["interpret-trailers", "--parse"], { cwd, input: message });
+  const parsed = runGit(["interpret-trailers", "--parse"], {
+    cwd,
+    input: message,
+  });
   const trailers = new Map();
 
   for (const line of parsed.split(/\r?\n/)) {
@@ -55,7 +60,10 @@ function isValidSpecPath(specPath) {
   if (path.posix.normalize(specPath) !== specPath) return false;
 
   const segments = specPath.split("/");
-  return segments.length >= 2 && segments.every((segment) => segment && segment !== "." && segment !== "..");
+  return (
+    segments.length >= 2 &&
+    segments.every((segment) => segment && segment !== "." && segment !== "..")
+  );
 }
 
 function objectExists(cwd, objectName) {
@@ -77,18 +85,26 @@ function resolveCommits(cwd, revision) {
     return output ? output.split(/\r?\n/) : [];
   }
 
-  return [runGit(["rev-parse", "--verify", `${revision}^{commit}`], { cwd }).trim()];
+  return [
+    runGit(["rev-parse", "--verify", `${revision}^{commit}`], { cwd }).trim(),
+  ];
 }
 
 function inspectCommit(cwd, commit) {
   const subject = runGit(["show", "-s", "--format=%s", commit], { cwd }).trim();
   const message = runGit(["show", "-s", "--format=%B", commit], { cwd });
-  const parents = runGit(["show", "-s", "--format=%P", commit], { cwd }).trim().split(/\s+/).filter(Boolean);
+  const parents = runGit(["show", "-s", "--format=%P", commit], { cwd })
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
   const type = parseCommitType(subject);
   const trailers = parseTrailers(message, cwd);
-  const hasKnownTrailer = [...KNOWN_TRAILERS].some((key) => trailerValues(trailers, key).length > 0);
+  const hasKnownTrailer = [...KNOWN_TRAILERS].some(
+    (key) => trailerValues(trailers, key).length > 0,
+  );
   const isMerge = parents.length > 1;
-  const policyApplies = (REQUIRED_TYPES.has(type) && !isMerge) || hasKnownTrailer;
+  const policyApplies =
+    (REQUIRED_TYPES.has(type) && !isMerge) || hasKnownTrailer;
   const violations = [];
 
   if (!policyApplies) return { commit, subject, violations };
@@ -98,13 +114,19 @@ function inspectCommit(cwd, commit) {
   const reasonValues = trailerValues(trailers, "Spec-Exempt-Reason");
 
   if (agentValues.length !== 1) {
-    violations.push(`expected exactly one Agent trailer, found ${agentValues.length}`);
+    violations.push(
+      `expected exactly one Agent trailer, found ${agentValues.length}`,
+    );
   } else if (!AGENT_PATTERN.test(agentValues[0])) {
-    violations.push(`invalid Agent trailer value: ${JSON.stringify(agentValues[0])}`);
+    violations.push(
+      `invalid Agent trailer value: ${JSON.stringify(agentValues[0])}`,
+    );
   }
 
   if (specValues.length !== 1) {
-    violations.push(`expected exactly one Spec trailer, found ${specValues.length}`);
+    violations.push(
+      `expected exactly one Spec trailer, found ${specValues.length}`,
+    );
     if (reasonValues.length > 0) {
       violations.push("Spec-Exempt-Reason requires Spec: EXEMPT");
     }
@@ -114,7 +136,9 @@ function inspectCommit(cwd, commit) {
   const specValue = specValues[0];
   if (specValue === "EXEMPT") {
     if (reasonValues.length !== 1 || !reasonValues[0]?.trim()) {
-      violations.push(`Spec: EXEMPT requires exactly one non-empty Spec-Exempt-Reason trailer`);
+      violations.push(
+        `Spec: EXEMPT requires exactly one non-empty Spec-Exempt-Reason trailer`,
+      );
     }
     return { commit, subject, violations };
   }
@@ -124,7 +148,9 @@ function inspectCommit(cwd, commit) {
   }
 
   if (!isValidSpecPath(specValue)) {
-    violations.push(`invalid Spec path ${JSON.stringify(specValue)}; expected SPEC/<file>.md`);
+    violations.push(
+      `invalid Spec path ${JSON.stringify(specValue)}; expected SPEC/<file>.md`,
+    );
     return { commit, subject, violations };
   }
 
@@ -133,18 +159,34 @@ function inspectCommit(cwd, commit) {
   }
 
   const firstParent = parents[0];
+  const isSelfIntroducingSpec =
+    type === "docs" &&
+    subject.startsWith("docs(spec):") &&
+    objectExists(cwd, `${commit}:${specValue}`);
   if (!firstParent) {
-    violations.push(`referenced SPEC has no prior commit: ${specValue}`);
-  } else if (!objectExists(cwd, `${firstParent}:${specValue}`)) {
-    violations.push(`referenced SPEC did not exist in the first parent: ${specValue}`);
+    if (!isSelfIntroducingSpec)
+      violations.push(`referenced SPEC has no prior commit: ${specValue}`);
+  } else if (
+    !objectExists(cwd, `${firstParent}:${specValue}`) &&
+    !isSelfIntroducingSpec
+  ) {
+    violations.push(
+      `referenced SPEC did not exist in the first parent: ${specValue}`,
+    );
   }
 
   return { commit, subject, violations };
 }
 
-export function checkRepository({ cwd = process.cwd(), revision = "HEAD" } = {}) {
-  const insideWorkTree = runGit(["rev-parse", "--is-inside-work-tree"], { cwd }).trim();
-  if (insideWorkTree !== "true") throw new Error("current directory is not inside a Git work tree");
+export function checkRepository({
+  cwd = process.cwd(),
+  revision = "HEAD",
+} = {}) {
+  const insideWorkTree = runGit(["rev-parse", "--is-inside-work-tree"], {
+    cwd,
+  }).trim();
+  if (insideWorkTree !== "true")
+    throw new Error("current directory is not inside a Git work tree");
 
   const commits = resolveCommits(cwd, revision);
   const results = commits.map((commit) => inspectCommit(cwd, commit));
@@ -156,7 +198,12 @@ export function checkRepository({ cwd = process.cwd(), revision = "HEAD" } = {})
     })),
   );
 
-  return { revision, checked: commits.length, violations, ok: violations.length === 0 };
+  return {
+    revision,
+    checked: commits.length,
+    violations,
+    ok: violations.length === 0,
+  };
 }
 
 function formatViolation(violation) {
@@ -178,7 +225,9 @@ export function main(argv = process.argv.slice(2)) {
       return 1;
     }
 
-    console.log(`SPEC traceability OK: ${result.checked} commit(s) checked for ${result.revision}.`);
+    console.log(
+      `SPEC traceability OK: ${result.checked} commit(s) checked for ${result.revision}.`,
+    );
     return 0;
   } catch (error) {
     console.error(`SPEC traceability could not run: ${error.message}`);
@@ -186,7 +235,9 @@ export function main(argv = process.argv.slice(2)) {
   }
 }
 
-const entryPoint = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : null;
+const entryPoint = process.argv[1]
+  ? pathToFileURL(path.resolve(process.argv[1])).href
+  : null;
 if (entryPoint === import.meta.url) {
   process.exitCode = main();
 }

@@ -49,7 +49,11 @@ function addSpec(cwd, name = "feature.md") {
 
 afterEach(async () => {
   const { rm } = await import("node:fs/promises");
-  await Promise.all(repositories.splice(0).map((repository) => rm(repository, { recursive: true, force: true })));
+  await Promise.all(
+    repositories
+      .splice(0)
+      .map((repository) => rm(repository, { recursive: true, force: true })),
+  );
 });
 
 describe("check-spec-traceability", { timeout: 15_000 }, () => {
@@ -57,20 +61,49 @@ describe("check-spec-traceability", { timeout: 15_000 }, () => {
     const cwd = createRepository();
     const specPath = addSpec(cwd);
     write(cwd, "feature.txt", "implemented\n");
-    commit(cwd, `feat(core): add fixture\n\nAgent: codex/gpt-5\nSpec: ${specPath}`);
+    commit(
+      cwd,
+      `feat(core): add fixture\n\nAgent: codex/gpt-5\nSpec: ${specPath}`,
+    );
 
-    expect(checkRepository({ cwd })).toMatchObject({ ok: true, checked: 1, violations: [] });
+    expect(checkRepository({ cwd })).toMatchObject({
+      ok: true,
+      checked: 1,
+      violations: [],
+    });
   });
 
   it("rejects a SPEC introduced in the implementation commit", () => {
     const cwd = createRepository();
     write(cwd, "SPEC/feature.md", "# Fixture SPEC\n");
     write(cwd, "feature.txt", "implemented\n");
-    commit(cwd, "feat(core): add fixture\n\nAgent: codex/gpt-5\nSpec: SPEC/feature.md");
+    commit(
+      cwd,
+      "feat(core): add fixture\n\nAgent: codex/gpt-5\nSpec: SPEC/feature.md",
+    );
 
     const result = checkRepository({ cwd });
     expect(result.ok).toBe(false);
-    expect(result.violations.some(({ message }) => message.includes("did not exist in the first parent"))).toBe(true);
+    expect(
+      result.violations.some(({ message }) =>
+        message.includes("did not exist in the first parent"),
+      ),
+    ).toBe(true);
+  });
+
+  it("accepts a docs(spec) commit that introduces its referenced SPEC", () => {
+    const cwd = createRepository();
+    write(cwd, "SPEC/workforce.md", "# Workforce SPEC\n");
+    commit(
+      cwd,
+      "docs(spec): define workforce\n\nAgent: codex/gpt-5\nSpec: SPEC/workforce.md",
+    );
+
+    expect(checkRepository({ cwd })).toMatchObject({
+      ok: true,
+      checked: 1,
+      violations: [],
+    });
   });
 
   it("rejects a required commit without Agent", () => {
@@ -80,7 +113,11 @@ describe("check-spec-traceability", { timeout: 15_000 }, () => {
     commit(cwd, `fix(core): repair fixture\n\nSpec: ${specPath}`);
 
     const result = checkRepository({ cwd });
-    expect(result.violations.some(({ message }) => message.includes("Agent trailer"))).toBe(true);
+    expect(
+      result.violations.some(({ message }) =>
+        message.includes("Agent trailer"),
+      ),
+    ).toBe(true);
   });
 
   it("requires a reason for Spec: EXEMPT", () => {
@@ -89,7 +126,11 @@ describe("check-spec-traceability", { timeout: 15_000 }, () => {
     commit(cwd, "refactor(core): adjust fixture\n\nAgent: human\nSpec: EXEMPT");
 
     const result = checkRepository({ cwd });
-    expect(result.violations.some(({ message }) => message.includes("Spec-Exempt-Reason"))).toBe(true);
+    expect(
+      result.violations.some(({ message }) =>
+        message.includes("Spec-Exempt-Reason"),
+      ),
+    ).toBe(true);
   });
 
   it("accepts a justified exemption", () => {
@@ -116,10 +157,17 @@ describe("check-spec-traceability", { timeout: 15_000 }, () => {
     write(cwd, "docs/modules/feature.md", "# Not a SPEC\n");
     commit(cwd, "docs: add module document");
     write(cwd, "feature.txt", "implemented\n");
-    commit(cwd, "feat(core): add fixture\n\nAgent: claude/sonnet\nSpec: docs/modules/feature.md");
+    commit(
+      cwd,
+      "feat(core): add fixture\n\nAgent: claude/sonnet\nSpec: docs/modules/feature.md",
+    );
 
     const result = checkRepository({ cwd });
-    expect(result.violations.some(({ message }) => message.includes("invalid Spec path"))).toBe(true);
+    expect(
+      result.violations.some(({ message }) =>
+        message.includes("invalid Spec path"),
+      ),
+    ).toBe(true);
   });
 
   it("rejects duplicate policy trailers", () => {
@@ -132,7 +180,11 @@ describe("check-spec-traceability", { timeout: 15_000 }, () => {
     );
 
     const result = checkRepository({ cwd });
-    expect(result.violations.some(({ message }) => message.includes("exactly one Agent trailer, found 2"))).toBe(true);
+    expect(
+      result.violations.some(({ message }) =>
+        message.includes("exactly one Agent trailer, found 2"),
+      ),
+    ).toBe(true);
   });
 
   it("exempts merge commits even when their title uses a required type", () => {
@@ -144,9 +196,20 @@ describe("check-spec-traceability", { timeout: 15_000 }, () => {
     git(cwd, ["checkout", "--quiet", mainBranch]);
     write(cwd, "main.txt", "main\n");
     commit(cwd, "docs: update fixture main");
-    git(cwd, ["merge", "--no-ff", "--quiet", "-m", "feat(core): merge fixture", "fixture-branch"]);
+    git(cwd, [
+      "merge",
+      "--no-ff",
+      "--quiet",
+      "-m",
+      "feat(core): merge fixture",
+      "fixture-branch",
+    ]);
 
-    expect(checkRepository({ cwd })).toMatchObject({ ok: true, checked: 1, violations: [] });
+    expect(checkRepository({ cwd })).toMatchObject({
+      ok: true,
+      checked: 1,
+      violations: [],
+    });
   });
 
   it("checks each commit in an explicit range", () => {
@@ -154,7 +217,10 @@ describe("check-spec-traceability", { timeout: 15_000 }, () => {
     const base = git(cwd, ["rev-parse", "HEAD"]);
     const specPath = addSpec(cwd, "range.md");
     write(cwd, "feature.txt", "implemented\n");
-    commit(cwd, `feat(core): add range fixture\n\nAgent: human\nSpec: ${specPath}`);
+    commit(
+      cwd,
+      `feat(core): add range fixture\n\nAgent: human\nSpec: ${specPath}`,
+    );
 
     const result = checkRepository({ cwd, revision: `${base}..HEAD` });
     expect(result).toMatchObject({ ok: true, checked: 2 });
