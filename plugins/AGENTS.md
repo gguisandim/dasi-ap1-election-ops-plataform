@@ -4,7 +4,7 @@ Plugins são unidades autônomas de domínio. Trabalhe localmente e preserve a f
 
 ## Leia primeiro
 
-1. a SPEC relevante;
+1. classifique o SPEC Gate conforme `SPEC/README.md` e leia a SPEC relevante;
 2. `docs/AI-PLUGIN-GUIDE.md`;
 3. `docs/COMMIT-GUIDE.md`;
 4. a pasta do plugin alvo;
@@ -12,6 +12,8 @@ Plugins são unidades autônomas de domínio. Trabalhe localmente e preserve a f
 6. packages compartilhados realmente importados pelo plugin.
 
 Não percorra todos os plugins para “entender o sistema”. Se precisar de padrão estrutural, consulte apenas um plugin semelhante.
+
+Documentação em `docs/modules/` não substitui a SPEC normativa. Se o gate resultar em `NEW_SPEC` ou `UPDATE_SPEC`, a SPEC deve ser commitada antes da alteração do plugin; a autorização desse commit não autoriza o commit da implementação.
 
 ## Regras
 

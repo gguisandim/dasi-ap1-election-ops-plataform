@@ -12,3 +12,5 @@ Esta pasta deve guardar exportações **literais** das sessões usadas para prog
 Execute `scripts/coletar-sessoes-codex.ps1`. Ele procura sessões no diretório local do Codex e copia somente arquivos que mencionam este projeto para `prompts/sessoes/codex-export/`. Revise antes do commit para garantir que não há segredos.
 
 Os arquivos em `prompts/resumos/` são apenas resumos históricos e **não substituem** exportações literais.
+
+Templates reutilizáveis ficam em `prompts/templates/`. Eles ajudam a iniciar uma execução, mas não substituem a SPEC normativa nem o registro literal posterior da sessão.

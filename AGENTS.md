@@ -13,6 +13,17 @@ Este repositório foi estruturado para permitir trabalho com contexto limitado. 
 7. Para funcionalidade nova ou mudança material de comportamento, crie/atualize a SPEC e faça o commit da SPEC antes do código.
 8. Preserve arquitetura, rotas, permissões e funcionalidades existentes, salvo quando a SPEC determinar mudança.
 
+## SPEC Gate obrigatório
+
+Antes da primeira alteração de implementação, declare exatamente uma classificação e a evidência correspondente:
+
+- `NEW_SPEC`: não existe SPEC normativa; crie e commite a SPEC antes da implementação;
+- `UPDATE_SPEC`: a SPEC existe, mas os requisitos mudaram; atualize-a e commite antes da implementação afetada;
+- `EXISTING_SPEC_OK`: a SPEC existente cobre integralmente a tarefa; informe seu caminho;
+- `SPEC_EXEMPT`: não há mudança funcional ou normativa; registre uma justificativa objetiva.
+
+`SPEC/README.md` é a referência canônica do gate. Documentos em `docs/modules/`, prompts e código existente não substituem uma SPEC normativa. Uma autorização para commitar a SPEC é limitada ao que o usuário autorizou e não permite commitar implementação, fazer push ou reescrever histórico.
+
 ## Contexto mínimo
 
 ### Tarefa em um plugin
@@ -53,6 +64,10 @@ npm run build
 ```
 
 Se algum comando depender de infraestrutura indisponível, registre exatamente o que não pôde ser validado; não invente sucesso.
+
+## Handoff obrigatório
+
+Toda entrega de implementação deve incluir `SPEC COMPLIANCE` com resultado `PASS`, `PARTIAL`, `BLOCKED`, `FAIL` ou `N/A`, além da classificação do SPEC Gate, caminho da SPEC (ou justificativa da isenção), evidências e desvios. Use o formato canônico de `SPEC/README.md`.
 
 ## Feedback de execução
 

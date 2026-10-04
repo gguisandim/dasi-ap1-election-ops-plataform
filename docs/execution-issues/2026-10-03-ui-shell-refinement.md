@@ -32,6 +32,12 @@ O npm reporta três vulnerabilidades de severidade alta em `deepmerge-ts`, trazi
 
 `npm audit --omit=dev` aponta `GHSA-ggr8-5vv4-36mx` e informa que `npm audit fix --force` instalaria `prisma@6.12.0`, uma alteração potencialmente incompatível.
 
+Reprodução em 2026-10-04:
+
+- `npm ls deepmerge-ts --all`: `prisma@6.19.3` → `@prisma/config@6.19.3` → `deepmerge-ts@7.1.5`;
+- `npm audit --omit=dev`: três vulnerabilidades altas associadas a `GHSA-ggr8-5vv4-36mx`;
+- a correção oferecida continua sendo `npm audit fix --force`, com instalação indicada de `prisma@6.12.0` e aviso de breaking change.
+
 ### O que era esperado
 
 A árvore de dependências de produção deveria possuir um caminho de atualização não destrutivo ou uma decisão registrada sobre a versão afetada do Prisma.
@@ -51,6 +57,10 @@ Planejar uma atualização compatível de Prisma e validar migrations, geração
 ### Estado
 
 open
+
+### Decisão e reavaliação
+
+O issue permanece `open`: não houve aceitação explícita do risco e a correção sugerida pelo npm é destrutiva/incompatível para esta tarefa. Reavaliar em uma tarefa própria de dependências quando houver versão compatível do Prisma/@prisma/config ou plano de validação de migrations, geração do client, API, testes e build.
 
 ---
 
@@ -94,4 +104,8 @@ Disponibilizar browser controlado ou um harness de screenshots autenticadas para
 
 ### Estado
 
-open
+not-actionable
+
+### Decisão e evidência de encerramento
+
+A limitação pertenceu à superfície de browser daquela execução, não ao código do repositório. Não há correção documental ou de produto que torne retroativamente possível a inspeção visual. O erro original (`Browser is not available: iab`) e o contorno por análise de CSS, semântica/ARIA e build permanecem registrados. Uma execução futura com browser disponível pode realizar nova validação visual, sem alterar este diagnóstico histórico.

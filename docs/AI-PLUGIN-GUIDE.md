@@ -67,7 +67,16 @@ Leia:
 
 Para montar a home, use manifests, APIs públicas e contratos compartilhados. **Não abra nem importe a implementação interna de todos os plugins.**
 
-## 3. Spec antes de implementação
+## 3. SPEC Gate antes de implementação
+
+Antes da primeira alteração de código, classifique a tarefa conforme `SPEC/README.md`:
+
+- `NEW_SPEC`: criar e commitar uma SPEC nova;
+- `UPDATE_SPEC`: atualizar e commitar a SPEC existente;
+- `EXISTING_SPEC_OK`: reutilizar uma SPEC que cobre integralmente a mudança;
+- `SPEC_EXEMPT`: justificar por que não existe mudança funcional ou normativa.
+
+`SPEC/README.md` é a referência canônica. Arquivos em `docs/modules/` são descritivos e não substituem a SPEC; prompts e código existente também não comprovam anterioridade normativa. Adaptadores de ferramentas devem apontar para estas regras, sem duplicá-las integralmente.
 
 Para funcionalidade nova ou alteração material de comportamento:
 
@@ -80,6 +89,8 @@ Para funcionalidade nova ou alteração material de comportamento:
 7. usar trailers `Agent:` e `Spec:` no commit de implementação.
 
 A ordem do histórico importa. Se o requisito mudar durante a implementação, atualize e commite a SPEC antes do próximo commit de código. Specs reconstruídas retrospectivamente não devem ser apresentadas como se tivessem antecedido código antigo.
+
+Uma autorização para commitar a SPEC é limitada ao que o usuário autorizou. Ela não autoriza commit da implementação, push ou reescrita do histórico. A entrega deve incluir o bloco `SPEC COMPLIANCE` definido em `SPEC/README.md`.
 
 ## 4. Contrato visual obrigatório para frontend
 
