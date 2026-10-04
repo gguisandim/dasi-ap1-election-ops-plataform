@@ -555,6 +555,7 @@ model ElectoralZone {
   distributionRoutes    DistributionRoute[]
   transmissionPoints    TransmissionPoint[]
   fieldShifts           FieldShift[]
+  fieldShiftTemplates   FieldShiftTemplate[]
   fieldAllocations      FieldAllocation[]
   fieldChecks           FieldCheckEvent[]
   communicationAudiences CommunicationAudience[]
@@ -592,6 +593,7 @@ model PollingPlace {
   deliveries            Delivery[]
   transmissionPoints    TransmissionPoint[]
   fieldShifts           FieldShift[]
+  fieldShiftTemplates   FieldShiftTemplate[]
   fieldAllocations      FieldAllocation[]
   fieldChecks           FieldCheckEvent[]
   communicationAudiences CommunicationAudience[]
@@ -818,6 +820,7 @@ model User {
   taskHistory                               TaskHistory[]                     @relation("TaskHistoryActor")
   shiftHistory                              FieldShiftHistory[]               @relation("FieldShiftHistoryActor")
   shiftReplacements                         FieldShiftReplacement[]           @relation("FieldShiftReplacementActor")
+  fieldMemberUnavailability                 FieldMemberUnavailability[]       @relation("FieldMemberUnavailabilityActor")
 
   @@index([status, name])
 }
@@ -1205,6 +1208,7 @@ model FieldTeam {
   election               Election                @relation(fields: [electionId], references: [id], onDelete: Cascade)
   members                FieldMember[]
   shifts                 FieldShift[]
+  shiftTemplates         FieldShiftTemplate[]
   allocations            FieldAllocation[]
   communicationAudiences CommunicationAudience[]
 
@@ -1236,6 +1240,8 @@ model FieldSpecialty {
   createdAt   DateTime               @default(now())
   updatedAt   DateTime               @updatedAt
   members     FieldMemberSpecialty[]
+  shiftRequirements FieldShiftSpecialtyRequirement[]
+  templateRequirements FieldShiftTemplateSpecialtyRequirement[]
 
   @@index([active, name])
 }
@@ -1257,11 +1263,29 @@ model FieldMember {
   shiftAssignments        FieldShiftAssignment[]
   allocations             FieldAllocation[]
   checks                  FieldCheckEvent[]
+  unavailability          FieldMemberUnavailability[]
   communicationRecipients CommunicationRecipient[]
 
   @@index([teamId, status])
   @@index([roleId])
   @@index([name])
+}
+
+model FieldMemberUnavailability {
+  id        String      @id @default(cuid())
+  memberId  String
+  startsAt  DateTime
+  endsAt    DateTime
+  reason    String
+  notes     String?     @db.Text
+  actorId   String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  member    FieldMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  actor     User?       @relation("FieldMemberUnavailabilityActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([memberId, startsAt, endsAt])
+  @@index([actorId, createdAt])
 }
 
 model FieldMemberSpecialty {
@@ -1296,6 +1320,7 @@ model FieldShift {
   assignments       FieldShiftAssignment[]
   replacements      FieldShiftReplacement[]
   history           FieldShiftHistory[]
+  specialtyRequirements FieldShiftSpecialtyRequirement[]
 
   @@index([startsAt, endsAt])
   @@index([teamId, startsAt])
@@ -1303,6 +1328,53 @@ model FieldShift {
   @@index([status, startsAt])
   @@index([electoralZoneId, startsAt])
   @@index([pollingPlaceId, startsAt])
+}
+
+model FieldShiftSpecialtyRequirement {
+  id           String         @id @default(cuid())
+  shiftId      String
+  specialtyId  String
+  requiredCount Int
+  shift        FieldShift     @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  specialty    FieldSpecialty @relation(fields: [specialtyId], references: [id], onDelete: Restrict)
+
+  @@unique([shiftId, specialtyId])
+  @@index([specialtyId])
+}
+
+model FieldShiftTemplate {
+  id                String   @id @default(cuid())
+  teamId            String
+  electoralZoneId   String?
+  pollingPlaceId    String?
+  name              String
+  startMinute       Int
+  durationMinutes   Int
+  requiredOperators Int      @default(1)
+  notes             String?  @db.Text
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  team              FieldTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  electoralZone     ElectoralZone? @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
+  pollingPlace      PollingPlace? @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  specialtyRequirements FieldShiftTemplateSpecialtyRequirement[]
+
+  @@index([teamId, active, name])
+  @@index([electoralZoneId])
+  @@index([pollingPlaceId])
+}
+
+model FieldShiftTemplateSpecialtyRequirement {
+  id           String         @id @default(cuid())
+  templateId   String
+  specialtyId  String
+  requiredCount Int
+  template     FieldShiftTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  specialty    FieldSpecialty @relation(fields: [specialtyId], references: [id], onDelete: Restrict)
+
+  @@unique([templateId, specialtyId])
+  @@index([specialtyId])
 }
 
 model FieldShiftAssignment {

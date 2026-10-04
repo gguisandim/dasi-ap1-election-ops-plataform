@@ -16,6 +16,7 @@
     "./inventory": "./src/inventory.ts",
     "./knowledge": "./src/knowledge.ts",
     "./risks": "./src/risks.ts",
-    "./simulation": "./src/simulation.ts"
+    "./simulation": "./src/simulation.ts",
+    "./workforce": "./src/workforce.ts"
   }
 }

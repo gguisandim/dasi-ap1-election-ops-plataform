@@ -9,9 +9,15 @@ import styles from "./ui.module.css";
 
 export function Button({
   className = "",
+  secondary = false,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement>) {
-  return <button className={`${styles.button} ${className}`} {...props} />;
+}: ButtonHTMLAttributes<HTMLButtonElement> & { secondary?: boolean }) {
+  return (
+    <button
+      className={`${styles.button} ${secondary ? styles.secondary : ""} ${className}`}
+      {...props}
+    />
+  );
 }
 
 export function LinkButton({

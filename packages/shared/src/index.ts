@@ -9,3 +9,4 @@ export * from "./inventory";
 export * from "./knowledge";
 export * from "./risks";
 export * from "./simulation";
+export * from "./workforce";

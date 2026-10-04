@@ -261,6 +261,41 @@ export interface DomainEventMap {
     occurredAt: string;
   };
 
+  "field_member.availability_changed": {
+    entityId: string;
+    actorId: string;
+    memberName: string;
+    from: string;
+    to: string;
+  };
+
+  "field_member.unavailability_created": {
+    entityId: string;
+    actorId: string;
+    memberId: string;
+    memberName: string;
+    startsAt: string;
+    endsAt: string;
+    reason: string;
+  };
+
+  "field_member.unavailability_removed": {
+    entityId: string;
+    actorId: string;
+    memberId: string;
+    memberName: string;
+    startsAt: string;
+    endsAt: string;
+    reason: string;
+  };
+
+  "field_member.specialty_changed": {
+    entityId: string;
+    actorId: string;
+    memberName: string;
+    specialtyIds: string[];
+  };
+
   "communication.created": {
     entityId: string;
     actorId?: string;
@@ -502,6 +537,71 @@ export interface DomainEventMap {
     name: string;
     electionId: string;
   };
+  "shift.cancelled": {
+    entityId: string;
+    actorId: string;
+    name: string;
+    electionId: string;
+    from: string;
+    to: string;
+  };
+  "shift.updated": {
+    entityId: string;
+    actorId: string;
+    name: string;
+    electionId: string;
+    changes: string[];
+  };
+  "shift.assignment_added": {
+    entityId: string;
+    actorId: string;
+    shiftId: string;
+    electionId: string;
+    memberId: string;
+    memberName: string;
+    status: string;
+  };
+  "shift.presence_registered": {
+    entityId: string;
+    actorId: string;
+    shiftId: string;
+    electionId: string;
+    memberId: string;
+    memberName: string;
+    occurredAt: string;
+  };
+  "shift.on_call_activated": {
+    entityId: string;
+    actorId: string;
+    shiftId: string;
+    electionId: string;
+    memberId: string;
+    memberName: string;
+    activatedAt: string;
+  };
+  "shift.replacement_created": {
+    entityId: string;
+    actorId: string;
+    shiftId: string;
+    electionId: string;
+    originalMemberId: string;
+    substituteMemberId: string;
+    substituteName: string;
+    reason?: string;
+  };
+  "shift.template_created": {
+    entityId: string;
+    actorId: string;
+    name: string;
+    teamId: string;
+  };
+  "shift.template_updated": {
+    entityId: string;
+    actorId: string;
+    name: string;
+    teamId: string;
+    changes: string[];
+  };
   "shift.assignment_changed": {
     entityId: string;
     actorId?: string;
@@ -560,37 +660,149 @@ export interface NotificationEventDefinition {
 }
 
 export const NOTIFICATION_EVENT_CATALOG = [
-  { eventName: "incident.created", domain: "Incidentes", label: "Novo incidente", description: "Incidente registrado na operação.", requiredPermission: "incidents.read" },
-  { eventName: "incident.acknowledged", domain: "Incidentes", label: "Incidente reconhecido", description: "Um operador assumiu conhecimento do incidente.", requiredPermission: "incidents.read" },
-  { eventName: "incident.assigned", domain: "Incidentes", label: "Incidente atribuído", description: "Responsável pelo atendimento alterado.", requiredPermission: "incidents.read" },
-  { eventName: "incident.escalated", domain: "Incidentes", label: "Incidente escalado", description: "Nível de escalonamento aumentado.", requiredPermission: "incidents.read" },
-  { eventName: "incident.resolved", domain: "Incidentes", label: "Incidente resolvido", description: "Incidente marcado como resolvido.", requiredPermission: "incidents.read" },
-  { eventName: "incident.reopened", domain: "Incidentes", label: "Incidente reaberto", description: "Incidente retornou ao atendimento.", requiredPermission: "incidents.read" },
-  { eventName: "incident.closed", domain: "Incidentes", label: "Incidente fechado", description: "Incidente encerrado definitivamente.", requiredPermission: "incidents.read" },
-  { eventName: "incident.comment_added", domain: "Incidentes", label: "Comentário adicionado", description: "Novo comentário na timeline.", requiredPermission: "incidents.read" },
-  { eventName: "asset.status_changed", domain: "Inventário", label: "Status de ativo alterado", description: "Ativo mudou de estado operacional.", requiredPermission: "inventory.read" },
-  { eventName: "transmission.failed", domain: "Transmissão", label: "Falha de transmissão", description: "Ponto registrou falha de transmissão.", requiredPermission: "transmission.read" },
-  { eventName: "transmission.connectivity_changed", domain: "Transmissão", label: "Conectividade alterada", description: "Conectividade do ponto mudou.", requiredPermission: "transmission.read" },
-  { eventName: "task.assigned", domain: "Tarefas", label: "Tarefa atribuída", description: "Responsável de uma tarefa foi alterado.", requiredPermission: "tasks.read" },
-  { eventName: "task.blocked", domain: "Tarefas", label: "Tarefa bloqueada", description: "Tarefa encontrou impedimento.", requiredPermission: "tasks.read" },
-  { eventName: "shift.coverage_insufficient", domain: "Escalas", label: "Cobertura insuficiente", description: "Turno sem operadores suficientes.", requiredPermission: "shifts.read" },
+  {
+    eventName: "incident.created",
+    domain: "Incidentes",
+    label: "Novo incidente",
+    description: "Incidente registrado na operação.",
+    requiredPermission: "incidents.read",
+  },
+  {
+    eventName: "incident.acknowledged",
+    domain: "Incidentes",
+    label: "Incidente reconhecido",
+    description: "Um operador assumiu conhecimento do incidente.",
+    requiredPermission: "incidents.read",
+  },
+  {
+    eventName: "incident.assigned",
+    domain: "Incidentes",
+    label: "Incidente atribuído",
+    description: "Responsável pelo atendimento alterado.",
+    requiredPermission: "incidents.read",
+  },
+  {
+    eventName: "incident.escalated",
+    domain: "Incidentes",
+    label: "Incidente escalado",
+    description: "Nível de escalonamento aumentado.",
+    requiredPermission: "incidents.read",
+  },
+  {
+    eventName: "incident.resolved",
+    domain: "Incidentes",
+    label: "Incidente resolvido",
+    description: "Incidente marcado como resolvido.",
+    requiredPermission: "incidents.read",
+  },
+  {
+    eventName: "incident.reopened",
+    domain: "Incidentes",
+    label: "Incidente reaberto",
+    description: "Incidente retornou ao atendimento.",
+    requiredPermission: "incidents.read",
+  },
+  {
+    eventName: "incident.closed",
+    domain: "Incidentes",
+    label: "Incidente fechado",
+    description: "Incidente encerrado definitivamente.",
+    requiredPermission: "incidents.read",
+  },
+  {
+    eventName: "incident.comment_added",
+    domain: "Incidentes",
+    label: "Comentário adicionado",
+    description: "Novo comentário na timeline.",
+    requiredPermission: "incidents.read",
+  },
+  {
+    eventName: "asset.status_changed",
+    domain: "Inventário",
+    label: "Status de ativo alterado",
+    description: "Ativo mudou de estado operacional.",
+    requiredPermission: "inventory.read",
+  },
+  {
+    eventName: "transmission.failed",
+    domain: "Transmissão",
+    label: "Falha de transmissão",
+    description: "Ponto registrou falha de transmissão.",
+    requiredPermission: "transmission.read",
+  },
+  {
+    eventName: "transmission.connectivity_changed",
+    domain: "Transmissão",
+    label: "Conectividade alterada",
+    description: "Conectividade do ponto mudou.",
+    requiredPermission: "transmission.read",
+  },
+  {
+    eventName: "task.assigned",
+    domain: "Tarefas",
+    label: "Tarefa atribuída",
+    description: "Responsável de uma tarefa foi alterado.",
+    requiredPermission: "tasks.read",
+  },
+  {
+    eventName: "task.blocked",
+    domain: "Tarefas",
+    label: "Tarefa bloqueada",
+    description: "Tarefa encontrou impedimento.",
+    requiredPermission: "tasks.read",
+  },
+  {
+    eventName: "shift.coverage_insufficient",
+    domain: "Escalas",
+    label: "Cobertura insuficiente",
+    description: "Turno sem operadores suficientes.",
+    requiredPermission: "shifts.read",
+  },
+  {
+    eventName: "shift.absence_registered",
+    domain: "Escalas",
+    label: "Ausência registrada",
+    description: "Operador marcado como ausente em um turno.",
+    requiredPermission: "shifts.read",
+  },
+  {
+    eventName: "shift.on_call_activated",
+    domain: "Escalas",
+    label: "Sobreaviso acionado",
+    description: "Operador de sobreaviso foi acionado.",
+    requiredPermission: "shifts.read",
+  },
+  {
+    eventName: "shift.replacement_created",
+    domain: "Escalas",
+    label: "Substituição registrada",
+    description: "Operador de um turno foi substituído.",
+    requiredPermission: "shifts.read",
+  },
 ] as const satisfies readonly NotificationEventDefinition[];
 
-export function requiredPermissionForEvent(name: DomainEventName): string | undefined {
-  const configured = NOTIFICATION_EVENT_CATALOG.find((item) => item.eventName === name);
+export function requiredPermissionForEvent(
+  name: DomainEventName,
+): string | undefined {
+  const configured = NOTIFICATION_EVENT_CATALOG.find(
+    (item) => item.eventName === name,
+  );
   if (configured?.requiredPermission) return configured.requiredPermission;
   if (name.startsWith("incident.")) return "incidents.read";
   if (name.startsWith("asset.")) return "inventory.read";
   if (name.startsWith("transmission.")) return "transmission.read";
   if (name.startsWith("task.")) return "tasks.read";
   if (name.startsWith("shift.")) return "shifts.read";
-  if (name.startsWith("route.") || name.startsWith("delivery.")) return "routes.read";
-  if (name.startsWith("field_team.") || name.startsWith("field_member.")) return "field-teams.read";
+  if (name.startsWith("route.") || name.startsWith("delivery."))
+    return "routes.read";
+  if (name.startsWith("field_team.") || name.startsWith("field_member."))
+    return "field-teams.read";
   if (name.startsWith("communication.")) return "communications.read";
   if (name.startsWith("evidence.")) return "evidence.read";
   if (name.startsWith("runbook.")) return "knowledge.read";
   if (name.startsWith("risk.")) return "risks.read";
-  if (name.startsWith("preparation_checklist.")) return "preparation-checklists.read";
+  if (name.startsWith("preparation_checklist."))
+    return "preparation-checklists.read";
   if (name.startsWith("user.")) return "users.read";
   if (name.startsWith("election.")) return "elections.read";
   return undefined;

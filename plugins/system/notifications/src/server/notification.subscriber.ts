@@ -61,15 +61,15 @@ const names = [
   "shift.completed",
   "shift.assignment_changed",
   "shift.absence_registered",
+  "shift.on_call_activated",
+  "shift.replacement_created",
   "shift.replacement_registered",
   "shift.coverage_insufficient",
 ] as const satisfies readonly DomainEventName[];
 
 type SubscribedEventName = (typeof names)[number];
 
-function content(
-  event: DomainEvent<SubscribedEventName>,
-): {
+function content(event: DomainEvent<SubscribedEventName>): {
   title: string;
   message: string;
   type: NotificationType;
@@ -137,7 +137,10 @@ function content(
       return {
         title: "Severidade de incidente alterada",
         message: `${"code" in payload ? payload.code : "Incidente"} mudou para ${"to" in payload ? payload.to : "nova severidade"}.`,
-        type: "to" in payload && payload.to === "CRITICAL" ? NotificationType.CRITICAL : NotificationType.WARNING,
+        type:
+          "to" in payload && payload.to === "CRITICAL"
+            ? NotificationType.CRITICAL
+            : NotificationType.WARNING,
         entityType: "Incident",
       };
 
@@ -544,6 +547,20 @@ function content(
         title: "Falta registrada",
         message: `${"memberName" in payload ? payload.memberName : "Operador"} foi marcado como ausente.`,
         type: NotificationType.WARNING,
+        entityType: "FieldShift",
+      };
+    case "shift.on_call_activated":
+      return {
+        title: "Sobreaviso acionado",
+        message: `${"memberName" in payload ? payload.memberName : "Operador"} foi acionado para o turno.`,
+        type: NotificationType.WARNING,
+        entityType: "FieldShift",
+      };
+    case "shift.replacement_created":
+      return {
+        title: "Substituição registrada",
+        message: `${"substituteName" in payload ? payload.substituteName : "Um operador"} assumiu um turno.`,
+        type: NotificationType.INFO,
         entityType: "FieldShift",
       };
     case "shift.replacement_registered":
