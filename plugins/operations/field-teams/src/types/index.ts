@@ -1,3 +1,17 @@
+import type {
+  CapabilityMatch,
+  FieldDispatchMetrics,
+  FieldDispatchPriority as DispatchPriority,
+  FieldDispatchStatus as DispatchStatus,
+} from "@eops/shared/workforce";
+
+export type {
+  CapabilityMatch,
+  DispatchPriority,
+  DispatchStatus,
+  FieldDispatchMetrics,
+};
+
 export type TeamStatus = "ACTIVE" | "STANDBY" | "INACTIVE";
 export type MemberAvailability =
   "AVAILABLE" | "ASSIGNED" | "ON_DUTY" | "UNAVAILABLE" | "OFF_DUTY";
@@ -110,6 +124,15 @@ export interface FieldTeam {
   members: FieldMember[];
   allocations: FieldAllocation[];
 }
+export interface DispatchOperations {
+  awaiting: number;
+  active: number;
+  enRoute: number;
+  onSite: number;
+  completedToday: number;
+  averageTimeToAcceptMinutes: number | null;
+  averageTimeToArrivalMinutes: number | null;
+}
 export interface FieldDashboard {
   activeTeams: number;
   availablePeople: number;
@@ -119,6 +142,53 @@ export interface FieldDashboard {
   peopleWithoutSpecialties: number;
   uncoveredZones: number;
   uncoveredPlaces: number;
+  operations: DispatchOperations;
+}
+export interface DispatchTimelineEntry {
+  id: string;
+  type: string;
+  message: string;
+  fromStatus: DispatchStatus | null;
+  toStatus: DispatchStatus | null;
+  actor: { id: string; name: string } | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+export interface FieldDispatchDetail {
+  id: string;
+  title: string;
+  notes: string | null;
+  status: DispatchStatus;
+  priority: DispatchPriority;
+  capabilityMatch: CapabilityMatch | null;
+  capabilityOverrideReason: string | null;
+  teamId: string;
+  memberId: string | null;
+  taskId: string | null;
+  incidentId: string | null;
+  locationLabel: string | null;
+  requestedAt: string;
+  acceptedAt: string | null;
+  departedAt: string | null;
+  arrivedAt: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  cancelledAt: string | null;
+  rejectionReason: string | null;
+  cancellationReason: string | null;
+  completionSummary: string | null;
+  completionResult: string | null;
+  team: { id: string; name: string; code: string };
+  member: { id: string; name: string } | null;
+  task: { id: string; title: string } | null;
+  incident: { id: string; code: string } | null;
+  electoralZone: { id: string; number: number; name: string } | null;
+  pollingPlace: { id: string; name: string } | null;
+  createdBy: { id: string; name: string } | null;
+  specialties: string[];
+  elapsedMinutes: number;
+  metrics: FieldDispatchMetrics;
+  events: DispatchTimelineEntry[];
 }
 export interface FieldFilters {
   electionId?: string;

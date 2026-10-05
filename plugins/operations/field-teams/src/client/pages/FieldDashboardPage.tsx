@@ -1,7 +1,8 @@
-import { Card, ErrorState, Loading, Select, useAsync } from "@eops/ui";
+import { Card, ErrorState, LinkButton, Loading, Select, useAsync } from "@eops/ui";
 import { useState } from "react";
 import { FieldNav } from "../components/FieldNav";
 import { fieldTeamsService } from "../services/fieldTeamsService";
+import { formatDuration } from "../status";
 import styles from "../styles/fieldTeams.module.css";
 
 export function FieldDashboardPage() {
@@ -24,18 +25,21 @@ export function FieldDashboardPage() {
           <h1>Equipes de Campo</h1>
           <p>Estrutura, disponibilidade e capacidades operacionais.</p>
         </div>
-        <Select
-          aria-label="Pleito"
-          value={electionId}
-          onChange={(event) => setElectionId(event.target.value)}
-        >
-          <option value="">Todos os pleitos</option>
-          {references.data?.elections.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name}
-            </option>
-          ))}
-        </Select>
+        <div className={styles.actions}>
+          <LinkButton to="/field-teams/dispatch">Abrir despachos</LinkButton>
+          <Select
+            aria-label="Pleito"
+            value={electionId}
+            onChange={(event) => setElectionId(event.target.value)}
+          >
+            <option value="">Todos os pleitos</option>
+            {references.data?.elections.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </Select>
+        </div>
       </header>
       {dashboard.loading && <Loading label="Carregando workforce…" />}
       {dashboard.error && (
@@ -76,6 +80,49 @@ export function FieldDashboardPage() {
             <strong>{dashboard.data.uncoveredPlaces}</strong>
           </Card>
         </div>
+      )}
+      {dashboard.data && (
+        <Card>
+          <h2>Operação de campo</h2>
+          <div className={styles.metrics}>
+            <Card>
+              <span>Aguardando envio</span>
+              <strong>{dashboard.data.operations.awaiting}</strong>
+            </Card>
+            <Card>
+              <span>Dispatches ativos</span>
+              <strong>{dashboard.data.operations.active}</strong>
+            </Card>
+            <Card>
+              <span>Em deslocamento</span>
+              <strong>{dashboard.data.operations.enRoute}</strong>
+            </Card>
+            <Card>
+              <span>No local ou em atendimento</span>
+              <strong>{dashboard.data.operations.onSite}</strong>
+            </Card>
+            <Card>
+              <span>Concluídos hoje</span>
+              <strong>{dashboard.data.operations.completedToday}</strong>
+            </Card>
+            <Card>
+              <span>Tempo médio até aceite</span>
+              <strong>
+                {formatDuration(
+                  dashboard.data.operations.averageTimeToAcceptMinutes,
+                )}
+              </strong>
+            </Card>
+            <Card>
+              <span>Tempo médio até chegada</span>
+              <strong>
+                {formatDuration(
+                  dashboard.data.operations.averageTimeToArrivalMinutes,
+                )}
+              </strong>
+            </Card>
+          </div>
+        </Card>
       )}
     </section>
   );

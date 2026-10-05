@@ -1,18 +1,24 @@
 import {
   FieldAllocationStatus,
   FieldCheckType,
+  FieldDispatchStatus,
   FieldTeamStatus,
   MemberAvailability,
+  TaskPriority,
 } from "@prisma/client";
+import { Transform } from "class-transformer";
 import {
   IsArray,
   IsBoolean,
   IsDateString,
   IsEmail,
   IsEnum,
+  IsInt,
   IsOptional,
   IsString,
   Length,
+  MaxLength,
+  Min,
 } from "class-validator";
 
 export class FieldTeamsQueryDto {
@@ -101,4 +107,41 @@ export class CreateCheckDto {
   @IsEnum(FieldCheckType) type!: FieldCheckType;
   @IsDateString() @IsOptional() occurredAt?: string;
   @IsString() @IsOptional() notes?: string;
+}
+export class DispatchQueryDto {
+  @IsEnum(FieldDispatchStatus) @IsOptional() status?: FieldDispatchStatus;
+  @IsString() @IsOptional() teamId?: string;
+  @IsString() @IsOptional() memberId?: string;
+  @IsString() @IsOptional() taskId?: string;
+  @IsString() @IsOptional() incidentId?: string;
+  @IsEnum(TaskPriority) @IsOptional() priority?: TaskPriority;
+  @Transform(({ value }) =>
+    value === "true" ? true : value === "false" ? false : value,
+  )
+  @IsBoolean()
+  @IsOptional()
+  active?: boolean;
+}
+export class CreateDispatchDto {
+  @IsString() teamId!: string;
+  @IsString() @IsOptional() memberId?: string;
+  @IsString() @IsOptional() taskId?: string;
+  @IsString() @IsOptional() incidentId?: string;
+  @IsString() @Length(2, 180) @IsOptional() title?: string;
+  @IsString() @MaxLength(4000) @IsOptional() notes?: string;
+  @IsString() @MaxLength(180) @IsOptional() locationLabel?: string;
+  @IsString() @IsOptional() electoralZoneId?: string;
+  @IsString() @IsOptional() pollingPlaceId?: string;
+  @IsEnum(TaskPriority) @IsOptional() priority?: TaskPriority;
+  @IsArray() @IsString({ each: true }) @IsOptional() requiredSpecialtyIds?: string[];
+  @IsInt() @Min(1) @IsOptional() requiredTeamSize?: number;
+  @IsString() @MaxLength(1000) @IsOptional() capabilityOverrideReason?: string;
+}
+export class UpdateDispatchStatusDto {
+  @IsEnum(FieldDispatchStatus) status!: FieldDispatchStatus;
+  @IsString() @Length(3, 1000) @IsOptional() reason?: string;
+  @IsString() @Length(3, 2000) @IsOptional() summary?: string;
+  @IsString() @MaxLength(1000) @IsOptional() result?: string;
+  @IsString() @IsOptional() memberId?: string;
+  @IsString() @MaxLength(1000) @IsOptional() notes?: string;
 }

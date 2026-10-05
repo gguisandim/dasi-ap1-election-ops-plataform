@@ -8,9 +8,12 @@ import type { Paginated } from "@eops/shared/common";
 import type {
   AllocationStatus,
   CheckType,
+  DispatchPriority,
+  DispatchStatus,
   FieldAllocation,
   FieldCheck,
   FieldDashboard,
+  FieldDispatchDetail,
   FieldFilters,
   FieldMember,
   FieldRole,
@@ -21,7 +24,10 @@ import type {
   TeamCapability,
   TeamStatus,
 } from "../../types";
-import type { WorkforceShiftSummary } from "@eops/shared/workforce";
+import type {
+  FieldDispatchSummary,
+  WorkforceShiftSummary,
+} from "@eops/shared/workforce";
 
 export const fieldTeamsService = {
   teams: (query: FieldFilters = {}) =>
@@ -137,6 +143,49 @@ export const fieldTeamsService = {
   }) => apiClient.post<FieldAllocation>("/field-teams/allocations", input),
   checks: (query: FieldFilters = {}) =>
     apiClient.get<FieldCheck[]>("/field-teams/checks", { query }),
+  dispatches: (
+    query: {
+      status?: DispatchStatus;
+      teamId?: string;
+      memberId?: string;
+      taskId?: string;
+      incidentId?: string;
+      priority?: DispatchPriority;
+      active?: boolean;
+    } = {},
+  ) => apiClient.get<FieldDispatchSummary[]>("/field-teams/dispatches", { query }),
+  dispatch: (id: string) =>
+    apiClient.get<FieldDispatchDetail>(`/field-teams/dispatches/${id}`),
+  createDispatch: (input: {
+    teamId: string;
+    memberId?: string;
+    taskId?: string;
+    incidentId?: string;
+    title?: string;
+    notes?: string;
+    locationLabel?: string;
+    electoralZoneId?: string;
+    pollingPlaceId?: string;
+    priority?: DispatchPriority;
+    requiredSpecialtyIds?: string[];
+    requiredTeamSize?: number;
+    capabilityOverrideReason?: string;
+  }) => apiClient.post<FieldDispatchSummary>("/field-teams/dispatches", input),
+  updateDispatchStatus: (
+    id: string,
+    input: {
+      status: DispatchStatus;
+      reason?: string;
+      summary?: string;
+      result?: string;
+      memberId?: string;
+      notes?: string;
+    },
+  ) =>
+    apiClient.patch<FieldDispatchSummary>(
+      `/field-teams/dispatches/${id}/status`,
+      input,
+    ),
   createCheck: (input: {
     memberId: string;
     electoralZoneId?: string;
@@ -145,6 +194,16 @@ export const fieldTeamsService = {
     occurredAt?: string;
     notes?: string;
   }) => apiClient.post<FieldCheck>("/field-teams/checks", input),
+  taskOptions: () =>
+    apiClient.get<
+      Array<{
+        id: string;
+        title: string;
+        executionMode: string;
+        status: string;
+        priority: string;
+      }>
+    >("/tasks"),
   references: async () => {
     const [elections, zones, places, routes] = await Promise.all([
       apiClient.get<ElectionSummary[]>("/elections"),

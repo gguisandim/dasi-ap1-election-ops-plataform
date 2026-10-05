@@ -16,28 +16,62 @@ import {
   AvailabilityQueryDto,
   CreateAllocationDto,
   CreateCheckDto,
+  CreateDispatchDto,
   CreateMemberDto,
   CreateRoleDto,
   CreateSpecialtyDto,
   CreateTeamDto,
   CreateUnavailabilityDto,
+  DispatchQueryDto,
   FieldTeamsQueryDto,
   UpdateCatalogDto,
+  UpdateDispatchStatusDto,
   UpdateMemberDto,
   UpdateTeamDto,
   UpdateUnavailabilityDto,
 } from "./dto/field-teams.dto";
+import { FieldDispatchService } from "./field-dispatch.service";
 import { FieldTeamsService } from "./field-teams.service";
 
 @Permissions(PERMISSIONS.fieldTeams.read)
 @Controller("field-teams")
 export class FieldTeamsController {
-  constructor(private readonly service: FieldTeamsService) {}
+  constructor(
+    private readonly service: FieldTeamsService,
+    private readonly dispatchService: FieldDispatchService,
+  ) {}
   @Get() teams(@Query() query: FieldTeamsQueryDto) {
     return this.service.findAll(query);
   }
-  @Get("dashboard") dashboard(@Query() query: FieldTeamsQueryDto) {
-    return this.service.dashboard(query);
+  @Get("dashboard") async dashboard(@Query() query: FieldTeamsQueryDto) {
+    const [dashboard, operations] = await Promise.all([
+      this.service.dashboard(query),
+      this.dispatchService.operationalMetrics(query.electionId),
+    ]);
+    return { ...dashboard, operations };
+  }
+  @Get("dispatches") dispatches(@Query() query: DispatchQueryDto) {
+    return this.dispatchService.list(query);
+  }
+  @Get("dispatches/:id") dispatch(@Param("id") id: string) {
+    return this.dispatchService.findOne(id);
+  }
+  @Permissions(PERMISSIONS.fieldTeams.manage)
+  @Post("dispatches")
+  createDispatch(
+    @Body() dto: CreateDispatchDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.dispatchService.create(dto, request.user.id);
+  }
+  @Permissions(PERMISSIONS.fieldTeams.manage)
+  @Patch("dispatches/:id/status")
+  updateDispatchStatus(
+    @Param("id") id: string,
+    @Body() dto: UpdateDispatchStatusDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.dispatchService.transition(id, dto, request.user.id);
   }
   @Get("members") members(
     @Query("teamId") teamId?: string,

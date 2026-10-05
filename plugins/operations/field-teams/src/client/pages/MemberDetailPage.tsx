@@ -11,10 +11,14 @@ import {
   Loading,
   useAsync,
 } from "@eops/ui";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { FieldNav } from "../components/FieldNav";
 import { fieldTeamsService } from "../services/fieldTeamsService";
 import { MEMBER_STATUS_LABELS } from "../../types";
+import {
+  DISPATCH_STATUS_LABELS,
+  formatDuration,
+} from "../status";
 import styles from "../styles/fieldTeams.module.css";
 
 export function MemberDetailPage() {
@@ -28,6 +32,10 @@ export function MemberDetailPage() {
         startsFrom: now.toISOString(),
         startsTo: new Date(now.getTime() + 30 * 86400000).toISOString(),
       }),
+    [id],
+  );
+  const dispatches = useAsync(
+    () => fieldTeamsService.dispatches({ memberId: id, active: true }),
     [id],
   );
   const [form, setForm] = useState({
@@ -56,11 +64,11 @@ export function MemberDetailPage() {
       );
     }
   }
-  if (member.loading) return <Loading label="Carregando membroâ€¦" />;
+  if (member.loading) return <Loading label="Carregando membro…" />;
   if (member.error || !member.data)
     return (
       <ErrorState
-        error={member.error ?? new Error("Membro nÃ£o encontrado.")}
+        error={member.error ?? new Error("Membro não encontrado.")}
       />
     );
   const data = member.data;
@@ -72,7 +80,7 @@ export function MemberDetailPage() {
           <span>MEMBRO</span>
           <h1>{data.name}</h1>
           <p>
-            {data.team?.name} Â· {data.role.name}
+            {data.team?.name} · {data.role.name}
           </p>
         </div>
         <LinkButton to={"/shifts/list?memberId=" + data.id}>
@@ -94,7 +102,7 @@ export function MemberDetailPage() {
           <strong>{data.unavailability.length}</strong>
         </Card>
         <Card>
-          <span>PrÃ³ximos turnos</span>
+          <span>Próximos turnos</span>
           <strong>{shifts.data?.length ?? 0}</strong>
         </Card>
       </div>
@@ -105,7 +113,7 @@ export function MemberDetailPage() {
             className={styles.form}
             onSubmit={(event) => void submit(event)}
           >
-            <Field label="InÃ­cio">
+            <Field label="Início">
               <Input
                 required
                 type="datetime-local"
@@ -137,7 +145,7 @@ export function MemberDetailPage() {
                 }
               />
             </Field>
-            <Field label="ObservaÃ§Ã£o">
+            <Field label="Observação">
               <Input
                 value={form.notes}
                 onChange={(event) =>
@@ -145,7 +153,7 @@ export function MemberDetailPage() {
                 }
               />
             </Field>
-            <Button type="submit">Registrar perÃ­odo</Button>
+            <Button type="submit">Registrar período</Button>
           </form>
         </Card>
         <Card>
@@ -155,7 +163,7 @@ export function MemberDetailPage() {
               "Sem especialidades cadastradas"}
           </p>
           <p>
-            {data.phone || "Sem telefone"} Â· {data.email || "Sem e-mail"}
+            {data.phone || "Sem telefone"} · {data.email || "Sem e-mail"}
           </p>
           <Badge
             tone={
@@ -171,11 +179,11 @@ export function MemberDetailPage() {
         </Card>
       </div>
       <Card>
-        <h2>PerÃ­odos de indisponibilidade</h2>
+        <h2>Períodos de indisponibilidade</h2>
         {!data.unavailability.length && (
           <EmptyState
-            title="Nenhum perÃ­odo registrado"
-            description="O membro nÃ£o possui indisponibilidades operacionais."
+            title="Nenhum período registrado"
+            description="O membro não possui indisponibilidades operacionais."
           />
         )}
         <div className={styles.list}>
@@ -184,7 +192,7 @@ export function MemberDetailPage() {
               <div>
                 <strong>{period.reason}</strong>
                 <span>
-                  {new Date(period.startsAt).toLocaleString("pt-BR")} â†’{" "}
+                  {new Date(period.startsAt).toLocaleString("pt-BR")} →{" "}
                   {new Date(period.endsAt).toLocaleString("pt-BR")}
                 </span>
                 <small>{period.notes}</small>
@@ -203,15 +211,40 @@ export function MemberDetailPage() {
         </div>
       </Card>
       <Card>
-        <h2>PrÃ³ximos turnos</h2>
+        <h2>Despacho atual</h2>
+        {dispatches.loading && <Loading />}
+        {dispatches.error && (
+          <ErrorState error={dispatches.error} onRetry={dispatches.reload} />
+        )}
+        {dispatches.data?.length === 0 && (
+          <p className={styles.muted}>
+            O membro não possui dispatch ativo no momento.
+          </p>
+        )}
+        <div className={styles.list}>
+          {dispatches.data?.map((item) => (
+            <Link key={item.id} to={`/field-teams/dispatch/${item.id}`}>
+              <div>
+                <strong>{item.title}</strong>
+                <span>
+                  {DISPATCH_STATUS_LABELS[item.status]} · {item.teamCode} · há{" "}
+                  {formatDuration(item.elapsedMinutes)}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </Card>
+      <Card>
+        <h2>Próximos turnos</h2>
         {shifts.loading && <Loading />}
         {shifts.error && (
           <ErrorState error={shifts.error} onRetry={shifts.reload} />
         )}
         {shifts.data?.length === 0 && (
           <EmptyState
-            title="Sem prÃ³ximos turnos"
-            description="Assignments sÃ£o geridos pelo mÃ³dulo Shifts."
+            title="Sem próximos turnos"
+            description="Assignments são geridos pelo módulo Shifts."
           />
         )}
         <div className={styles.schedule}>
@@ -221,7 +254,7 @@ export function MemberDetailPage() {
               <div>
                 <strong>{shift.name}</strong>
                 <span>
-                  {shift.status} Â· {shift.coverage.state}
+                  {shift.status} · {shift.coverage.state}
                 </span>
               </div>
             </article>

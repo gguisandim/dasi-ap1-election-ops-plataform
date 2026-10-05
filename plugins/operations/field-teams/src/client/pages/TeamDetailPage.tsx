@@ -10,12 +10,23 @@ import { Link, useParams } from "react-router-dom";
 import { FieldNav } from "../components/FieldNav";
 import { fieldTeamsService } from "../services/fieldTeamsService";
 import { MEMBER_STATUS_LABELS } from "../../types";
+import {
+  DISPATCH_PRIORITY_LABELS,
+  DISPATCH_STATUS_LABELS,
+  dispatchOperationalState,
+  formatDuration,
+  OPERATIONAL_STATE_LABELS,
+} from "../status";
 import styles from "../styles/fieldTeams.module.css";
 
 export function TeamDetailPage() {
   const { id = "" } = useParams();
   const team = useAsync(() => fieldTeamsService.team(id), [id]);
   const capabilities = useAsync(() => fieldTeamsService.capabilities(id), [id]);
+  const dispatches = useAsync(
+    () => fieldTeamsService.dispatches({ teamId: id, active: true }),
+    [id],
+  );
   const upcoming = useAsync(
     () =>
       fieldTeamsService.upcomingShifts({
@@ -71,7 +82,46 @@ export function TeamDetailPage() {
           <span>Alocações</span>
           <strong>{data.allocations.length}</strong>
         </Card>
+        <Card>
+          <span>Estado operacional</span>
+          <strong>
+            {dispatches.data?.length
+              ? OPERATIONAL_STATE_LABELS[
+                  dispatchOperationalState(dispatches.data[0].status)
+                ]
+              : OPERATIONAL_STATE_LABELS.AVAILABLE}
+          </strong>
+        </Card>
       </div>
+      <Card>
+        <h2>Despacho atual</h2>
+        {dispatches.loading && <Loading />}
+        {dispatches.error && (
+          <ErrorState error={dispatches.error} onRetry={dispatches.reload} />
+        )}
+        {dispatches.data && !dispatches.data.length && (
+          <p className={styles.muted}>A equipe não possui dispatch ativo.</p>
+        )}
+        <div className={styles.list}>
+          {dispatches.data?.map((item) => (
+            <Link key={item.id} to={`/field-teams/dispatch/${item.id}`}>
+              <div>
+                <strong>{item.title}</strong>
+                <span>
+                  {DISPATCH_STATUS_LABELS[item.status]} ·{" "}
+                  {item.memberName ?? "Equipe inteira"} · há{" "}
+                  {formatDuration(item.elapsedMinutes)}
+                </span>
+              </div>
+              <Badge
+                tone={item.priority === "CRITICAL" ? "danger" : "warning"}
+              >
+                {DISPATCH_PRIORITY_LABELS[item.priority]}
+              </Badge>
+            </Link>
+          ))}
+        </div>
+      </Card>
       <Card>
         <h2>Capabilities</h2>
         {capabilities.loading && <Loading />}
