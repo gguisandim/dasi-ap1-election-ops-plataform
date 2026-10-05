@@ -1,16 +1,18 @@
-import type { PollingPlaceSummary } from "@eops/shared/elections";
-import { STATUS_LABELS } from "@eops/shared/elections";
+import { Badge } from "@eops/ui";
 import { Link } from "react-router-dom";
+import { OPERATIONAL_MAP_TYPE_LABELS, type OperationalMapFeature } from "../../shared/types/operational-map";
+import { statusLabel, statusTone } from "../utils/labels";
 import styles from "../styles/map.module.css";
-export function MapPopup({ place }: { place: PollingPlaceSummary }) {
+
+export function MapPopup({ feature }: { feature: OperationalMapFeature }) {
   return (
     <div className={styles.popup}>
-      <strong>{place.name}</strong>
-      <span>Zona: {place.electoralZone.number}</span>
-      <span>Seções: {place.sectionCount}</span>
-      <span>Eleitores: {place.registeredVoters.toLocaleString("pt-BR")}</span>
-      <b>Status: {STATUS_LABELS[place.monitoringStatus]}</b>
-      <Link to={`/polling-places/${place.id}`}>Ver local</Link>
+      <small>{OPERATIONAL_MAP_TYPE_LABELS[feature.type]}</small>
+      <strong>{feature.title}</strong>
+      {feature.subtitle && <span>{feature.subtitle}</span>}
+      <span>Status: <Badge tone={statusTone(feature.status)}>{statusLabel(feature.status)}</Badge></span>
+      {feature.severity && <span>Severidade: {feature.severity}</span>}
+      {feature.deepLink && <Link to={feature.deepLink}>Abrir domínio</Link>}
     </div>
   );
 }

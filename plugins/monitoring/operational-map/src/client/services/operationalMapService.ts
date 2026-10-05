@@ -1,22 +1,31 @@
 import { apiClient } from "@eops/api-client";
-import type { ElectionSummary, ElectoralZoneSummary, MonitoringStatus, PollingPlaceSummary } from "@eops/shared/elections";
+import type { ElectoralZoneSummary } from "@eops/shared/elections";
+import type { IncidentSeverity } from "@eops/shared/incidents";
+import { OPERATIONAL_MAP_TYPES, type OperationalMapFeature, type OperationalMapFeatureType } from "../../shared/types/operational-map";
+
 export interface MapFiltersValue {
-  electionId: string;
   zoneId: string;
-  municipality: string;
-  status: "" | MonitoringStatus;
+  status: string;
+  severity: "" | IncidentSeverity;
 }
-export const emptyMapFilters: MapFiltersValue = {
-  electionId: "",
-  zoneId: "",
-  municipality: "",
-  status: "",
-};
+
+export const emptyMapFilters: MapFiltersValue = { zoneId: "", status: "", severity: "" };
+
+export const allLayers: OperationalMapFeatureType[] = [...OPERATIONAL_MAP_TYPES];
+
+export interface FeaturesQuery extends MapFiltersValue {
+  types?: OperationalMapFeatureType[];
+}
+
 export const operationalMapService = {
-  elections: () => apiClient.get<ElectionSummary[]>("/elections"),
   zones: () => apiClient.get<ElectoralZoneSummary[]>("/electoral-zones"),
-  places: (filters: MapFiltersValue) =>
-    apiClient.get<PollingPlaceSummary[]>("/polling-places/map", {
-      query: filters,
+  features: (query: FeaturesQuery) =>
+    apiClient.get<OperationalMapFeature[]>("/operational-map/features", {
+      query: {
+        zoneId: query.zoneId,
+        status: query.status,
+        severity: query.severity,
+        types: query.types?.length ? query.types.join(",") : undefined,
+      },
     }),
 };

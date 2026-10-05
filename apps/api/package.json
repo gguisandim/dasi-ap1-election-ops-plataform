@@ -23,6 +23,7 @@
     "@eops/plugin-inventory": "0.1.0",
     "@eops/plugin-knowledge-runbooks": "0.1.0",
     "@eops/plugin-notifications": "0.1.0",
+    "@eops/plugin-operational-map": "0.1.0",
     "@eops/plugin-operational-simulator": "0.1.0",
     "@eops/plugin-polling-places": "0.1.0",
     "@eops/plugin-polling-sections": "0.1.0",

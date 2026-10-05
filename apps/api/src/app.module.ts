@@ -20,6 +20,7 @@ import { RiskManagementModule } from "@eops/plugin-risk-management/server";
 import { ShiftsModule } from "@eops/plugin-shifts/server";
 import { TasksModule } from "@eops/plugin-tasks/server";
 import { SimulatorModule } from "@eops/plugin-operational-simulator/server";
+import { OperationalMapModule } from "@eops/plugin-operational-map/server";
 import { AccessControlModule } from "@eops/plugin-access-control/server";
 import { AuditModule } from "@eops/plugin-audit/server";
 import { NotificationsModule } from "@eops/plugin-notifications/server";
@@ -38,6 +39,7 @@ import { NotificationsModule } from "@eops/plugin-notifications/server";
     AuditModule,
     NotificationsModule,
     SimulatorModule,
+    OperationalMapModule,
     RoutesModule,
     TransmissionModule,
     ReportsModule,
