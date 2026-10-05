@@ -1,6 +1,6 @@
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import { ConnectivityStatus, TransmissionAlertStatus, TransmissionAttemptResult, TransmissionStatus } from "@prisma/client";
-import { IsDateString, IsEnum, IsInt, IsOptional, IsString, Length, Max, Min } from "class-validator";
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsBoolean, IsDateString, IsEnum, IsInt, IsOptional, IsString, Length, Max, Min } from "class-validator";
 
 export class TransmissionQueryDto {
   @IsString() @IsOptional() electionId?: string;
@@ -47,4 +47,22 @@ export class RegisterAttemptDto {
 
 export class UpdateAlertDto {
   @IsEnum(TransmissionAlertStatus) status!: TransmissionAlertStatus;
+  @IsString() @IsOptional() @Length(1, 500) notes?: string;
+}
+
+export class AlertsQueryDto {
+  @IsString() @IsOptional() electionId?: string;
+  @IsString() @IsOptional() zoneId?: string;
+  @IsString() @IsOptional() pollingPlaceId?: string;
+  @IsEnum(TransmissionAlertStatus) @IsOptional() status?: TransmissionAlertStatus;
+  @Transform(({ value }) => value === true || value === "true" || value === "1") @IsBoolean() @IsOptional() includeResolved?: boolean;
+}
+
+export class RetryPointDto {
+  @IsString() @IsOptional() @Length(1, 500) reason?: string;
+}
+
+export class BulkRetryDto {
+  @IsArray() @ArrayMinSize(1) @ArrayMaxSize(100) @IsString({ each: true }) ids!: string[];
+  @IsString() @Length(1, 500) reason!: string;
 }

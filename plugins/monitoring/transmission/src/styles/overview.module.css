@@ -1,5 +1,6 @@
 .page { max-width: 1380px; --plugin-accent: #7dd3fc; display: grid; gap: 18px; }
 .header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .header h1 { margin: 7px 0 8px; font-size: 30px; }
 .header p { color: #8194aa; margin: 0; }
 .tag { text-transform: uppercase; font-size: 10px; letter-spacing: .14em; color: var(--plugin-accent); font-weight: 700; }
@@ -22,6 +23,12 @@
 .alerts article { display: grid; gap: 7px; padding: 12px; border: 1px solid #452535; border-radius: 9px; background: #1b1018; }
 .alerts p { margin: 0; }
 .alerts small { color: #7f91a7; }
+.alertHead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.alertState { color: #7f91a7; font-size: 12px; }
+.attention { display: grid; gap: 8px; margin-top: 12px; max-height: 520px; overflow: auto; }
+.attention > a { display: grid; gap: 6px; padding: 12px; color: inherit; text-decoration: none; border: 1px solid #1a2a41; border-radius: 9px; }
+.attention > a > span { color: #7f91a7; }
+.attention > a > div { display: flex; gap: 6px; flex-wrap: wrap; }
 .pointGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .pointGrid > a { display: grid; gap: 8px; padding: 14px; color: inherit; text-decoration: none; border: 1px solid #1a2a41; border-radius: 10px; }
 .pointGrid > a > span { color: #7f91a7; }
