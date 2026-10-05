@@ -1,5 +1,6 @@
 export type TaskStatus = "PENDING" | "IN_PROGRESS" | "BLOCKED" | "DONE" | "CANCELLED";
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+export type TaskExecutionMode = "OFFICE" | "FIELD" | "MIXED";
 
 export interface PersonReference { id: string; name: string; email: string; }
 export interface ElectionReference { id: string; name: string; year: number; }
@@ -9,12 +10,20 @@ export interface TaskReferences { elections: ElectionReference[]; zones: ZoneRef
 export interface TaskDependency { dependsOn: { id: string; title: string; status: TaskStatus; priority: TaskPriority; dueAt: string | null }; }
 export interface TaskComment { id: string; content: string; createdAt: string; author: PersonReference | null; }
 export interface TaskHistory { id: string; action: string; message: string; createdAt: string; actor: { id: string; name: string } | null; }
+export interface TaskSpecialtyRequirement {
+  id: string;
+  specialtyId: string;
+  requiredCount: number;
+  specialty: { id: string; key: string; name: string };
+}
 export interface Task {
   id: string;
   title: string;
   description: string | null;
   status: TaskStatus;
   priority: TaskPriority;
+  executionMode: TaskExecutionMode;
+  requiredTeamSize: number | null;
   assigneeId: string | null;
   electionId: string;
   electoralZoneId: string | null;
@@ -31,6 +40,7 @@ export interface Task {
   dependencies: TaskDependency[];
   comments: TaskComment[];
   history: TaskHistory[];
+  specialtyRequirements: TaskSpecialtyRequirement[];
   blockedByDependencies: boolean;
 }
 export interface TaskFilters {
@@ -40,6 +50,7 @@ export interface TaskFilters {
   assigneeId?: string;
   status?: TaskStatus;
   priority?: TaskPriority;
+  executionMode?: TaskExecutionMode;
   overdue?: boolean;
   search?: string;
 }

@@ -1,13 +1,16 @@
-import { TaskPriority, TaskStatus } from "@prisma/client";
+import { TaskExecutionMode, TaskPriority, TaskStatus } from "@prisma/client";
 import { Transform } from "class-transformer";
 import {
+  IsArray,
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsInt,
   IsOptional,
   IsString,
   Length,
   MaxLength,
+  Min,
 } from "class-validator";
 
 export class TasksQueryDto {
@@ -17,6 +20,7 @@ export class TasksQueryDto {
   @IsString() @IsOptional() assigneeId?: string;
   @IsEnum(TaskStatus) @IsOptional() status?: TaskStatus;
   @IsEnum(TaskPriority) @IsOptional() priority?: TaskPriority;
+  @IsEnum(TaskExecutionMode) @IsOptional() executionMode?: TaskExecutionMode;
   @Transform(({ value }) => value === "true" ? true : value === "false" ? false : value)
   @IsBoolean() @IsOptional() overdue?: boolean;
   @IsString() @MaxLength(160) @IsOptional() search?: string;
@@ -30,6 +34,9 @@ export class CreateTaskDto {
   @IsString() @IsOptional() pollingPlaceId?: string;
   @IsString() @IsOptional() assigneeId?: string;
   @IsEnum(TaskPriority) @IsOptional() priority?: TaskPriority;
+  @IsEnum(TaskExecutionMode) @IsOptional() executionMode?: TaskExecutionMode;
+  @IsInt() @Min(1) @IsOptional() requiredTeamSize?: number | null;
+  @IsArray() @IsString({ each: true }) @IsOptional() requiredSpecialtyIds?: string[];
   @IsDateString() @IsOptional() dueAt?: string;
 }
 
@@ -42,6 +49,9 @@ export class UpdateTaskDto {
   @IsString() @IsOptional() assigneeId?: string | null;
   @IsEnum(TaskPriority) @IsOptional() priority?: TaskPriority;
   @IsEnum(TaskStatus) @IsOptional() status?: TaskStatus;
+  @IsEnum(TaskExecutionMode) @IsOptional() executionMode?: TaskExecutionMode;
+  @IsInt() @Min(1) @IsOptional() requiredTeamSize?: number | null;
+  @IsArray() @IsString({ each: true }) @IsOptional() requiredSpecialtyIds?: string[];
   @IsDateString() @IsOptional() dueAt?: string | null;
 }
 

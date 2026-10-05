@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { Prisma, TaskHistoryAction, TaskPriority, TaskStatus, UserStatus } from "@prisma/client";
+import { Prisma, TaskExecutionMode, TaskHistoryAction, TaskPriority, TaskStatus, UserStatus } from "@prisma/client";
 import { PrismaService } from "@eops/database";
 import { EventBus } from "@eops/event-bus";
 import { CreateTaskCommentDto, CreateTaskDependencyDto, CreateTaskDto, TasksQueryDto, UpdateTaskDto } from "./dto/tasks.dto";
@@ -13,6 +13,7 @@ const taskInclude = {
   dependencies: { include: { dependsOn: { select: { id: true, title: true, status: true, priority: true, dueAt: true } } } },
   comments: { include: { author: { select: { id: true, name: true, email: true } } }, orderBy: { createdAt: "asc" as const } },
   history: { include: { actor: { select: { id: true, name: true } } }, orderBy: { createdAt: "desc" as const }, take: 100 },
+  specialtyRequirements: { include: { specialty: { select: { id: true, key: true, name: true } } }, orderBy: { specialty: { name: "asc" as const } } },
 } satisfies Prisma.TaskInclude;
 
 type TaskRecord = Prisma.TaskGetPayload<{ include: typeof taskInclude }>;
@@ -69,6 +70,7 @@ export class TasksService {
         assigneeId: query.assigneeId,
         status: query.status,
         priority: query.priority,
+        executionMode: query.executionMode,
         ...(query.search ? { OR: [{ title: { contains: query.search, mode: "insensitive" } }, { description: { contains: query.search, mode: "insensitive" } }] } : {}),
       },
       include: taskInclude,
@@ -105,6 +107,7 @@ export class TasksService {
   async createTask(dto: CreateTaskDto, actorId: string) {
     const electoralZoneId = await this.validateLocation(dto.electionId, dto.electoralZoneId, dto.pollingPlaceId);
     if (dto.assigneeId) await this.requireActiveUser(dto.assigneeId);
+    await this.requireActiveSpecialties(dto.requiredSpecialtyIds);
     const task = await this.prisma.$transaction(async (tx) => {
       const created = await tx.task.create({
         data: {
@@ -116,7 +119,17 @@ export class TasksService {
           assigneeId: dto.assigneeId,
           createdById: actorId,
           priority: dto.priority ?? TaskPriority.MEDIUM,
+          executionMode: dto.executionMode ?? TaskExecutionMode.OFFICE,
+          requiredTeamSize: dto.requiredTeamSize ?? undefined,
           dueAt: dto.dueAt ? new Date(dto.dueAt) : undefined,
+          specialtyRequirements: dto.requiredSpecialtyIds?.length
+            ? {
+                create: dto.requiredSpecialtyIds.map((specialtyId) => ({
+                  specialtyId,
+                  requiredCount: 1,
+                })),
+              }
+            : undefined,
         },
       });
       await tx.taskHistory.create({ data: { taskId: created.id, actorId, action: TaskHistoryAction.CREATED, message: "Tarefa criada." } });
@@ -132,6 +145,7 @@ export class TasksService {
     const current = await this.prisma.task.findUnique({ where: { id }, include: { dependencies: { include: { dependsOn: { select: { status: true } } } } } });
     if (!current) throw new NotFoundException("Tarefa não encontrada.");
     if (dto.assigneeId) await this.requireActiveUser(dto.assigneeId);
+    if (dto.requiredSpecialtyIds) await this.requireActiveSpecialties(dto.requiredSpecialtyIds);
     const electionId = dto.electionId ?? current.electionId;
     const zoneId = dto.electoralZoneId === undefined ? current.electoralZoneId ?? undefined : dto.electoralZoneId ?? undefined;
     const placeId = dto.pollingPlaceId === undefined ? current.pollingPlaceId ?? undefined : dto.pollingPlaceId ?? undefined;
@@ -148,14 +162,26 @@ export class TasksService {
     if (dto.priority !== undefined) updates.priority = dto.priority;
     if (dto.status !== undefined) updates.status = dto.status;
     if (dto.dueAt !== undefined) updates.dueAt = dto.dueAt === null ? null : new Date(dto.dueAt);
+    if (dto.executionMode !== undefined) updates.executionMode = dto.executionMode;
+    if (dto.requiredTeamSize !== undefined) updates.requiredTeamSize = dto.requiredTeamSize;
     if (dto.status !== undefined) updates.completedAt = dto.status === TaskStatus.DONE ? current.completedAt ?? new Date() : null;
     const previousDependencyBlocked = hasUnfinishedDependencies(current);
     const changedAssignee = dto.assigneeId !== undefined && dto.assigneeId !== current.assigneeId;
     const changedStatus = dto.status !== undefined && dto.status !== current.status;
     const changedPriority = dto.priority !== undefined && dto.priority !== current.priority;
     const changedDueDate = dto.dueAt !== undefined && (dto.dueAt ? new Date(dto.dueAt).getTime() : null) !== current.dueAt?.getTime();
+    const changedExecutionMode = dto.executionMode !== undefined && dto.executionMode !== current.executionMode;
+    const changedRequirements = dto.requiredSpecialtyIds !== undefined || dto.requiredTeamSize !== undefined;
     const task = await this.prisma.$transaction(async (tx) => {
       await tx.task.update({ where: { id }, data: updates });
+      if (dto.requiredSpecialtyIds !== undefined) {
+        await tx.taskSpecialtyRequirement.deleteMany({ where: { taskId: id } });
+        if (dto.requiredSpecialtyIds.length)
+          await tx.taskSpecialtyRequirement.createMany({
+            data: dto.requiredSpecialtyIds.map((specialtyId) => ({ taskId: id, specialtyId, requiredCount: 1 })),
+            skipDuplicates: true,
+          });
+      }
       const metadata: Record<string, unknown> = {};
       if (dto.title !== undefined && dto.title !== current.title) metadata.title = { from: current.title, to: dto.title };
       if (dto.description !== undefined && dto.description !== current.description) metadata.description = true;
@@ -164,6 +190,8 @@ export class TasksService {
       if (changedStatus) metadata.status = { from: current.status, to: nextStatus };
       if (changedPriority) metadata.priority = { from: current.priority, to: dto.priority };
       if (changedDueDate) metadata.dueAt = { from: current.dueAt?.toISOString() ?? null, to: dto.dueAt ?? null };
+      if (changedExecutionMode) metadata.executionMode = { from: current.executionMode, to: dto.executionMode };
+      if (changedRequirements) metadata.fieldRequirements = { requiredTeamSize: dto.requiredTeamSize ?? null, requiredSpecialtyIds: dto.requiredSpecialtyIds ?? null };
       if (Object.keys(metadata).length) await tx.taskHistory.create({ data: { taskId: id, actorId, action: TaskHistoryAction.UPDATED, message: "Dados da tarefa atualizados.", metadata: metadata as Prisma.InputJsonValue } });
       if (changedAssignee) await tx.taskHistory.create({ data: { taskId: id, actorId, action: TaskHistoryAction.ASSIGNED, message: dto.assigneeId ? "Responsável atualizado." : "Responsável removido.", metadata: { from: current.assigneeId, to: dto.assigneeId } } });
       if (changedStatus) await tx.taskHistory.create({ data: { taskId: id, actorId, action: nextStatus === TaskStatus.DONE ? TaskHistoryAction.COMPLETED : nextStatus === TaskStatus.CANCELLED ? TaskHistoryAction.CANCELLED : TaskHistoryAction.STATUS_CHANGED, message: `Status alterado de ${current.status} para ${nextStatus}.`, metadata: { from: current.status, to: nextStatus } } });
@@ -230,6 +258,19 @@ export class TasksService {
     const task = await this.prisma.task.findUnique({ where: { id }, select: { id: true } });
     if (!task) throw new NotFoundException("Tarefa não encontrada.");
     return task;
+  }
+
+  /**
+   * Requisitos de campo reutilizam a entidade de especialidade existente.
+   * A leitura usa o schema Prisma compartilhado; nenhum plugin é importado.
+   */
+  private async requireActiveSpecialties(ids?: string[]) {
+    if (!ids?.length) return;
+    const count = await this.prisma.fieldSpecialty.count({
+      where: { id: { in: ids }, active: true },
+    });
+    if (count !== ids.length)
+      throw new BadRequestException("Uma ou mais especialidades são inválidas.");
   }
 
   private async requireActiveUser(id: string) {
