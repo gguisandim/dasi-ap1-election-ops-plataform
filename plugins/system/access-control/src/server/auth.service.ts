@@ -8,9 +8,10 @@ const userAccess = {
   roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } },
 } as const;
 
-function publicUser(user: { id: string; name: string; email: string; status: UserStatus; roles: Array<{ role: { key: string; permissions: Array<{ permission: { key: string } }> } }> }) {
-  const roles = user.roles.map((entry) => entry.role.key);
-  const permissions = [...new Set(user.roles.flatMap((entry) => entry.role.permissions.map((permission) => permission.permission.key)))].sort();
+function publicUser(user: { id: string; name: string; email: string; status: UserStatus; roles: Array<{ role: { key: string; active: boolean; permissions: Array<{ permission: { key: string } }> } }> }) {
+  const activeRoles = user.roles.map((entry) => entry.role).filter((role) => role.active);
+  const roles = activeRoles.map((role) => role.key);
+  const permissions = [...new Set(activeRoles.flatMap((role) => role.permissions.map((permission) => permission.permission.key)))].sort();
   return { id: user.id, name: user.name, email: user.email, status: user.status, roles, permissions };
 }
 

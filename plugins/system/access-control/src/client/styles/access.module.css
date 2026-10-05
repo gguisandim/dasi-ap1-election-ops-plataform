@@ -2,7 +2,55 @@
 .login form { width: min(410px, calc(100vw - 32px)); display: grid; gap: 16px; padding: 32px; background: #0d1a2b; border: 1px solid #20344b; border-radius: 14px; }
 .login h1, .login p { margin: 0; } .login p { color: #8499af; }
 .logo { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 13px; background: #1f75bb; font-weight: 800; }
-.page { max-width: 1200px; margin: 0 auto; } .page header { margin-bottom: 20px; } .page header span { color: #72aee6; font-size: 11px; letter-spacing: .13em; } .page header h1 { margin: 6px 0; } .page header p { color: #8398ae; }
-.grid { display: grid; grid-template-columns: 360px 1fr; gap: 16px; } .grid form { display: grid; gap: 12px; }
-.users { list-style: none; margin: 0; padding: 0; } .users li { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid #1c3048; } .users span { display: block; color: #8296ad; margin-top: 3px; }
-@media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+
+.page { max-width: 1240px; margin: 0 auto; display: grid; gap: 16px; }
+.header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.header > div > span { color: #72aee6; font-size: 11px; letter-spacing: .13em; }
+.header h1 { margin: 6px 0; }
+.header p { color: #8398ae; margin: 0; }
+.headerActions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.nav { display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid #1c3048; padding-bottom: 8px; }
+.nav a { color: #8398ae; text-decoration: none; padding: 6px 12px; border-radius: 8px; font-size: 13px; }
+.nav a:hover { color: #e9eef7; background: #102239; }
+.nav a.active { color: #07111f; background: #38bdf8; }
+
+.layout { display: grid; grid-template-columns: 360px 1fr; gap: 16px; align-items: start; }
+.form { display: grid; gap: 12px; }
+
+.tableWrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th { text-align: left; color: #8398ae; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; padding: 8px 12px; border-bottom: 1px solid #1c3048; }
+.table td { padding: 10px 12px; border-bottom: 1px solid #16283d; vertical-align: middle; }
+.table td small { display: block; color: #8296ad; margin-top: 3px; }
+.table a { color: #cfe6f7; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.muted { color: #8296ad; margin: 0; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #9fb3c8; }
+
+.detailGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.detailColumn { display: grid; gap: 16px; }
+.sectionHeading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+.list { list-style: none; margin: 0; padding: 0; }
+.list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid #1c3048; }
+.list small { display: block; color: #8296ad; margin-top: 3px; }
+.inlineForm { display: flex; gap: 12px; align-items: flex-end; margin-top: 12px; flex-wrap: wrap; }
+
+.permissionBlock { margin-top: 12px; display: grid; gap: 6px; }
+.permissionGroups { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.permissionGroup { border: 1px solid #1c3048; border-radius: 10px; padding: 10px 12px; display: grid; gap: 4px; }
+.permissionGroup legend { color: #8398ae; font-size: 12px; padding: 0 4px; }
+.checkbox { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #c7d4e2; }
+
+.inlineError { color: #fb8a94; margin: 0; font-size: 13px; }
+.dangerZone { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; border-top: 1px solid #1c3048; padding-top: 12px; }
+
+.matrix { font-size: 12px; }
+.matrixPermission span { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 10px; text-transform: none; letter-spacing: 0; color: #6f8299; }
+.matrixRole { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.matrixOn { text-align: center; color: #34d399; font-weight: 700; }
+.matrixOff { text-align: center; color: #33465d; }
+
+@media (max-width: 900px) { .layout, .detailGrid { grid-template-columns: 1fr; } }
