@@ -149,6 +149,45 @@ export interface DomainEventMap {
     name: string;
   };
 
+  "access.role_created": {
+    entityId: string;
+    actorId?: string;
+    key: string;
+    name: string;
+    permissionKeys: string[];
+  };
+
+  "access.role_updated": {
+    entityId: string;
+    actorId?: string;
+    key: string;
+    name: string;
+    permissionKeys: string[];
+  };
+
+  "access.role_deactivated": {
+    entityId: string;
+    actorId?: string;
+    key: string;
+    name: string;
+  };
+
+  "access.user_roles_changed": {
+    entityId: string;
+    actorId?: string;
+    userId: string;
+    from: string[];
+    to: string[];
+  };
+
+  "access.user_status_changed": {
+    entityId: string;
+    actorId?: string;
+    userId: string;
+    from: string;
+    to: string;
+  };
+
   "election.created": {
     entityId: string;
     actorId?: string;
@@ -553,6 +592,25 @@ export interface DomainEventMap {
     reason: string;
   };
 
+  "preparation_checklist.readiness_changed": {
+    entityId: string;
+    actorId?: string;
+    checklistId: string;
+    electionId: string;
+    pollingPlaceId: string;
+    from: number;
+    to: number;
+  };
+
+  "preparation_checklist.blocker_detected": {
+    entityId: string;
+    actorId?: string;
+    checklistId: string;
+    electionId: string;
+    pollingPlaceId: string;
+    blockers: string[];
+  };
+
   "task.created": {
     entityId: string;
     actorId?: string;
@@ -591,6 +649,22 @@ export interface DomainEventMap {
     title: string;
     electionId: string;
     reason: string;
+  };
+
+  "task.subtask_created": {
+    entityId: string;
+    actorId?: string;
+    title: string;
+    electionId: string;
+    parentId: string;
+  };
+
+  "task.bulk_updated": {
+    entityId: string;
+    actorId?: string;
+    taskIds: string[];
+    count: number;
+    fields: string[];
   };
 
   "shift.created": {

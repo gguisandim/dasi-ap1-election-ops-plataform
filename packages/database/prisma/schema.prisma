@@ -555,6 +555,7 @@ model Election {
   risks                  Risk[]
   preparationChecklists  PreparationChecklist[]
   tasks                  Task[]
+  taskMilestones         TaskMilestone[]
 
   @@index([year, status])
 }
@@ -857,6 +858,8 @@ model User {
   preparationChecklistHistory               PreparationChecklistHistory[]
   assignedTasks                             Task[]                            @relation("TaskAssignee")
   createdTasks                              Task[]                            @relation("TaskCreator")
+  completedTaskChecklistItems               TaskChecklistItem[]               @relation("TaskChecklistItemDoneBy")
+  taskSavedFilters                          TaskSavedFilter[]
   taskComments                              TaskComment[]
   taskHistory                               TaskHistory[]                     @relation("TaskHistoryActor")
   shiftHistory                              FieldShiftHistory[]               @relation("FieldShiftHistoryActor")
@@ -874,6 +877,7 @@ model Role {
   name        String
   description String?
   system      Boolean          @default(false)
+  active      Boolean          @default(true)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   users       UserRole[]
@@ -2122,6 +2126,7 @@ model PreparationChecklistTemplate {
   description  String?
   locationType PreparationLocationType @default(POLLING_PLACE)
   active       Boolean                @default(true)
+  version      Int                    @default(1)
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
   items        PreparationChecklistTemplateItem[]
@@ -2152,6 +2157,8 @@ model PreparationChecklist {
   templateId      String
   assigneeId      String?
   status          PreparationChecklistStatus @default(PENDING)
+  dueAt           DateTime?
+  templateVersion Int                       @default(1)
   approvedAt      DateTime?
   approvedById    String?
   createdAt       DateTime                  @default(now())
@@ -2170,6 +2177,7 @@ model PreparationChecklist {
   @@index([pollingPlaceId, status])
   @@index([assigneeId, status])
   @@index([templateId])
+  @@index([dueAt])
 }
 
 model PreparationChecklistItem {
@@ -2183,6 +2191,7 @@ model PreparationChecklistItem {
   status           PreparationChecklistItemStatus    @default(PENDING)
   assigneeId       String?
   observation      String?
+  dueAt            DateTime?
   completedAt      DateTime?
   createdAt        DateTime                          @default(now())
   updatedAt        DateTime                          @updatedAt
@@ -2237,6 +2246,8 @@ model Task {
   electionId      String
   electoralZoneId String?
   pollingPlaceId  String?
+  parentId        String?
+  milestoneId     String?
   dueAt           DateTime?
   completedAt     DateTime?
   createdAt       DateTime     @default(now())
@@ -2246,6 +2257,11 @@ model Task {
   election        Election     @relation(fields: [electionId], references: [id], onDelete: Cascade)
   electoralZone   ElectoralZone? @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
   pollingPlace    PollingPlace?  @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  parent          Task?        @relation("TaskHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  subtasks        Task[]       @relation("TaskHierarchy")
+  milestone       TaskMilestone? @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  checklistItems  TaskChecklistItem[]
+  labels          TaskLabelAssignment[]
   dependencies    TaskDependency[] @relation("TaskDependencies")
   dependents      TaskDependency[] @relation("TaskDependents")
   comments        TaskComment[]
@@ -2258,6 +2274,71 @@ model Task {
   @@index([pollingPlaceId, status])
   @@index([assigneeId, status])
   @@index([priority, dueAt])
+  @@index([parentId])
+  @@index([milestoneId])
+}
+
+model TaskChecklistItem {
+  id        String   @id @default(cuid())
+  taskId    String
+  title     String
+  order     Int
+  done      Boolean  @default(false)
+  doneAt    DateTime?
+  doneById  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  doneBy    User?    @relation("TaskChecklistItemDoneBy", fields: [doneById], references: [id], onDelete: SetNull)
+
+  @@unique([taskId, order])
+  @@index([taskId, done])
+}
+
+model TaskLabel {
+  id        String                @id @default(cuid())
+  name      String                @unique
+  createdAt DateTime              @default(now())
+  tasks     TaskLabelAssignment[]
+}
+
+model TaskLabelAssignment {
+  taskId    String
+  labelId   String
+  createdAt DateTime @default(now())
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label     TaskLabel @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, labelId])
+  @@index([labelId])
+}
+
+model TaskMilestone {
+  id          String   @id @default(cuid())
+  electionId  String
+  name        String
+  description String?
+  dueAt       DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  election    Election @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+
+  @@unique([electionId, name])
+  @@index([electionId])
+}
+
+model TaskSavedFilter {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  filters   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+  @@index([userId])
 }
 
 model TaskDependency {

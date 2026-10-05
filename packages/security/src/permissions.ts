@@ -55,6 +55,7 @@ export const PERMISSIONS = {
   },
 
   users: { read: "users.read", manage: "users.manage" },
+  roles: { read: "roles.read", manage: "roles.manage" },
   audit: { read: "audit.read" },
   simulation: { read: "simulation.read", manage: "simulation.manage" },
 } as const;
@@ -117,6 +118,9 @@ export const PLATFORM_PERMISSION_KEYS = [
 
   PERMISSIONS.users.read,
   PERMISSIONS.users.manage,
+
+  PERMISSIONS.roles.read,
+  PERMISSIONS.roles.manage,
 
   PERMISSIONS.audit.read,
 
