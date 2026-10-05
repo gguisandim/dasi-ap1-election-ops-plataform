@@ -228,8 +228,17 @@ Verificar o que `check-ap1.ps1` faz e, se for validação de repositório, reimp
 
 ### Estado
 
-open
+partially-resolved
 
 ### Decisão e evidência de encerramento
 
-Não encerrado. Requer decisão do usuário: autorizar o bypass da política de execução para este script, ou migrar a verificação para Node.js.
+O bloqueio operacional foi removido na execução de `2026-10-05-operational-intelligence-improvements`: aquele prompt autorizou explicitamente `-ExecutionPolicy Bypass` para `scripts/check-ap1.ps1`, e o gate foi executado com sucesso.
+
+```text
+$ powershell -ExecutionPolicy Bypass -File scripts/check-ap1.ps1
+Specs: 25
+Sessoes: 15
+Estrutura formal basica da AP1: OK
+```
+
+A causa estrutural permanece: o script continua sendo `.ps1` não assinado e continua exigindo bypass de política de execução, o que depende de autorização explícita em cada execução. Encerrar de fato exige reimplementá-lo como script Node executável via `npm run`. Reavaliar quando essa migração ocorrer.
