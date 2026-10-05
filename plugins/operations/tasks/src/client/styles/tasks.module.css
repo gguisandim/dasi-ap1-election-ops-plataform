@@ -73,6 +73,31 @@
 .history p { margin: 0; font-size: 12px; color: #c4cec8; }
 .history small { color: #899790; }
 .dependencyForm { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
-@media (max-width: 1050px) { .metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); } .detailGrid { grid-template-columns: 1fr; } }
+.inlineForm { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 8px; align-items: end; margin-top: 10px; }
+.inlineForm .grow { min-width: 0; }
+.graph { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 8px; }
+.graph h3 { margin: 0 0 8px; font-size: 13px; color: #dbe4df; }
+.labelRow { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; min-height: 22px; }
+.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.checklist li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid #2b3838; }
+.checklistToggle { display: flex; align-items: center; gap: 9px; color: #c8d2cc; font-size: 13px; cursor: pointer; }
+.checklistDone .checklistToggle span { color: #7f8d87; text-decoration: line-through; }
+.chipList { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip, .chipStatic { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border: 1px solid #33413c; border-radius: 12px; background: #101a18; color: #cbd5d0; font-size: 11px; }
+.chipStatic { border-style: dashed; }
+.chip button { border: 0; background: transparent; color: #d98a74; font-size: 14px; line-height: 1; cursor: pointer; padding: 0 2px; }
+.chipLabel { border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; padding: 0; }
+.chipLabel:hover { color: #f0bd61; }
+.checkColumn { width: 34px; text-align: center; }
+.checkColumn input { width: 16px; height: 16px; }
+.workloadGrid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, .9fr); gap: 18px; align-items: start; }
+.workloadGrid h3, .workloadSide h3 { margin: 0 0 8px; font-size: 13px; color: #dbe4df; }
+.workloadSide { display: grid; gap: 16px; }
+.barList { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.barList li { display: grid; grid-template-columns: minmax(96px, 130px) minmax(0, 1fr) auto; align-items: center; gap: 9px; font-size: 12px; color: #bcc7c1; }
+.bar { height: 7px; border-radius: 4px; background: #1b2624; overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, #5f8f7d, #8fb9a6); }
+.barList strong { font-variant-numeric: tabular-nums; color: #e7ede9; }
+@media (max-width: 1050px) { .metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); } .detailGrid { grid-template-columns: 1fr; } .workloadGrid { grid-template-columns: 1fr; } }
 @media (max-width: 700px) { .header, .detailHeading { flex-direction: column; } .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } .filters { grid-template-columns: repeat(2, minmax(120px, 1fr)); } .attentionRow { grid-template-columns: minmax(0, 1fr) auto; gap: 7px; } .attentionRow > :nth-child(n+3) { grid-column: 1 / -1; } .form, .detailFields { grid-template-columns: 1fr; } .form .wide, .detailFields .wide, .formActions { grid-column: auto; } .dependencyForm { grid-template-columns: 1fr; } }
 @media (max-width: 420px) { .filters { grid-template-columns: 1fr; } .metrics { gap: 7px; } .metric { padding: 11px; } }

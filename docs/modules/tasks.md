@@ -371,6 +371,65 @@ Uma tarefa em modo `FIELD` pode originar um Dispatch. A relação é persistida 
 
 A UI consulta `GET /field-teams/specialties` e `GET /field-teams/dispatches?taskId=` por HTTP público; não há import de implementação entre plugins.
 
+## 21. Gestão de trabalho (subtarefas, checklist, rótulos, marcos, filtros, lote, grafo e carga)
+
+A evolução definida em `SPEC/2026-10-05-platform-administration-work-improvements.md` (seção 4) adiciona capacidades de gestão de trabalho sem alterar a propriedade de domínio de Tasks sobre a entidade `Task`.
+
+### Subtarefas
+
+- `Task.parentId` forma hierarquia de profundidade máxima 2: uma tarefa com pai não pode receber subtarefas.
+- `GET/POST /api/tasks/:id/subtasks`; `POST /api/tasks` também aceita `parentId`.
+- A subtarefa herda o pleito do pai e, quando zona/local são omitidos, herda a localização do pai.
+- Uma tarefa com subtarefas não terminais (`status` diferente de `DONE`/`CANCELLED`) não pode ser concluída.
+- Emite `task.subtask_created`.
+
+### Checklist interno
+
+- Modelo `TaskChecklistItem` (`title`, `order` único por tarefa, `done`, `doneAt`, `doneById`).
+- `POST /api/tasks/:id/checklist-items`, `PATCH/DELETE /api/tasks/checklist-items/:itemId`.
+- `done`/`doneAt`/`doneById` são definidos pelo servidor; o cliente nunca envia timestamps.
+- Não bloqueia transições de status e não se confunde com Preparation Checklists.
+
+### Rótulos
+
+- `TaskLabel` (`name` único) e `TaskLabelAssignment`.
+- `GET/POST /api/tasks/labels`, `DELETE /api/tasks/labels/:id`.
+- `PATCH /api/tasks/:id` aceita `labelIds` (substituição do conjunto); `GET /api/tasks` aceita `labelId`.
+
+### Marcos
+
+- `TaskMilestone` (`electionId`, `name`, `description?`, `dueAt?`) e `Task.milestoneId` opcional.
+- `GET/POST /api/tasks/milestones`, `PATCH /api/tasks/milestones/:id`.
+- O marco precisa pertencer ao mesmo pleito da tarefa; `GET /api/tasks` aceita `milestoneId`.
+
+### Filtros salvos
+
+- `TaskSavedFilter` privado por usuário, único por `(userId, name)`.
+- `GET/POST /api/tasks/saved-filters`, `DELETE /api/tasks/saved-filters/:id`; filtro de outro usuário responde 404.
+- As rotas são declaradas antes de `GET /api/tasks/:id` para não serem capturadas como identificador.
+
+### Ações em lote
+
+- `PATCH /api/tasks/bulk` com `ids` (1 a 100) e ao menos um de `status`, `priority`, `assigneeId`, `addLabelIds`, `removeLabelIds`.
+- Exige `tasks.manage`; é atômico (valida todas as tarefas antes de aplicar) e registra histórico por tarefa.
+- Emite um único evento `task.bulk_updated` com `count` e `fields`.
+
+### Grafo de dependências
+
+- `GET /api/tasks/:id` inclui `dependents`; `GET /api/tasks/:id/dependencies` retorna `blockedBy`, `blocks` e `blockedByDependencies`.
+- `blockedByDependencies` continua derivado (dependência obrigatória não concluída) e nunca persistido; ciclos seguem rejeitados na criação.
+
+### Carga de trabalho
+
+- `GET /api/tasks/workload` com filtros `electionId`, `electoralZoneId`, `pollingPlaceId`.
+- Resposta derivada (sem persistência): `byAssignee` (total/pending/inProgress/blocked/overdue/critical), `byStatus`, `byPriority` e `byTeam`.
+- `byTeam` usa o `Task.dispatches` → `FieldDispatch.teamId` existente; tarefas sem despacho ativo aparecem em "Sem equipe". Não há balanceamento automático.
+
+### Eventos e RBAC
+
+- Eventos novos: `task.subtask_created` e `task.bulk_updated`; eventos existentes são reutilizados.
+- Nenhuma permissão nova: `tasks.read`/`tasks.manage` continuam governando; lote exige `tasks.manage` validado no backend.
+
 ## 20. Critérios de aceite
 
 O módulo será considerado funcional quando for possível:
