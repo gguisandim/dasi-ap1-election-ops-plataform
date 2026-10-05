@@ -867,6 +867,8 @@ model User {
   fieldMemberUnavailability                 FieldMemberUnavailability[]       @relation("FieldMemberUnavailabilityActor")
   createdFieldDispatches                    FieldDispatch[]                   @relation("FieldDispatchCreator")
   fieldDispatchEvents                       FieldDispatchEvent[]              @relation("FieldDispatchEventActor")
+  acknowledgedTransmissionAlerts            TransmissionAlert[]               @relation("TransmissionAlertAcknowledger")
+  resolvedTransmissionAlerts                TransmissionAlert[]               @relation("TransmissionAlertResolver")
 
   @@index([status, name])
 }
@@ -965,16 +967,53 @@ model NotificationPreference {
 }
 
 model SimulationScenario {
-  id            String       @id @default(cuid())
-  name          String
-  description   String?
-  configuration Json
-  active        Boolean      @default(true)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  simulations   Simulation[]
+  id              String       @id @default(cuid())
+  name            String
+  description     String?
+  configuration   Json
+  active          Boolean      @default(true)
+  seed            Int?
+  durationSeconds Int?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  simulations     Simulation[]
+  events          SimulationScenarioEvent[]
 
   @@index([active, name])
+}
+
+enum SimulationScenarioEventType {
+  INCIDENT_CREATE
+  TRANSMISSION_FAILURE
+  TRANSMISSION_RECOVERY
+  ASSET_FAILURE
+  ASSET_RECOVERY
+}
+
+enum SimulationTargetType {
+  NONE
+  POLLING_PLACE
+  ZONE
+  ASSET
+  TRANSMISSION
+}
+
+model SimulationScenarioEvent {
+  id               String                      @id @default(cuid())
+  scenarioId       String
+  offsetSeconds    Int
+  type             SimulationScenarioEventType
+  severity         IncidentSeverity?
+  targetType       SimulationTargetType        @default(NONE)
+  targetId         String?
+  probability      Int                         @default(100)
+  payload          Json?
+  createdAt        DateTime                    @default(now())
+  scenario         SimulationScenario          @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  simulationEvents SimulationEvent[]
+
+  @@unique([scenarioId, offsetSeconds, type])
+  @@index([scenarioId, offsetSeconds])
 }
 
 model Simulation {
@@ -991,6 +1030,9 @@ model Simulation {
   logistics         Boolean             @default(true)
   applyToOperations Boolean             @default(false)
   elapsedSeconds    Int                 @default(0)
+  seed              Int?
+  score             Int?
+  scoreBreakdown    Json?
   startedAt         DateTime?
   pausedAt          DateTime?
   endedAt           DateTime?
@@ -1007,22 +1049,27 @@ model Simulation {
 }
 
 model SimulationEvent {
-  id             String        @id @default(cuid())
-  simulationId   String
-  eventType      String
-  title          String
-  description    String?
-  offsetSeconds  Int
-  payload        Json?
-  incidentId     String?
-  assetId        String?
-  pollingPlaceId String?
-  createdAt      DateTime      @default(now())
-  simulation     Simulation    @relation(fields: [simulationId], references: [id], onDelete: Cascade)
-  incident       Incident?     @relation(fields: [incidentId], references: [id], onDelete: SetNull)
-  asset          Asset?        @relation(fields: [assetId], references: [id], onDelete: SetNull)
-  pollingPlace   PollingPlace? @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  id              String                   @id @default(cuid())
+  simulationId    String
+  eventType       String
+  title           String
+  description     String?
+  offsetSeconds   Int
+  payload         Json?
+  result          String?
+  severity        IncidentSeverity?
+  incidentId      String?
+  assetId         String?
+  pollingPlaceId  String?
+  scenarioEventId String?
+  createdAt       DateTime                 @default(now())
+  simulation      Simulation               @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  incident        Incident?                @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  asset           Asset?                   @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  pollingPlace    PollingPlace?            @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  scenarioEvent   SimulationScenarioEvent? @relation(fields: [scenarioEventId], references: [id], onDelete: SetNull)
 
+  @@unique([simulationId, scenarioEventId])
   @@index([simulationId, offsetSeconds])
   @@index([incidentId])
 }
@@ -1228,18 +1275,25 @@ model TransmissionTimelineEvent {
 }
 
 model TransmissionAlert {
-  id         String                  @id @default(cuid())
-  pointId    String
-  type       TransmissionAlertType
-  status     TransmissionAlertStatus @default(OPEN)
-  message    String
-  createdAt  DateTime                @default(now())
-  updatedAt  DateTime                @updatedAt
-  resolvedAt DateTime?
-  point      TransmissionPoint       @relation(fields: [pointId], references: [id], onDelete: Cascade)
+  id               String                  @id @default(cuid())
+  pointId          String
+  type             TransmissionAlertType
+  status           TransmissionAlertStatus @default(OPEN)
+  message          String
+  notes            String?
+  acknowledgedAt   DateTime?
+  acknowledgedById String?
+  resolvedAt       DateTime?
+  resolvedById     String?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  point            TransmissionPoint       @relation(fields: [pointId], references: [id], onDelete: Cascade)
+  acknowledgedBy   User?                   @relation("TransmissionAlertAcknowledger", fields: [acknowledgedById], references: [id], onDelete: SetNull)
+  resolvedBy       User?                   @relation("TransmissionAlertResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
 
   @@index([pointId, status])
   @@index([type, status])
+  @@index([status, createdAt])
 }
 
 model FieldTeam {

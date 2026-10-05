@@ -269,6 +269,75 @@ export interface DomainEventMap {
     message: string;
   };
 
+  "transmission.alert_acknowledged": {
+    entityId: string;
+    actorId?: string;
+    alertId: string;
+    pointId: string;
+    identification: string;
+    alertType: string;
+  };
+
+  "transmission.alert_resolved": {
+    entityId: string;
+    actorId?: string;
+    alertId: string;
+    pointId: string;
+    identification: string;
+    alertType: string;
+  };
+
+  "transmission.retry_requested": {
+    entityId: string;
+    actorId?: string;
+    pointIds: string[];
+    count: number;
+    reason?: string;
+  };
+
+  "simulation.started": {
+    entityId: string;
+    actorId?: string;
+    name: string;
+    electionId: string;
+    scenarioId?: string;
+  };
+
+  "simulation.resumed": {
+    entityId: string;
+    actorId?: string;
+    name: string;
+    electionId: string;
+    elapsedSeconds: number;
+  };
+
+  "simulation.paused": {
+    entityId: string;
+    actorId?: string;
+    name: string;
+    electionId: string;
+    elapsedSeconds: number;
+  };
+
+  "simulation.finished": {
+    entityId: string;
+    actorId?: string;
+    name: string;
+    electionId: string;
+    elapsedSeconds: number;
+    incidentCount: number;
+  };
+
+  "simulation.scored": {
+    entityId: string;
+    actorId?: string;
+    name: string;
+    electionId: string;
+    score: number;
+    executedEvents: number;
+    plannedEvents: number;
+  };
+
   "field_team.allocated": {
     entityId: string;
     actorId?: string;
@@ -963,6 +1032,7 @@ export function requiredPermissionForEvent(
   if (name.startsWith("incident.")) return "incidents.read";
   if (name.startsWith("asset.")) return "inventory.read";
   if (name.startsWith("transmission.")) return "transmission.read";
+  if (name.startsWith("simulation.")) return "simulation.read";
   if (name.startsWith("task.")) return "tasks.read";
   if (name.startsWith("shift.")) return "shifts.read";
   if (name.startsWith("route.") || name.startsWith("delivery."))
