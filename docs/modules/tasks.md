@@ -354,7 +354,24 @@ A implementação deve:
 
 ---
 
-## 19. Critérios de aceite
+## 19. Execução em campo
+
+Tarefas podem ser classificadas por modo de execução: `OFFICE` (padrão), `FIELD` ou `MIXED`. A classificação apenas identifica tarefas que podem originar uma operação de campo; nenhuma tarefa é convertida automaticamente.
+
+Tarefas de campo podem possuir requisitos operacionais:
+
+- `requiredTeamSize`, o tamanho mínimo da equipe;
+- especialidades exigidas, armazenadas em `TaskSpecialtyRequirement` e referenciando a entidade `FieldSpecialty` existente, sem rótulos duplicados.
+
+Localização e prioridade já existem na tarefa e não são duplicadas.
+
+O responsável operacional de campo não é um segundo eixo de assignment na tarefa: ele vive no Dispatch, que carrega equipe e membro. `assigneeId` continua sendo o responsável usuário.
+
+Uma tarefa em modo `FIELD` pode originar um Dispatch. A relação é persistida por `FieldDispatch.taskId` e a tarefa continua sendo controlada pelo domínio Tasks: `Dispatch COMPLETED` registra evento e timeline, mas não altera o status da tarefa. O detalhe da tarefa mostra os despachos vinculados com equipe, status, tempo e link para Field Teams, sem duplicar a interface do outro plugin.
+
+A UI consulta `GET /field-teams/specialties` e `GET /field-teams/dispatches?taskId=` por HTTP público; não há import de implementação entre plugins.
+
+## 20. Critérios de aceite
 
 O módulo será considerado funcional quando for possível:
 
