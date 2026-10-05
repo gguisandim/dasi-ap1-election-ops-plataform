@@ -25,5 +25,11 @@
 .tableWrap table { width: 100%; border-collapse: collapse; }
 .tableWrap th, .tableWrap td { text-align: left; padding: 11px; border-bottom: 1px solid #1a2a41; }
 .tableWrap th { color: #7f91a7; font-size: 11px; text-transform: uppercase; }
+.nav { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid #1a2a41; }
+.nav a { padding: 8px 11px; border-radius: 8px; color: #8298ae; text-decoration: none; font-size: 13px; }
+.nav a:hover, .nav .active { color: #eef7ff; background: #14243a; }
+.link { color: #38bdf8; text-decoration: none; }
+.link:hover { text-decoration: underline; }
+.period { color: #7f91a7; font-size: 12px; margin: 0; }
 @media (max-width: 1050px) { .filters, .metrics { grid-template-columns: repeat(2, 1fr); } .grid { grid-template-columns: 1fr; } .grid > :last-child { grid-column: auto; } }
 @media (max-width: 650px) { .header { flex-direction: column; } .filters, .metrics, .chartGrid { grid-template-columns: 1fr; } }

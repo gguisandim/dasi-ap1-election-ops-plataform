@@ -1,5 +1,23 @@
 import type { PlatformPlugin } from '@eops/plugin-sdk';
 import { manifest } from './manifest';
 import { ReportsDashboardPage } from './client/pages/ReportsDashboardPage';
+import { ReportsOperationsPage } from './client/pages/ReportsOperationsPage';
+import { ReportsIncidentsPage } from './client/pages/ReportsIncidentsPage';
+import { ReportsTransmissionPage } from './client/pages/ReportsTransmissionPage';
+import { ReportsWorkforcePage } from './client/pages/ReportsWorkforcePage';
+import { ReportsLogisticsPage } from './client/pages/ReportsLogisticsPage';
+import { ReportsAssetsPage } from './client/pages/ReportsAssetsPage';
 
-export const reportsPlugin: PlatformPlugin = { manifest, View: ReportsDashboardPage, routes: [{ path: '/reports', Component: ReportsDashboardPage }] };
+export const reportsPlugin: PlatformPlugin = {
+  manifest,
+  View: ReportsDashboardPage,
+  routes: [
+    { path: '/reports', Component: ReportsDashboardPage },
+    { path: '/reports/operations', Component: ReportsOperationsPage },
+    { path: '/reports/incidents', Component: ReportsIncidentsPage },
+    { path: '/reports/transmission', Component: ReportsTransmissionPage },
+    { path: '/reports/workforce', Component: ReportsWorkforcePage },
+    { path: '/reports/logistics', Component: ReportsLogisticsPage },
+    { path: '/reports/assets', Component: ReportsAssetsPage },
+  ],
+};

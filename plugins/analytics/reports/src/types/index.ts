@@ -1,5 +1,16 @@
-export interface ReportFilters { from?: string; to?: string; electionId?: string; zoneId?: string; pollingPlaceId?: string; categoryId?: string; status?: string; }
+export interface ReportFilters { from?: string; to?: string; electionId?: string; zoneId?: string; pollingPlaceId?: string; categoryId?: string; status?: string; severity?: string; }
 export interface SeriesItem { name: string; value: number; }
+export type ReportRow = { id: string; label: string; zoneId?: string } & Record<string, unknown>;
+export interface ReportBreakdown { byZone: ReportRow[]; byPlace: ReportRow[]; [group: string]: unknown; }
+export interface ReportComparison { available: boolean; current: Record<string, number>; previous: Record<string, number> | null; }
+export interface DomainReport {
+  generatedAt: string;
+  period: { from: string | null; to: string | null };
+  filters: ReportFilters;
+  summary: Record<string, number | string>;
+  breakdown: ReportBreakdown;
+  comparison: ReportComparison;
+}
 export interface ExecutiveReport {
   generatedAt: string;
   filters: ReportFilters;
