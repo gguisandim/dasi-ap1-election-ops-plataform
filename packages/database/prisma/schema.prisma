@@ -276,6 +276,38 @@ enum FieldCheckType {
   CHECK_OUT
 }
 
+enum FieldDispatchStatus {
+  REQUESTED
+  DISPATCHED
+  ACCEPTED
+  EN_ROUTE
+  ARRIVED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum FieldDispatchEventType {
+  CREATED
+  DISPATCHED
+  ACCEPTED
+  REJECTED
+  DEPARTED
+  ARRIVED
+  STARTED
+  COMPLETED
+  CANCELLED
+  ASSIGNED
+  UPDATED
+}
+
+enum CapabilityMatch {
+  MATCH
+  PARTIAL
+  NO_MATCH
+}
+
 enum CommunicationPriority {
   LOW
   NORMAL
@@ -326,6 +358,12 @@ enum TaskPriority {
   MEDIUM
   HIGH
   CRITICAL
+}
+
+enum TaskExecutionMode {
+  OFFICE
+  FIELD
+  MIXED
 }
 
 enum CommunicationStatus {
@@ -562,6 +600,7 @@ model ElectoralZone {
   risks                 Risk[]
   preparationChecklists PreparationChecklist[]
   tasks                 Task[]
+  fieldDispatches       FieldDispatch[]
 
   @@unique([electionId, number])
   @@index([municipality, state])
@@ -600,6 +639,7 @@ model PollingPlace {
   risks                 Risk[]
   preparationChecklists PreparationChecklist[]
   tasks                 Task[]
+  fieldDispatches       FieldDispatch[]
 
   @@index([city, state])
   @@index([electoralZoneId, monitoringStatus])
@@ -670,6 +710,7 @@ model Incident {
   events           IncidentEvent[]
   assignments      IncidentAssignment[]
   simulationEvents SimulationEvent[]
+  fieldDispatches  FieldDispatch[]
 
   @@index([electionId, status])
   @@index([electoralZoneId, status])
@@ -821,6 +862,8 @@ model User {
   shiftHistory                              FieldShiftHistory[]               @relation("FieldShiftHistoryActor")
   shiftReplacements                         FieldShiftReplacement[]           @relation("FieldShiftReplacementActor")
   fieldMemberUnavailability                 FieldMemberUnavailability[]       @relation("FieldMemberUnavailabilityActor")
+  createdFieldDispatches                    FieldDispatch[]                   @relation("FieldDispatchCreator")
+  fieldDispatchEvents                       FieldDispatchEvent[]              @relation("FieldDispatchEventActor")
 
   @@index([status, name])
 }
@@ -1210,6 +1253,7 @@ model FieldTeam {
   shifts                 FieldShift[]
   shiftTemplates         FieldShiftTemplate[]
   allocations            FieldAllocation[]
+  dispatches             FieldDispatch[]
   communicationAudiences CommunicationAudience[]
 
   @@index([electionId, status])
@@ -1242,6 +1286,7 @@ model FieldSpecialty {
   members     FieldMemberSpecialty[]
   shiftRequirements FieldShiftSpecialtyRequirement[]
   templateRequirements FieldShiftTemplateSpecialtyRequirement[]
+  taskRequirements TaskSpecialtyRequirement[]
 
   @@index([active, name])
 }
@@ -1264,6 +1309,7 @@ model FieldMember {
   allocations             FieldAllocation[]
   checks                  FieldCheckEvent[]
   unavailability          FieldMemberUnavailability[]
+  dispatches              FieldDispatch[]
   communicationRecipients CommunicationRecipient[]
 
   @@index([teamId, status])
@@ -1478,6 +1524,71 @@ model FieldCheckEvent {
 
   @@index([memberId, occurredAt])
   @@index([pollingPlaceId, occurredAt])
+}
+
+model FieldDispatch {
+  id                       String              @id @default(cuid())
+  teamId                   String
+  memberId                 String?
+  taskId                   String?
+  incidentId               String?
+  status                   FieldDispatchStatus @default(REQUESTED)
+  priority                 TaskPriority        @default(MEDIUM)
+  title                    String
+  notes                    String?             @db.Text
+  locationLabel            String?
+  electoralZoneId          String?
+  pollingPlaceId           String?
+  capabilityMatch          CapabilityMatch?
+  capabilityOverrideReason String?             @db.Text
+  requestedAt              DateTime            @default(now())
+  dispatchedAt             DateTime?
+  acceptedAt               DateTime?
+  rejectedAt               DateTime?
+  departedAt               DateTime?
+  arrivedAt                DateTime?
+  startedAt                DateTime?
+  completedAt              DateTime?
+  cancelledAt              DateTime?
+  rejectionReason          String?             @db.Text
+  cancellationReason       String?             @db.Text
+  completionSummary        String?             @db.Text
+  completionResult         String?             @db.Text
+  createdById              String?
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  team                     FieldTeam           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  member                   FieldMember?        @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  task                     Task?               @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  incident                 Incident?           @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  electoralZone            ElectoralZone?      @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
+  pollingPlace             PollingPlace?       @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  createdBy                User?               @relation("FieldDispatchCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  events                   FieldDispatchEvent[]
+
+  @@index([status, priority])
+  @@index([teamId, status])
+  @@index([memberId, status])
+  @@index([taskId])
+  @@index([incidentId])
+  @@index([requestedAt])
+}
+
+model FieldDispatchEvent {
+  id         String                 @id @default(cuid())
+  dispatchId String
+  type       FieldDispatchEventType
+  message    String                 @db.Text
+  fromStatus FieldDispatchStatus?
+  toStatus   FieldDispatchStatus?
+  actorId    String?
+  metadata   Json?
+  createdAt  DateTime               @default(now())
+  dispatch   FieldDispatch          @relation(fields: [dispatchId], references: [id], onDelete: Cascade)
+  actor      User?                  @relation("FieldDispatchEventActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([dispatchId, createdAt])
+  @@index([actorId, createdAt])
 }
 
 model CommunicationCategory {
@@ -2119,6 +2230,8 @@ model Task {
   description     String?      @db.Text
   status          TaskStatus   @default(PENDING)
   priority        TaskPriority @default(MEDIUM)
+  executionMode   TaskExecutionMode @default(OFFICE)
+  requiredTeamSize Int?
   assigneeId      String?
   createdById     String?
   electionId      String
@@ -2137,6 +2250,8 @@ model Task {
   dependents      TaskDependency[] @relation("TaskDependents")
   comments        TaskComment[]
   history         TaskHistory[]
+  specialtyRequirements TaskSpecialtyRequirement[]
+  dispatches      FieldDispatch[]
 
   @@index([electionId, status])
   @@index([electoralZoneId, status])
@@ -2181,4 +2296,16 @@ model TaskHistory {
 
   @@index([taskId, createdAt])
   @@index([actorId, createdAt])
+}
+
+model TaskSpecialtyRequirement {
+  id            String         @id @default(cuid())
+  taskId        String
+  specialtyId   String
+  requiredCount Int
+  task          Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  specialty     FieldSpecialty @relation(fields: [specialtyId], references: [id], onDelete: Restrict)
+
+  @@unique([taskId, specialtyId])
+  @@index([specialtyId])
 }

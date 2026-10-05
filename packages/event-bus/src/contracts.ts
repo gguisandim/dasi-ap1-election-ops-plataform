@@ -296,6 +296,83 @@ export interface DomainEventMap {
     specialtyIds: string[];
   };
 
+  "field_dispatch.created": {
+    entityId: string;
+    actorId: string;
+    teamId: string;
+    memberId?: string | null;
+    taskId?: string | null;
+    incidentId?: string | null;
+    priority: string;
+    title: string;
+  };
+
+  "field_dispatch.dispatched": {
+    entityId: string;
+    actorId: string;
+    teamId: string;
+    memberId?: string | null;
+    taskId?: string | null;
+    priority: string;
+  };
+
+  "field_dispatch.accepted": {
+    entityId: string;
+    actorId: string;
+    teamId: string;
+    memberId?: string | null;
+    taskId?: string | null;
+  };
+
+  "field_dispatch.rejected": {
+    entityId: string;
+    actorId: string;
+    teamId: string;
+    taskId?: string | null;
+    reason: string;
+  };
+
+  "field_dispatch.departed": {
+    entityId: string;
+    actorId: string;
+    teamId: string;
+    memberId?: string | null;
+    taskId?: string | null;
+  };
+
+  "field_dispatch.arrived": {
+    entityId: string;
+    actorId: string;
+    teamId: string;
+    memberId?: string | null;
+    taskId?: string | null;
+  };
+
+  "field_dispatch.started": {
+    entityId: string;
+    actorId: string;
+    teamId: string;
+    memberId?: string | null;
+    taskId?: string | null;
+  };
+
+  "field_dispatch.completed": {
+    entityId: string;
+    actorId: string;
+    teamId: string;
+    memberId?: string | null;
+    taskId?: string | null;
+    summary: string;
+  };
+
+  "field_dispatch.cancelled": {
+    entityId: string;
+    actorId: string;
+    teamId: string;
+    taskId?: string | null;
+    reason: string;
+  };
+
   "communication.created": {
     entityId: string;
     actorId?: string;
@@ -779,6 +856,27 @@ export const NOTIFICATION_EVENT_CATALOG = [
     description: "Operador de um turno foi substituído.",
     requiredPermission: "shifts.read",
   },
+  {
+    eventName: "field_dispatch.created",
+    domain: "Operação de campo",
+    label: "Dispatch solicitado",
+    description: "Nova demanda operacional registrada para envio de equipe.",
+    requiredPermission: "field-teams.read",
+  },
+  {
+    eventName: "field_dispatch.dispatched",
+    domain: "Operação de campo",
+    label: "Dispatch atribuído",
+    description: "Demanda enviada para uma equipe de campo.",
+    requiredPermission: "field-teams.read",
+  },
+  {
+    eventName: "field_dispatch.rejected",
+    domain: "Operação de campo",
+    label: "Dispatch rejeitado",
+    description: "Equipe recusou a demanda operacional enviada.",
+    requiredPermission: "field-teams.read",
+  },
 ] as const satisfies readonly NotificationEventDefinition[];
 
 export function requiredPermissionForEvent(
@@ -797,6 +895,7 @@ export function requiredPermissionForEvent(
     return "routes.read";
   if (name.startsWith("field_team.") || name.startsWith("field_member."))
     return "field-teams.read";
+  if (name.startsWith("field_dispatch.")) return "field-teams.read";
   if (name.startsWith("communication.")) return "communications.read";
   if (name.startsWith("evidence.")) return "evidence.read";
   if (name.startsWith("runbook.")) return "knowledge.read";
