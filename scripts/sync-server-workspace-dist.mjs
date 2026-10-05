@@ -7,7 +7,7 @@ const root = path.resolve(scriptDirectory, "..");
 const apiDist = path.join(root, "apps", "api", "dist");
 const commonJsMarker = `${JSON.stringify({ type: "commonjs" }, null, 2)}\n`;
 
-async function copyCompiledDirectory(source, target, packageRoot, entrySource) {
+async function copyCompiledDirectory(source, target, packageRoot, entrySource, entryTarget = "index.js") {
   await fs.access(source);
   await fs.rm(target, { recursive: true, force: true });
   await fs.mkdir(path.dirname(target), { recursive: true });
@@ -19,7 +19,9 @@ async function copyCompiledDirectory(source, target, packageRoot, entrySource) {
     if (!moduleSpecifier?.startsWith("./")) {
       throw new Error(`Unsupported plugin server entrypoint: ${entrySource}`);
     }
-    await fs.writeFile(path.join(target, "index.js"), `"use strict";\nmodule.exports = require(${JSON.stringify(moduleSpecifier)});\n`, "utf8");
+    const targetEntry = path.join(target, entryTarget);
+    await fs.mkdir(path.dirname(targetEntry), { recursive: true });
+    await fs.writeFile(targetEntry, `"use strict";\nmodule.exports = require(${JSON.stringify(moduleSpecifier)});\n`, "utf8");
   }
 
   await fs.mkdir(path.join(packageRoot, "dist"), { recursive: true });
@@ -40,10 +42,11 @@ async function discoverPluginTargets() {
       if (!packageJson.exports?.["./server"]) continue;
 
       targets.push({
-        source: path.join(apiDist, "plugins", category.name, plugin.name, "src", "server"),
-        target: path.join(pluginRoot, "dist", "server"),
+        source: path.join(apiDist, "plugins", category.name, plugin.name, "src"),
+        target: path.join(pluginRoot, "dist"),
         packageRoot: pluginRoot,
         entrySource: path.join(pluginRoot, "src", "server", "index.ts"),
+        entryTarget: path.join("server", "index.js"),
       });
     }
   }
@@ -62,8 +65,8 @@ async function syncAll() {
   });
   const targets = [...packageTargets, ...(await discoverPluginTargets())];
   await Promise.all(
-    targets.map(({ source, target, packageRoot, entrySource }) =>
-      copyCompiledDirectory(source, target, packageRoot, entrySource),
+    targets.map(({ source, target, packageRoot, entrySource, entryTarget }) =>
+      copyCompiledDirectory(source, target, packageRoot, entrySource, entryTarget),
     ),
   );
   console.log(`Server workspace exports synchronized: ${targets.length} target(s).`);
@@ -74,12 +77,35 @@ async function main() {
   if (!process.argv.includes("--watch")) return;
 
   let timer;
-  const watcher = watch(apiDist, { recursive: true }, () => {
+  let syncing = false;
+  let pending = false;
+
+  const runScheduledSync = async () => {
+    if (syncing) {
+      pending = true;
+      return;
+    }
+
+    syncing = true;
+    try {
+      await syncAll();
+    } catch (error) {
+      console.error(`Server export sync failed: ${error.message}`);
+    } finally {
+      syncing = false;
+      if (pending) {
+        pending = false;
+        scheduleSync();
+      }
+    }
+  };
+
+  const scheduleSync = () => {
     clearTimeout(timer);
-    timer = setTimeout(() => {
-      syncAll().catch((error) => console.error(`Server export sync failed: ${error.message}`));
-    }, 150);
-  });
+    timer = setTimeout(runScheduledSync, 500);
+  };
+
+  const watcher = watch(apiDist, { recursive: true }, scheduleSync);
   console.log("Watching API dist for server workspace export changes.");
 
   const close = () => {
