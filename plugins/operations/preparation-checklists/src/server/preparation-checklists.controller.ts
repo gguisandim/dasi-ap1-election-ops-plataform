@@ -10,6 +10,7 @@ import {
   TemplatesQueryDto,
   UpdateChecklistItemDto,
   UpdateChecklistAssigneeDto,
+  UpdateChecklistDueDateDto,
   UpdateTemplateDto,
 } from "./dto/preparation-checklists.dto";
 import { PreparationChecklistsService } from "./preparation-checklists.service";
@@ -31,11 +32,14 @@ export class PreparationChecklistsController {
   @Post("templates/:id/items") addTemplateItem(@Param("id") id: string, @Body() dto: AddTemplateItemDto) { return this.service.addTemplateItem(id, dto); }
 
   @Get() checklists(@Query() query: PreparationChecklistsQueryDto) { return this.service.checklists(query); }
+  @Get("overview") overview(@Query() query: PreparationChecklistsQueryDto) { return this.service.overview(query); }
   @Get(":id") checklist(@Param("id") id: string) { return this.service.findChecklist(id); }
   @Permissions(PERMISSIONS.preparationChecklists.manage)
   @Post() createChecklist(@Body() dto: CreateChecklistDto, @Req() request: AuthenticatedRequest) { return this.service.createChecklist(dto, request.user.id); }
   @Permissions(PERMISSIONS.preparationChecklists.manage)
   @Patch(":id/assignee") updateAssignee(@Param("id") id: string, @Body() dto: UpdateChecklistAssigneeDto, @Req() request: AuthenticatedRequest) { return this.service.updateAssignee(id, dto, request.user.id); }
+  @Permissions(PERMISSIONS.preparationChecklists.manage)
+  @Patch(":id/due-date") updateDueDate(@Param("id") id: string, @Body() dto: UpdateChecklistDueDateDto) { return this.service.updateDueDate(id, dto); }
   @Permissions(PERMISSIONS.preparationChecklists.manage)
   @Patch("items/:itemId") updateItem(@Param("itemId") itemId: string, @Body() dto: UpdateChecklistItemDto, @Req() request: AuthenticatedRequest) { return this.service.updateItem(itemId, dto, request.user.id); }
   @Permissions(PERMISSIONS.preparationChecklists.manage)

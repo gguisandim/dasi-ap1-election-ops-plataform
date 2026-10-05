@@ -1,5 +1,11 @@
-import type { ChecklistItemStatus, ChecklistStatus } from "../types";
+import type { ChecklistItemStatus, ChecklistStatus, CriticalBlockerReason, DeadlineState } from "../types";
 
+export const DEADLINE_STATE_LABELS: Record<DeadlineState, string> = {
+  ON_TRACK: "No prazo", AT_RISK: "Prazo próximo", OVERDUE: "Atrasado",
+};
+export const CRITICAL_BLOCKER_LABELS: Record<CriticalBlockerReason, string> = {
+  REQUIRED_PENDING: "Item obrigatório pendente", MISSING_EVIDENCE: "Evidência obrigatória ausente", BLOCKED: "Item bloqueado",
+};
 export const CHECKLIST_STATUS_LABELS: Record<ChecklistStatus, string> = {
   PENDING: "Pendente", IN_PROGRESS: "Em andamento", READY_FOR_APPROVAL: "Pronto para aprovação", APPROVED: "Aprovado", BLOCKED: "Bloqueado",
 };

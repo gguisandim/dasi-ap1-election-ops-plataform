@@ -3,6 +3,7 @@ import { manifest } from "./manifest";
 import { ChecklistDetailPage } from "./client/pages/ChecklistDetailPage";
 import { ChecklistsPage } from "./client/pages/ChecklistsPage";
 import { NewChecklistPage } from "./client/pages/NewChecklistPage";
+import { OverviewPage } from "./client/pages/OverviewPage";
 import { PreparationDashboardPage } from "./client/pages/PreparationDashboardPage";
 import { TemplatesPage } from "./client/pages/TemplatesPage";
 
@@ -12,6 +13,7 @@ export const preparationChecklistsPlugin: PlatformPlugin = {
   routes: [
     { path: "/preparation-checklists", Component: PreparationDashboardPage },
     { path: "/preparation-checklists/list", Component: ChecklistsPage },
+    { path: "/preparation-checklists/overview", Component: OverviewPage },
     { path: "/preparation-checklists/new", Component: NewChecklistPage },
     { path: "/preparation-checklists/:id", Component: ChecklistDetailPage },
     { path: "/preparation-checklists/templates", Component: TemplatesPage },

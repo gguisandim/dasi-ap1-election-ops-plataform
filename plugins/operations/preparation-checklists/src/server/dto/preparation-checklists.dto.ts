@@ -7,6 +7,7 @@ import { Transform, Type } from "class-transformer";
 import {
   IsArray,
   IsBoolean,
+  IsDateString,
   IsEnum,
   IsInt,
   IsOptional,
@@ -50,6 +51,7 @@ export class CreateTemplateDto {
 export class UpdateTemplateDto {
   @IsString() @Length(2, 160) @IsOptional() name?: string;
   @IsString() @MaxLength(1000) @IsOptional() description?: string;
+  @IsEnum(PreparationLocationType) @IsOptional() locationType?: PreparationLocationType;
   @IsBoolean() @IsOptional() active?: boolean;
 }
 
@@ -59,16 +61,22 @@ export class CreateChecklistDto {
   @IsString() pollingPlaceId!: string;
   @IsString() templateId!: string;
   @IsString() @IsOptional() assigneeId?: string;
+  @IsDateString() @IsOptional() dueAt?: string;
 }
 
 export class UpdateChecklistAssigneeDto {
   @IsString() @IsOptional() assigneeId?: string | null;
 }
 
+export class UpdateChecklistDueDateDto {
+  @IsDateString() @IsOptional() dueAt?: string | null;
+}
+
 export class UpdateChecklistItemDto {
   @IsEnum(PreparationChecklistItemStatus) @IsOptional() status?: PreparationChecklistItemStatus;
   @IsString() @IsOptional() assigneeId?: string;
   @IsString() @MaxLength(2000) @IsOptional() observation?: string;
+  @IsDateString() @IsOptional() dueAt?: string | null;
 }
 
 export class CreateChecklistEvidenceDto {

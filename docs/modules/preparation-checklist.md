@@ -311,3 +311,38 @@ Devem existir testes para:
 - aprovação válida;
 - bloqueio de alteração após aprovação;
 - permissões principais.
+
+## 21. Readiness, prazos e versionamento
+
+Readiness é derivado e não persistido:
+
+- `readiness = concluídos obrigatórios / total de obrigatórios` (arredondado, 0–100);
+- sem itens obrigatórios, usa concluídos / total;
+- sem itens, 0;
+- não há ponderação por criticidade.
+
+Bloqueadores críticos são listados separadamente dos demais itens:
+
+- item obrigatório não concluído;
+- item com evidência obrigatória sem evidência registrada;
+- item com status `BLOCKED`.
+
+Prazo:
+
+- `PreparationChecklist.dueAt` e `PreparationChecklistItem.dueAt` são opcionais e editáveis;
+- estados derivados: `ON_TRACK`, `AT_RISK` (janela de 24 horas, constante exportada) e `OVERDUE`;
+- checklist aprovado é sempre `ON_TRACK`; prazo vencido não bloqueia aprovação.
+
+Versionamento de template:
+
+- o template possui `version` iniciando em 1;
+- alterações semânticas (`description`, `locationType` ou adição de item) incrementam a versão; alterar apenas `name` não incrementa;
+- o checklist grava `templateVersion` no momento da criação e os itens são cópias dos itens do template;
+- o detalhe expõe `templateVersion` e a versão atual do template, tornando a divergência visível.
+
+Eventos derivados:
+
+- `preparation_checklist.readiness_changed` é emitido somente quando o readiness calculado muda (`from`/`to`);
+- `preparation_checklist.blocker_detected` é emitido somente quando surge um bloqueador crítico novo.
+
+Visão consolidada: `GET /api/preparation-checklists/overview` expõe, por local, readiness, quantidade de bloqueadores críticos, responsável, prazo (`dueAt` + `deadlineState`) e status de aprovação.
