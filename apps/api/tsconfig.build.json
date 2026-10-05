@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/**/*.ts",
+    "../../plugins/*/*/src/server/**/*.ts",
+    "../../packages/database/src/**/*.ts",
+    "../../packages/event-bus/src/**/*.ts"
+  ],
+  "exclude": ["dist", "node_modules", "../../**/*.test.ts"]
+}
