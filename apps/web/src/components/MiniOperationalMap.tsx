@@ -59,10 +59,12 @@ export function MiniOperationalMap({ places }: Props) {
         zoom={9}
         zoomControl={false}
       >
-        <TileLayer
-          attribution='&copy; OpenStreetMap contributors &copy; CARTO'
-          url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${import.meta.env.VITE_CARTO_BASEMAP_KEY}`}
-        />
+      <TileLayer
+        attribution='&copy; OpenStreetMap contributors &copy; CARTO'
+        url={`https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png?key=${import.meta.env.VITE_CARTO_BASEMAP_KEY}`}
+        subdomains="abcd"
+        maxZoom={20}
+      />
         {locatedPlaces.map((place) => (
           <CircleMarker
             center={[place.latitude, place.longitude]}
