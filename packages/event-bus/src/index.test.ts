@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { EventBus } from "./index";
+import { EventBus, requiredPermissionForEvent } from "./index";
 describe("EventBus", () => {
   it("entrega payload tipado ao subscriber", async () => {
     const bus = new EventBus(); const handler = vi.fn(); bus.subscribe("asset.moved", handler);
@@ -33,5 +33,9 @@ describe("EventBus", () => {
 
     expect(first).not.toHaveBeenCalled();
     expect(second).toHaveBeenCalledWith(expect.objectContaining({ payload: expect.objectContaining({ entityId: "incident-1" }) }));
+  });
+  it("separa a permissão de handover da permissão de shifts", () => {
+    expect(requiredPermissionForEvent("shift_handover.submitted")).toBe("shift-handovers.read");
+    expect(requiredPermissionForEvent("shift.started")).toBe("shifts.read");
   });
 });
