@@ -1229,6 +1229,100 @@ export interface DomainEventMap {
     name: string;
     layoutMode: string;
   };
+
+  "simulation.failed": {
+    entityId: string;
+    actorId: string;
+    name: string;
+    electionId: string;
+    reason: string;
+    elapsedSeconds: number;
+  };
+  "simulation.cancelled": {
+    entityId: string;
+    actorId: string;
+    name: string;
+    electionId: string;
+    elapsedSeconds: number;
+  };
+  "simulation.decision_recorded": {
+    entityId: string;
+    actorId: string;
+    simulationId: string;
+    kind: string;
+    offsetSeconds: number;
+    rationale: string;
+  };
+  "simulated_incident.created": {
+    entityId: string;
+    actorId?: string;
+    code: string;
+    title: string;
+    severity: string;
+    electionId: string;
+    simulationId: string;
+    pollingPlaceId?: string;
+  };
+
+  "report_view.created": {
+    entityId: string;
+    actorId: string;
+    name: string;
+    granularity: string;
+  };
+  "report_view.shared": {
+    entityId: string;
+    actorId: string;
+    name: string;
+  };
+
+  "transmission.state_transition": {
+    entityId: string;
+    actorId?: string;
+    pointId: string;
+    identification: string;
+    from: string;
+    to: string;
+    reason?: string;
+    circuitId?: string;
+  };
+  "transmission.circuit_created": {
+    entityId: string;
+    actorId: string;
+    pointId: string;
+    identification: string;
+    code: string;
+    isPrimary: boolean;
+  };
+  "transmission.circuit_status_changed": {
+    entityId: string;
+    actorId: string;
+    pointId: string;
+    code: string;
+    from: string;
+    to: string;
+  };
+  "transmission.failover_started": {
+    entityId: string;
+    actorId: string;
+    pointId: string;
+    identification: string;
+    toCircuitCode: string;
+    reason: string;
+  };
+  "transmission.failover_recovered": {
+    entityId: string;
+    actorId: string;
+    pointId: string;
+    identification: string;
+  };
+  "transmission.provider_updated": {
+    entityId: string;
+    actorId: string;
+    code: string;
+    name: string;
+    active: boolean;
+  };
 }
 
 export type DomainEventName = keyof DomainEventMap;
@@ -1237,6 +1331,12 @@ export interface DomainEvent<K extends DomainEventName = DomainEventName> {
   name: K;
   payload: DomainEventMap[K];
   occurredAt: Date;
+  /**
+   * Correlation ID da cadeia operacional que originou o evento, quando houver.
+   * Preenchido pelo EventBus a partir do contexto assíncrono ativo; `undefined`
+   * nunca é erro.
+   */
+  correlationId?: string;
 }
 
 export type DomainEventHandler<K extends DomainEventName> = (
@@ -1498,6 +1598,20 @@ export const NOTIFICATION_EVENT_CATALOG = [
     requiredPermission: "postmortems.read",
   },
   {
+    eventName: "transmission.failover_started",
+    domain: "Transmissão",
+    label: "Failover acionado",
+    description: "Um ponto passou a operar por circuito alternativo.",
+    requiredPermission: "transmission.read",
+  },
+  {
+    eventName: "transmission.failover_recovered",
+    domain: "Transmissão",
+    label: "Failover recuperado",
+    description: "O ponto voltou a operar pelo circuito de origem.",
+    requiredPermission: "transmission.read",
+  },
+  {
     eventName: "postmortem.action_overdue",
     domain: "Postmortem",
     label: "Ação corretiva vencida",
@@ -1531,6 +1645,8 @@ export function requiredPermissionForEvent(
   if (name.startsWith("risk.")) return "risks.read";
   if (name.startsWith("preparation_checklist."))
     return "preparation-checklists.read";
+  if (name.startsWith("simulated_incident.")) return "incidents.read";
+  if (name.startsWith("report_view.")) return "reports.read";
   if (name.startsWith("resource_request.")) return "resource-requests.read";
   if (name.startsWith("postmortem.")) return "postmortems.read";
   if (name.startsWith("command_center.")) return "command-center.read";

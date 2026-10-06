@@ -4,6 +4,7 @@ import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { ApiExceptionFilter } from "./api-exception.filter";
+import { CorrelationInterceptor } from "./correlation.interceptor";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,6 +18,7 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new ApiExceptionFilter());
+  app.useGlobalInterceptors(new CorrelationInterceptor());
   await app.listen(process.env.PORT ?? 3001);
 }
 bootstrap();

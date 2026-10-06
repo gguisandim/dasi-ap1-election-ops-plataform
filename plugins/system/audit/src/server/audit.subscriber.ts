@@ -2,21 +2,13 @@ import { Injectable, OnModuleInit } from "@nestjs/common";
 import { AuditAction, Prisma } from "@prisma/client";
 import { EventBus, type DomainEvent } from "@eops/event-bus";
 import { PrismaService } from "@eops/database";
-
-const sensitiveKeys = new Set(["password", "passwordhash", "authorization", "token", "secret", "apikey"]);
-
-export function sanitizeAuditValue(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(sanitizeAuditValue);
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, child]) => [
-        key,
-        sensitiveKeys.has(key.toLowerCase()) ? "[REDACTED]" : sanitizeAuditValue(child),
-      ]),
-    );
-  }
-  return value;
-}
+import {
+  copyScopeFields,
+  deriveCategory,
+  deriveSeverity,
+  sanitizeAuditValue,
+  truncateAuditPayload,
+} from "./audit.rules";
 
 export function inferAuditAction(eventName: string): AuditAction {
   if (eventName.endsWith(".created") || eventName.endsWith(".category_created")) return AuditAction.CREATE;
@@ -98,17 +90,24 @@ export class AuditSubscriber implements OnModuleInit {
     const actorId = requestedActorId && await this.prisma.user.findUnique({ where: { id: requestedActorId }, select: { id: true } })
       ? requestedActorId
       : undefined;
+    const entityType = inferEntityType(event.name);
     const { oldData, newData } = auditData(payload);
+    const scope = copyScopeFields(payload);
     await this.prisma.auditEvent.create({
       data: {
         actorId,
         eventName: event.name,
         action: inferAuditAction(event.name),
-        entityType: inferEntityType(event.name),
+        entityType,
         entityId: typeof payload.entityId === "string" ? payload.entityId : undefined,
-        oldData: oldData as Prisma.InputJsonValue | undefined,
-        newData: newData as Prisma.InputJsonValue,
-        metadata: sanitizeAuditValue({ occurredAt: event.occurredAt.toISOString() }) as Prisma.InputJsonValue,
+        category: deriveCategory(event.name, entityType),
+        severity: deriveSeverity(event.name),
+        correlationId: event.correlationId,
+        electionId: scope.electionId,
+        electoralZoneId: scope.electoralZoneId,
+        oldData: truncateAuditPayload(oldData) as Prisma.InputJsonValue | undefined,
+        newData: truncateAuditPayload(newData) as Prisma.InputJsonValue,
+        metadata: truncateAuditPayload(sanitizeAuditValue({ occurredAt: event.occurredAt.toISOString() })) as Prisma.InputJsonValue,
         createdAt: event.occurredAt,
       },
     });

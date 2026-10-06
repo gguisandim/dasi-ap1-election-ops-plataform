@@ -1,16 +1,16 @@
-import { AuditAction } from "@prisma/client";
+import { AuditAction, AuditEventSeverity } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 import type { PrismaService } from "@eops/database";
 import { EventBus } from "@eops/event-bus";
+import { sanitizeAuditValue } from "./audit.rules";
 import {
   AuditSubscriber,
   inferAuditAction,
   inferEntityType,
-  sanitizeAuditValue,
 } from "./audit.subscriber";
 
 describe("AuditSubscriber", () => {
-  it("observes every event through subscribeAll and persists event metadata", async () => {
+  it("observes every event through subscribeAll and enriches the persisted record", async () => {
     const bus = new EventBus();
     const prisma = {
       user: { findUnique: vi.fn().mockResolvedValue({ id: "actor-1" }) },
@@ -35,9 +35,36 @@ describe("AuditSubscriber", () => {
         action: AuditAction.STATUS_CHANGE,
         entityType: "Incident",
         entityId: "incident-1",
+        category: "incident",
+        severity: AuditEventSeverity.WARNING,
         oldData: { value: "NEW" },
         newData: { value: "TRIAGED" },
         createdAt: expect.any(Date),
+      }),
+    });
+  });
+
+  it("persists the correlation id and copies election and zone scope from the payload", async () => {
+    const prisma = {
+      user: { findUnique: vi.fn().mockResolvedValue(null) },
+      auditEvent: { create: vi.fn().mockResolvedValue({}) },
+    } as unknown as PrismaService;
+    const subscriber = new AuditSubscriber(new EventBus(), prisma);
+
+    await subscriber.handle({
+      name: "field_team.allocated",
+      payload: { entityId: "alloc-1", electionId: "election-1", electoralZoneId: "zone-1" },
+      occurredAt: new Date("2026-10-06T10:00:00.000Z"),
+      correlationId: "cid-9",
+    });
+
+    expect(prisma.auditEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        electionId: "election-1",
+        electoralZoneId: "zone-1",
+        category: "field_team",
+        severity: AuditEventSeverity.INFO,
+        correlationId: "cid-9",
       }),
     });
   });

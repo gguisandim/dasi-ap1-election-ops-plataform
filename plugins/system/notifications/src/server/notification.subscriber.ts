@@ -36,6 +36,8 @@ const names = [
   "transmission.failed",
   "transmission.connectivity_changed",
   "transmission.alert_created",
+  "transmission.failover_started",
+  "transmission.failover_recovered",
   "field_team.allocated",
   "field_member.checked_in",
   "field_member.checked_out",
@@ -379,6 +381,24 @@ function content(event: DomainEvent<SubscribedEventName>): {
           "identification" in payload ? payload.identification : "Ponto"
         } mudou para ${"to" in payload ? payload.to : "novo estado"}.`,
         type: NotificationType.WARNING,
+        entityType: "TransmissionPoint",
+      };
+
+    case "transmission.failover_started":
+      return {
+        title: "Failover de transmissão acionado",
+        message: `${"identification" in payload ? payload.identification : "Ponto"} passou a operar por ${
+          "toCircuitCode" in payload ? payload.toCircuitCode : "circuito alternativo"
+        }: ${"reason" in payload ? payload.reason : "motivo não informado"}.`,
+        type: NotificationType.CRITICAL,
+        entityType: "TransmissionPoint",
+      };
+
+    case "transmission.failover_recovered":
+      return {
+        title: "Failover de transmissão recuperado",
+        message: `${"identification" in payload ? payload.identification : "Ponto"} voltou a operar pelo circuito de origem.`,
+        type: NotificationType.SUCCESS,
         entityType: "TransmissionPoint",
       };
 
@@ -822,6 +842,7 @@ export class NotificationSubscriber implements OnModuleInit {
         ...details,
         eventName: event.name,
         entityId: event.payload.entityId,
+        correlationId: event.correlationId ?? null,
       })),
     });
   }

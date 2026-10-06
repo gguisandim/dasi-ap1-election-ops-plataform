@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { currentCorrelationId } from "@eops/shared/correlation";
 import type { DomainEvent, DomainEventHandler, DomainEventMap, DomainEventName } from "./contracts";
 
 @Injectable()
@@ -19,7 +20,12 @@ export class EventBus {
   }
 
   async emit<K extends DomainEventName>(name: K, payload: DomainEventMap[K]) {
-    const event: DomainEvent<K> = { name, payload, occurredAt: new Date() };
+    const event: DomainEvent<K> = {
+      name,
+      payload,
+      occurredAt: new Date(),
+      correlationId: currentCorrelationId(),
+    };
     await Promise.all(
       [...(this.handlers.get(name) ?? []), ...this.allHandlers].map((handler) =>
         handler(event as DomainEvent<DomainEventName>),
