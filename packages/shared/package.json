@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./auth": "./src/auth.ts",
+    "./command-center": "./src/command-center.ts",
     "./common": "./src/common.ts",
     "./communications": "./src/communications.ts",
     "./elections": "./src/elections.ts",
@@ -15,6 +16,8 @@
     "./incidents": "./src/incidents.ts",
     "./inventory": "./src/inventory.ts",
     "./knowledge": "./src/knowledge.ts",
+    "./postmortems": "./src/postmortems.ts",
+    "./resource-requests": "./src/resource-requests.ts",
     "./risks": "./src/risks.ts",
     "./simulation": "./src/simulation.ts",
     "./workforce": "./src/workforce.ts"

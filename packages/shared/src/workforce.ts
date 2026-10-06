@@ -3,6 +3,22 @@ export type WorkforceAvailability =
 
 export type CoverageState = "FULL" | "PARTIAL" | "CRITICAL" | "EMPTY";
 
+/**
+ * Designação de turno que conta como cobertura operacional efetiva.
+ *
+ * `ON_CALL` só conta quando efetivamente acionado. Esta é a definição
+ * compartilhada de cobertura: consumidores externos ao plugin de escalas devem
+ * usar este predicado em vez de reimplementar o filtro.
+ */
+export function isOperationalShiftAssignment(assignment: {
+  status: string;
+  onCallActivatedAt?: Date | string | null;
+}): boolean {
+  if (assignment.status === "SCHEDULED" || assignment.status === "PRESENT")
+    return true;
+  return assignment.status === "ON_CALL" && Boolean(assignment.onCallActivatedAt);
+}
+
 export interface SpecialtyCoverage {
   specialtyId: string;
   specialtyName: string;

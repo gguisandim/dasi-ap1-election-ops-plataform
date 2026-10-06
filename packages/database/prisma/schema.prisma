@@ -600,28 +600,30 @@ enum EvidenceEventType {
 }
 
 model Election {
-  id                    String                 @id @default(cuid())
-  name                  String
-  description           String?
-  year                  Int
-  type                  ElectionType
-  status                ElectionStatus         @default(PLANNING)
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  rounds                ElectionRound[]
-  zones                 ElectoralZone[]
-  incidents             Incident[]
-  simulations           Simulation[]
-  distributionRoutes    DistributionRoute[]
-  transmissionPoints    TransmissionPoint[]
-  fieldTeams            FieldTeam[]
-  fieldAllocations      FieldAllocation[]
-  communications        Communication[]
-  evidences             Evidence[]
-  risks                 Risk[]
-  preparationChecklists PreparationChecklist[]
-  tasks                 Task[]
-  taskMilestones        TaskMilestone[]
+  id                     String                  @id @default(cuid())
+  name                   String
+  description            String?
+  year                   Int
+  type                   ElectionType
+  status                 ElectionStatus          @default(PLANNING)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  rounds                 ElectionRound[]
+  zones                  ElectoralZone[]
+  incidents              Incident[]
+  simulations            Simulation[]
+  distributionRoutes     DistributionRoute[]
+  transmissionPoints     TransmissionPoint[]
+  fieldTeams             FieldTeam[]
+  fieldAllocations       FieldAllocation[]
+  communications         Communication[]
+  evidences              Evidence[]
+  risks                  Risk[]
+  preparationChecklists  PreparationChecklist[]
+  tasks                  Task[]
+  taskMilestones         TaskMilestone[]
+  resourceRequests       ResourceRequest[]
+  commandCenterSnapshots CommandCenterSnapshot[]
 
   @@index([year, status])
 }
@@ -668,6 +670,8 @@ model ElectoralZone {
   preparationChecklists  PreparationChecklist[]
   tasks                  Task[]
   fieldDispatches        FieldDispatch[]
+  resourceRequests       ResourceRequest[]
+  commandCenterSnapshots CommandCenterSnapshot[]
 
   @@unique([electionId, number])
   @@index([municipality, state])
@@ -707,6 +711,7 @@ model PollingPlace {
   preparationChecklists  PreparationChecklist[]
   tasks                  Task[]
   fieldDispatches        FieldDispatch[]
+  resourceRequests       ResourceRequest[]
 
   @@index([city, state])
   @@index([electoralZoneId, monitoringStatus])
@@ -740,45 +745,48 @@ model IncidentCategory {
 }
 
 model Incident {
-  id               String               @id @default(cuid())
-  code             String               @unique
-  title            String
-  description      String
-  severity         IncidentSeverity
-  status           IncidentStatus       @default(NEW)
-  electionId       String
-  electoralZoneId  String?
-  pollingPlaceId   String?
-  categoryId       String
-  createdById      String?
-  assignedToId     String?
-  assignedToName   String?
-  openedAt         DateTime             @default(now())
-  resolvedAt       DateTime?
-  closedAt         DateTime?
-  slaDeadline      DateTime?
-  acknowledgedAt   DateTime?
-  acknowledgedById String?
-  escalationLevel  Int                  @default(0)
-  escalatedAt      DateTime?
-  escalatedById    String?
-  escalationReason String?
-  isSimulated      Boolean              @default(false)
-  simulationId     String?
-  assetId          String?
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
-  election         Election             @relation(fields: [electionId], references: [id], onDelete: Cascade)
-  electoralZone    ElectoralZone?       @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
-  pollingPlace     PollingPlace?        @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
-  category         IncidentCategory     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  asset            Asset?               @relation(fields: [assetId], references: [id], onDelete: SetNull)
-  simulation       Simulation?          @relation(fields: [simulationId], references: [id], onDelete: SetNull)
-  events           IncidentEvent[]
-  assignments      IncidentAssignment[]
-  simulationEvents SimulationEvent[]
-  fieldDispatches  FieldDispatch[]
-  handoverReferences ShiftHandoverIncident[]
+  id                         String                      @id @default(cuid())
+  code                       String                      @unique
+  title                      String
+  description                String
+  severity                   IncidentSeverity
+  status                     IncidentStatus              @default(NEW)
+  electionId                 String
+  electoralZoneId            String?
+  pollingPlaceId             String?
+  categoryId                 String
+  createdById                String?
+  assignedToId               String?
+  assignedToName             String?
+  openedAt                   DateTime                    @default(now())
+  resolvedAt                 DateTime?
+  closedAt                   DateTime?
+  slaDeadline                DateTime?
+  acknowledgedAt             DateTime?
+  acknowledgedById           String?
+  escalationLevel            Int                         @default(0)
+  escalatedAt                DateTime?
+  escalatedById              String?
+  escalationReason           String?
+  isSimulated                Boolean                     @default(false)
+  simulationId               String?
+  assetId                    String?
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  election                   Election                    @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  electoralZone              ElectoralZone?              @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
+  pollingPlace               PollingPlace?               @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  category                   IncidentCategory            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  asset                      Asset?                      @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  simulation                 Simulation?                 @relation(fields: [simulationId], references: [id], onDelete: SetNull)
+  events                     IncidentEvent[]
+  assignments                IncidentAssignment[]
+  simulationEvents           SimulationEvent[]
+  fieldDispatches            FieldDispatch[]
+  handoverReferences         ShiftHandoverIncident[]
+  resourceRequests           ResourceRequest[]
+  postmortems                Postmortem[]                @relation("PostmortemPrimaryIncident")
+  postmortemRelatedIncidents PostmortemRelatedIncident[]
 
   @@index([electionId, status])
   @@index([electoralZoneId, status])
@@ -819,43 +827,45 @@ model IncidentAssignment {
 }
 
 model AssetType {
-  id          String   @id @default(cuid())
-  key         String   @unique
-  name        String
-  description String?
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  assets      Asset[]
+  id                   String                @id @default(cuid())
+  key                  String                @unique
+  name                 String
+  description          String?
+  active               Boolean               @default(true)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  assets               Asset[]
+  resourceRequestItems ResourceRequestItem[]
 
   @@index([active, name])
 }
 
 model Asset {
-  id               String             @id @default(cuid())
-  assetTag         String             @unique
-  name             String
-  typeId           String
-  serialNumber     String?
-  manufacturer     String?
-  model            String?
-  status           AssetStatus        @default(AVAILABLE)
-  condition        AssetCondition     @default(GOOD)
-  electoralZoneId  String?
-  pollingPlaceId   String?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  type             AssetType          @relation(fields: [typeId], references: [id], onDelete: Restrict)
-  electoralZone    ElectoralZone?     @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
-  pollingPlace     PollingPlace?      @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
-  movements        AssetMovement[]
-  assignments      AssetAssignment[]
-  reservations     AssetReservation[]
-  maintenances     AssetMaintenance[]
-  incidents        Incident[]
-  simulationEvents SimulationEvent[]
-  deliveryItems    DeliveryItem[]
-  handoverReferences ShiftHandoverAsset[]
+  id                          String                       @id @default(cuid())
+  assetTag                    String                       @unique
+  name                        String
+  typeId                      String
+  serialNumber                String?
+  manufacturer                String?
+  model                       String?
+  status                      AssetStatus                  @default(AVAILABLE)
+  condition                   AssetCondition               @default(GOOD)
+  electoralZoneId             String?
+  pollingPlaceId              String?
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  type                        AssetType                    @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  electoralZone               ElectoralZone?               @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
+  pollingPlace                PollingPlace?                @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  movements                   AssetMovement[]
+  assignments                 AssetAssignment[]
+  reservations                AssetReservation[]
+  maintenances                AssetMaintenance[]
+  incidents                   Incident[]
+  simulationEvents            SimulationEvent[]
+  deliveryItems               DeliveryItem[]
+  handoverReferences          ShiftHandoverAsset[]
+  resourceRequestFulfillments ResourceRequestFulfillment[]
 
   @@index([typeId, status])
   @@index([electoralZoneId, status])
@@ -926,23 +936,24 @@ model AssetAssignment {
 }
 
 model AssetReservation {
-  id            String                 @id @default(cuid())
-  assetId       String
-  requesterId   String?
-  requesterName String
-  purpose       String
-  startsAt      DateTime
-  endsAt        DateTime
-  status        AssetReservationStatus @default(REQUESTED)
-  notes         String?
-  createdById   String?
-  approvedById  String?
-  approvedAt    DateTime?
-  fulfilledAt   DateTime?
-  cancelledAt   DateTime?
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-  asset         Asset                  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  id                          String                       @id @default(cuid())
+  assetId                     String
+  requesterId                 String?
+  requesterName               String
+  purpose                     String
+  startsAt                    DateTime
+  endsAt                      DateTime
+  status                      AssetReservationStatus       @default(REQUESTED)
+  notes                       String?
+  createdById                 String?
+  approvedById                String?
+  approvedAt                  DateTime?
+  fulfilledAt                 DateTime?
+  cancelledAt                 DateTime?
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  asset                       Asset                        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  resourceRequestFulfillments ResourceRequestFulfillment[]
 
   @@index([assetId, status])
   @@index([startsAt, endsAt])
@@ -1005,11 +1016,26 @@ model User {
   fieldDispatchEvents                  FieldDispatchEvent[]           @relation("FieldDispatchEventActor")
   acknowledgedTransmissionAlerts       TransmissionAlert[]            @relation("TransmissionAlertAcknowledger")
   resolvedTransmissionAlerts           TransmissionAlert[]            @relation("TransmissionAlertResolver")
-  sentShiftHandovers                    ShiftHandover[]                 @relation("ShiftHandoverSender")
-  receivedShiftHandovers                ShiftHandover[]                 @relation("ShiftHandoverRecipient")
-  confirmedShiftHandovers               ShiftHandover[]                 @relation("ShiftHandoverConfirmer")
-  cancelledShiftHandovers               ShiftHandover[]                 @relation("ShiftHandoverCanceller")
-  shiftHandoverHistory                  ShiftHandoverHistory[]          @relation("ShiftHandoverHistoryActor")
+  sentShiftHandovers                   ShiftHandover[]                @relation("ShiftHandoverSender")
+  receivedShiftHandovers               ShiftHandover[]                @relation("ShiftHandoverRecipient")
+  confirmedShiftHandovers              ShiftHandover[]                @relation("ShiftHandoverConfirmer")
+  cancelledShiftHandovers              ShiftHandover[]                @relation("ShiftHandoverCanceller")
+  shiftHandoverHistory                 ShiftHandoverHistory[]         @relation("ShiftHandoverHistoryActor")
+  commandCenterSavedViews              CommandCenterSavedView[]       @relation("CommandCenterSavedViewOwner")
+  commandCenterSnapshots               CommandCenterSnapshot[]        @relation("CommandCenterSnapshotCreator")
+  createdResourceRequests              ResourceRequest[]              @relation("ResourceRequestRequester")
+  ownedResourceRequests                ResourceRequest[]              @relation("ResourceRequestOwner")
+  resourceRequestFulfillments          ResourceRequestFulfillment[]   @relation("ResourceRequestFulfiller")
+  resourceRequestHistory               ResourceRequestHistory[]       @relation("ResourceRequestHistoryActor")
+  resourceRequestComments              ResourceRequestComment[]       @relation("ResourceRequestCommentAuthor")
+  createdPostmortems                   Postmortem[]                   @relation("PostmortemCreator")
+  ownedPostmortems                     Postmortem[]                   @relation("PostmortemOwner")
+  publishedPostmortems                 Postmortem[]                   @relation("PostmortemPublisher")
+  postmortemTimelineEntries            PostmortemTimelineEntry[]      @relation("PostmortemTimelineActor")
+  ownedPostmortemActions               PostmortemActionItem[]         @relation("PostmortemActionOwner")
+  createdPostmortemActions             PostmortemActionItem[]         @relation("PostmortemActionCreator")
+  postmortemReviews                    PostmortemReview[]             @relation("PostmortemReviewAuthor")
+  postmortemReviewerAssignments        PostmortemReviewer[]           @relation("PostmortemReviewerAssignee")
 
   @@index([status, name])
 }
@@ -1216,53 +1242,56 @@ model SimulationEvent {
 }
 
 model Vehicle {
-  id              String              @id @default(cuid())
-  identification  String              @unique
-  plate           String              @unique
-  model           String
-  capacity        Int?
-  status          VehicleStatus       @default(AVAILABLE)
-  driverName      String?
-  responsibleName String?
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  routes          DistributionRoute[]
+  id                          String                       @id @default(cuid())
+  identification              String                       @unique
+  plate                       String                       @unique
+  model                       String
+  capacity                    Int?
+  status                      VehicleStatus                @default(AVAILABLE)
+  driverName                  String?
+  responsibleName             String?
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  routes                      DistributionRoute[]
+  resourceRequestItems        ResourceRequestItem[]
+  resourceRequestFulfillments ResourceRequestFulfillment[]
 
   @@index([status])
 }
 
 model DistributionRoute {
-  id                   String              @id @default(cuid())
-  code                 String              @unique
-  name                 String
-  electionId           String
-  electoralZoneId      String
-  description          String?
-  originName           String
-  originLatitude       Decimal?            @db.Decimal(9, 6)
-  originLongitude      Decimal?            @db.Decimal(9, 6)
-  destinationName      String
-  destinationLatitude  Decimal?            @db.Decimal(9, 6)
-  destinationLongitude Decimal?            @db.Decimal(9, 6)
-  plannedDeparture     DateTime
-  plannedArrival       DateTime
-  actualDeparture      DateTime?
-  actualArrival        DateTime?
-  responsibleName      String
-  driverName           String?
-  vehicleId            String?
-  notes                String?
-  status               RouteStatus         @default(PLANNED)
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
-  election             Election            @relation(fields: [electionId], references: [id], onDelete: Cascade)
-  electoralZone        ElectoralZone       @relation(fields: [electoralZoneId], references: [id], onDelete: Restrict)
-  vehicle              Vehicle?            @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
-  stops                RouteStop[]
-  deliveries           Delivery[]
-  batches              DeliveryBatch[]
-  history              RouteHistoryEvent[]
-  exceptions           RouteException[]
+  id                          String                       @id @default(cuid())
+  code                        String                       @unique
+  name                        String
+  electionId                  String
+  electoralZoneId             String
+  description                 String?
+  originName                  String
+  originLatitude              Decimal?                     @db.Decimal(9, 6)
+  originLongitude             Decimal?                     @db.Decimal(9, 6)
+  destinationName             String
+  destinationLatitude         Decimal?                     @db.Decimal(9, 6)
+  destinationLongitude        Decimal?                     @db.Decimal(9, 6)
+  plannedDeparture            DateTime
+  plannedArrival              DateTime
+  actualDeparture             DateTime?
+  actualArrival               DateTime?
+  responsibleName             String
+  driverName                  String?
+  vehicleId                   String?
+  notes                       String?
+  status                      RouteStatus                  @default(PLANNED)
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  election                    Election                     @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  electoralZone               ElectoralZone                @relation(fields: [electoralZoneId], references: [id], onDelete: Restrict)
+  vehicle                     Vehicle?                     @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  stops                       RouteStop[]
+  deliveries                  Delivery[]
+  batches                     DeliveryBatch[]
+  history                     RouteHistoryEvent[]
+  exceptions                  RouteException[]
+  resourceRequestFulfillments ResourceRequestFulfillment[]
 
   @@index([electionId, status])
   @@index([electoralZoneId, status])
@@ -1466,22 +1495,24 @@ model TransmissionAlert {
 }
 
 model FieldTeam {
-  id                     String                  @id @default(cuid())
-  name                   String
-  code                   String                  @unique
-  electionId             String
-  responsibleName        String
-  status                 FieldTeamStatus         @default(ACTIVE)
-  notes                  String?
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
-  election               Election                @relation(fields: [electionId], references: [id], onDelete: Cascade)
-  members                FieldMember[]
-  shifts                 FieldShift[]
-  shiftTemplates         FieldShiftTemplate[]
-  allocations            FieldAllocation[]
-  dispatches             FieldDispatch[]
-  communicationAudiences CommunicationAudience[]
+  id                          String                       @id @default(cuid())
+  name                        String
+  code                        String                       @unique
+  electionId                  String
+  responsibleName             String
+  status                      FieldTeamStatus              @default(ACTIVE)
+  notes                       String?
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  election                    Election                     @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  members                     FieldMember[]
+  shifts                      FieldShift[]
+  shiftTemplates              FieldShiftTemplate[]
+  allocations                 FieldAllocation[]
+  dispatches                  FieldDispatch[]
+  communicationAudiences      CommunicationAudience[]
+  resourceRequestItems        ResourceRequestItem[]
+  resourceRequestFulfillments ResourceRequestFulfillment[]
 
   @@index([electionId, status])
   @@index([responsibleName])
@@ -1605,27 +1636,27 @@ model FieldShift {
 }
 
 model ShiftHandover {
-  id                 String                      @id @default(cuid())
+  id                 String                  @id @default(cuid())
   shiftId            String
   senderUserId       String
   recipientUserId    String
-  summary            String                      @db.Text
-  pendingNotes       String?                     @db.Text
-  observations       String?                     @db.Text
-  status             ShiftHandoverStatus         @default(DRAFT)
+  summary            String                  @db.Text
+  pendingNotes       String?                 @db.Text
+  observations       String?                 @db.Text
+  status             ShiftHandoverStatus     @default(DRAFT)
   submittedAt        DateTime?
   confirmedAt        DateTime?
   confirmedById      String?
   cancelledAt        DateTime?
   cancelledById      String?
-  cancellationReason String?                     @db.Text
-  createdAt          DateTime                    @default(now())
-  updatedAt          DateTime                    @updatedAt
-  shift              FieldShift                  @relation(fields: [shiftId], references: [id], onDelete: Restrict)
-  sender             User                        @relation("ShiftHandoverSender", fields: [senderUserId], references: [id], onDelete: Restrict)
-  recipient          User                        @relation("ShiftHandoverRecipient", fields: [recipientUserId], references: [id], onDelete: Restrict)
-  confirmedBy        User?                       @relation("ShiftHandoverConfirmer", fields: [confirmedById], references: [id], onDelete: SetNull)
-  cancelledBy        User?                       @relation("ShiftHandoverCanceller", fields: [cancelledById], references: [id], onDelete: SetNull)
+  cancellationReason String?                 @db.Text
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  shift              FieldShift              @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+  sender             User                    @relation("ShiftHandoverSender", fields: [senderUserId], references: [id], onDelete: Restrict)
+  recipient          User                    @relation("ShiftHandoverRecipient", fields: [recipientUserId], references: [id], onDelete: Restrict)
+  confirmedBy        User?                   @relation("ShiftHandoverConfirmer", fields: [confirmedById], references: [id], onDelete: SetNull)
+  cancelledBy        User?                   @relation("ShiftHandoverCanceller", fields: [cancelledById], references: [id], onDelete: SetNull)
   incidents          ShiftHandoverIncident[]
   tasks              ShiftHandoverTask[]
   assets             ShiftHandoverAsset[]
@@ -1672,15 +1703,15 @@ model ShiftHandoverAsset {
 }
 
 model ShiftHandoverHistory {
-  id         String                         @id @default(cuid())
-  handoverId String
-  actorId    String?
-  action     ShiftHandoverHistoryAction
+  id          String                     @id @default(cuid())
+  handoverId  String
+  actorId     String?
+  action      ShiftHandoverHistoryAction
   description String
-  metadata   Json?
-  createdAt  DateTime                       @default(now())
-  handover   ShiftHandover                  @relation(fields: [handoverId], references: [id], onDelete: Cascade)
-  actor      User?                          @relation("ShiftHandoverHistoryActor", fields: [actorId], references: [id], onDelete: SetNull)
+  metadata    Json?
+  createdAt   DateTime                   @default(now())
+  handover    ShiftHandover              @relation(fields: [handoverId], references: [id], onDelete: Cascade)
+  actor       User?                      @relation("ShiftHandoverHistoryActor", fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([handoverId, createdAt])
   @@index([actorId, createdAt])
@@ -2540,41 +2571,44 @@ model PreparationChecklistHistory {
 }
 
 model Task {
-  id                    String                     @id @default(cuid())
-  title                 String
-  description           String?                    @db.Text
-  status                TaskStatus                 @default(PENDING)
-  priority              TaskPriority               @default(MEDIUM)
-  executionMode         TaskExecutionMode          @default(OFFICE)
-  requiredTeamSize      Int?
-  assigneeId            String?
-  createdById           String?
-  electionId            String
-  electoralZoneId       String?
-  pollingPlaceId        String?
-  parentId              String?
-  milestoneId           String?
-  dueAt                 DateTime?
-  completedAt           DateTime?
-  createdAt             DateTime                   @default(now())
-  updatedAt             DateTime                   @updatedAt
-  assignee              User?                      @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
-  createdBy             User?                      @relation("TaskCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  election              Election                   @relation(fields: [electionId], references: [id], onDelete: Cascade)
-  electoralZone         ElectoralZone?             @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
-  pollingPlace          PollingPlace?              @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
-  parent                Task?                      @relation("TaskHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  subtasks              Task[]                     @relation("TaskHierarchy")
-  milestone             TaskMilestone?             @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
-  checklistItems        TaskChecklistItem[]
-  labels                TaskLabelAssignment[]
-  dependencies          TaskDependency[]           @relation("TaskDependencies")
-  dependents            TaskDependency[]           @relation("TaskDependents")
-  comments              TaskComment[]
-  history               TaskHistory[]
-  specialtyRequirements TaskSpecialtyRequirement[]
-  dispatches            FieldDispatch[]
-  handoverReferences    ShiftHandoverTask[]
+  id                          String                       @id @default(cuid())
+  title                       String
+  description                 String?                      @db.Text
+  status                      TaskStatus                   @default(PENDING)
+  priority                    TaskPriority                 @default(MEDIUM)
+  executionMode               TaskExecutionMode            @default(OFFICE)
+  requiredTeamSize            Int?
+  assigneeId                  String?
+  createdById                 String?
+  electionId                  String
+  electoralZoneId             String?
+  pollingPlaceId              String?
+  parentId                    String?
+  milestoneId                 String?
+  dueAt                       DateTime?
+  completedAt                 DateTime?
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  assignee                    User?                        @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdBy                   User?                        @relation("TaskCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  election                    Election                     @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  electoralZone               ElectoralZone?               @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
+  pollingPlace                PollingPlace?                @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  parent                      Task?                        @relation("TaskHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  subtasks                    Task[]                       @relation("TaskHierarchy")
+  milestone                   TaskMilestone?               @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  checklistItems              TaskChecklistItem[]
+  labels                      TaskLabelAssignment[]
+  dependencies                TaskDependency[]             @relation("TaskDependencies")
+  dependents                  TaskDependency[]             @relation("TaskDependents")
+  comments                    TaskComment[]
+  history                     TaskHistory[]
+  specialtyRequirements       TaskSpecialtyRequirement[]
+  dispatches                  FieldDispatch[]
+  handoverReferences          ShiftHandoverTask[]
+  resourceRequests            ResourceRequest[]
+  resourceRequestFulfillments ResourceRequestFulfillment[]
+  postmortemActionItems       PostmortemActionItem[]
 
   @@index([electionId, status])
   @@index([electoralZoneId, status])
@@ -2696,4 +2730,442 @@ model TaskSpecialtyRequirement {
 
   @@unique([taskId, specialtyId])
   @@index([specialtyId])
+}
+
+// ---------------------------------------------------------------------------
+// Operational Coordination Suite — Command Center / Resource Requests /
+// Postmortem. Ver SPEC/2026-10-06-operational-coordination-suite.md.
+// ---------------------------------------------------------------------------
+
+enum CommandCenterHealth {
+  NORMAL
+  ATTENTION
+  CRITICAL
+}
+
+enum CommandCenterLayoutMode {
+  STANDARD
+  WALLBOARD
+}
+
+model CommandCenterSavedView {
+  id             String                  @id @default(cuid())
+  ownerId        String
+  name           String
+  description    String?
+  filters        Json
+  layoutMode     CommandCenterLayoutMode @default(STANDARD)
+  refreshSeconds Int                     @default(45)
+  isDefault      Boolean                 @default(false)
+  shared         Boolean                 @default(false)
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  owner          User                    @relation("CommandCenterSavedViewOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, name])
+  @@index([ownerId, isDefault])
+  @@index([shared, updatedAt])
+}
+
+model CommandCenterSnapshot {
+  id              String              @id @default(cuid())
+  createdById     String
+  name            String
+  description     String?
+  electionId      String?
+  electoralZoneId String?
+  health          CommandCenterHealth
+  payload         Json
+  createdAt       DateTime            @default(now())
+  createdBy       User                @relation("CommandCenterSnapshotCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  election        Election?           @relation(fields: [electionId], references: [id], onDelete: SetNull)
+  electoralZone   ElectoralZone?      @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
+
+  @@index([electionId, createdAt])
+  @@index([createdAt])
+}
+
+enum ResourceRequestStatus {
+  DRAFT
+  SUBMITTED
+  TRIAGED
+  APPROVED
+  PARTIALLY_FULFILLED
+  FULFILLED
+  REJECTED
+  CANCELLED
+}
+
+enum ResourceRequestPriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum ResourceRequestItemKind {
+  ASSET
+  ASSET_TYPE
+  FIELD_TEAM
+  VEHICLE
+  TRANSPORT
+  TECH_SUPPORT
+  MATERIAL
+  OTHER
+}
+
+enum ResourceRequestHistoryAction {
+  CREATED
+  UPDATED
+  SUBMITTED
+  TRIAGED
+  OWNER_CHANGED
+  PRIORITY_CHANGED
+  APPROVED
+  REJECTED
+  FULFILLMENT_ADDED
+  FULFILLMENT_REMOVED
+  PARTIALLY_FULFILLED
+  FULFILLED
+  CANCELLED
+  COMMENT_ADDED
+}
+
+model ResourceRequest {
+  id                 String                   @id @default(cuid())
+  code               String                   @unique
+  electionId         String
+  electoralZoneId    String?
+  pollingPlaceId     String?
+  incidentId         String?
+  taskId             String?
+  title              String
+  description        String                   @db.Text
+  priority           ResourceRequestPriority  @default(NORMAL)
+  status             ResourceRequestStatus    @default(DRAFT)
+  requestedById      String
+  ownerId            String?
+  neededAt           DateTime?
+  submittedAt        DateTime?
+  triagedAt          DateTime?
+  approvedAt         DateTime?
+  fulfilledAt        DateTime?
+  rejectedAt         DateTime?
+  cancelledAt        DateTime?
+  triageNotes        String?                  @db.Text
+  rejectionReason    String?                  @db.Text
+  cancellationReason String?                  @db.Text
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  election           Election                 @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  electoralZone      ElectoralZone?           @relation(fields: [electoralZoneId], references: [id], onDelete: SetNull)
+  pollingPlace       PollingPlace?            @relation(fields: [pollingPlaceId], references: [id], onDelete: SetNull)
+  incident           Incident?                @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+  task               Task?                    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  requestedBy        User                     @relation("ResourceRequestRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+  owner              User?                    @relation("ResourceRequestOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  items              ResourceRequestItem[]
+  history            ResourceRequestHistory[]
+  comments           ResourceRequestComment[]
+
+  @@index([status, priority])
+  @@index([electionId, status])
+  @@index([neededAt, status])
+  @@index([ownerId, status])
+  @@index([requestedById, status])
+  @@index([incidentId])
+  @@index([taskId])
+  @@index([electoralZoneId, status])
+}
+
+model ResourceRequestItem {
+  id           String                       @id @default(cuid())
+  requestId    String
+  kind         ResourceRequestItemKind
+  label        String
+  description  String?                      @db.Text
+  quantity     Int                          @default(1)
+  notes        String?                      @db.Text
+  assetTypeId  String?
+  fieldTeamId  String?
+  vehicleId    String?
+  createdAt    DateTime                     @default(now())
+  updatedAt    DateTime                     @updatedAt
+  request      ResourceRequest              @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  assetType    AssetType?                   @relation(fields: [assetTypeId], references: [id], onDelete: SetNull)
+  fieldTeam    FieldTeam?                   @relation(fields: [fieldTeamId], references: [id], onDelete: SetNull)
+  vehicle      Vehicle?                     @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  fulfillments ResourceRequestFulfillment[]
+
+  @@index([requestId, kind])
+  @@index([assetTypeId])
+  @@index([fieldTeamId])
+  @@index([vehicleId])
+}
+
+model ResourceRequestFulfillment {
+  id                 String              @id @default(cuid())
+  requestItemId      String
+  quantity           Int
+  fulfilledById      String
+  assetId            String?
+  assetReservationId String?
+  fieldTeamId        String?
+  vehicleId          String?
+  routeId            String?
+  taskId             String?
+  notes              String?             @db.Text
+  createdAt          DateTime            @default(now())
+  requestItem        ResourceRequestItem @relation(fields: [requestItemId], references: [id], onDelete: Cascade)
+  fulfilledBy        User                @relation("ResourceRequestFulfiller", fields: [fulfilledById], references: [id], onDelete: Restrict)
+  asset              Asset?              @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  assetReservation   AssetReservation?   @relation(fields: [assetReservationId], references: [id], onDelete: SetNull)
+  fieldTeam          FieldTeam?          @relation(fields: [fieldTeamId], references: [id], onDelete: SetNull)
+  vehicle            Vehicle?            @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  route              DistributionRoute?  @relation(fields: [routeId], references: [id], onDelete: SetNull)
+  task               Task?               @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([requestItemId, createdAt])
+  @@index([assetId])
+  @@index([assetReservationId])
+  @@index([fieldTeamId])
+  @@index([vehicleId])
+  @@index([routeId])
+  @@index([taskId])
+  @@index([fulfilledById, createdAt])
+}
+
+model ResourceRequestHistory {
+  id          String                       @id @default(cuid())
+  requestId   String
+  actorId     String?
+  action      ResourceRequestHistoryAction
+  description String
+  metadata    Json?
+  createdAt   DateTime                     @default(now())
+  request     ResourceRequest              @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  actor       User?                        @relation("ResourceRequestHistoryActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([requestId, createdAt])
+  @@index([actorId, createdAt])
+}
+
+model ResourceRequestComment {
+  id        String          @id @default(cuid())
+  requestId String
+  authorId  String
+  body      String          @db.Text
+  createdAt DateTime        @default(now())
+  request   ResourceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  author    User            @relation("ResourceRequestCommentAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([requestId, createdAt])
+  @@index([authorId, createdAt])
+}
+
+enum PostmortemStatus {
+  DRAFT
+  IN_REVIEW
+  CHANGES_REQUESTED
+  APPROVED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PostmortemCauseType {
+  ROOT_CAUSE
+  CONTRIBUTING_FACTOR
+  CONDITION
+}
+
+enum PostmortemCauseCategory {
+  PEOPLE
+  PROCESS
+  TECHNOLOGY
+  COMMUNICATION
+  LOGISTICS
+  EXTERNAL
+  OTHER
+}
+
+enum PostmortemLessonType {
+  WENT_WELL
+  WENT_WRONG
+  LESSON
+  FOLLOW_UP
+}
+
+enum PostmortemActionStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum PostmortemReviewDecision {
+  APPROVED
+  CHANGES_REQUESTED
+}
+
+enum PostmortemTimelineSource {
+  INCIDENT_EVENT
+  SHIFT_HANDOVER
+  TASK
+  RESOURCE_REQUEST
+  MANUAL
+}
+
+model Postmortem {
+  id                   String                      @id @default(cuid())
+  code                 String                      @unique
+  title                String
+  primaryIncidentId    String
+  status               PostmortemStatus            @default(DRAFT)
+  executiveSummary     String?                     @db.Text
+  impactSummary        String?                     @db.Text
+  detectionSummary     String?                     @db.Text
+  responseSummary      String?                     @db.Text
+  resolutionSummary    String?                     @db.Text
+  rootCauseSummary     String?                     @db.Text
+  lessonsSummary       String?                     @db.Text
+  createdById          String
+  ownerId              String?
+  submittedForReviewAt DateTime?
+  approvedAt           DateTime?
+  publishedAt          DateTime?
+  publishedById        String?
+  archivedAt           DateTime?
+  createdAt            DateTime                    @default(now())
+  updatedAt            DateTime                    @updatedAt
+  primaryIncident      Incident                    @relation("PostmortemPrimaryIncident", fields: [primaryIncidentId], references: [id], onDelete: Restrict)
+  createdBy            User                        @relation("PostmortemCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  owner                User?                       @relation("PostmortemOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  publishedBy          User?                       @relation("PostmortemPublisher", fields: [publishedById], references: [id], onDelete: SetNull)
+  relatedIncidents     PostmortemRelatedIncident[]
+  timeline             PostmortemTimelineEntry[]
+  causes               PostmortemCause[]
+  lessons              PostmortemLesson[]
+  actions              PostmortemActionItem[]
+  reviewers            PostmortemReviewer[]
+  reviews              PostmortemReview[]
+
+  @@index([status, createdAt])
+  @@index([primaryIncidentId])
+  @@index([ownerId, status])
+}
+
+model PostmortemRelatedIncident {
+  id           String     @id @default(cuid())
+  postmortemId String
+  incidentId   String
+  note         String?    @db.Text
+  createdAt    DateTime   @default(now())
+  postmortem   Postmortem @relation(fields: [postmortemId], references: [id], onDelete: Cascade)
+  incident     Incident   @relation(fields: [incidentId], references: [id], onDelete: Restrict)
+
+  @@unique([postmortemId, incidentId])
+  @@index([incidentId])
+}
+
+model PostmortemTimelineEntry {
+  id           String                   @id @default(cuid())
+  postmortemId String
+  occurredAt   DateTime
+  sourceType   PostmortemTimelineSource
+  sourceId     String?
+  title        String
+  description  String?                  @db.Text
+  imported     Boolean                  @default(false)
+  createdById  String?
+  createdAt    DateTime                 @default(now())
+  postmortem   Postmortem               @relation(fields: [postmortemId], references: [id], onDelete: Cascade)
+  createdBy    User?                    @relation("PostmortemTimelineActor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([postmortemId, sourceType, sourceId])
+  @@index([postmortemId, occurredAt])
+}
+
+model PostmortemCause {
+  id           String                  @id @default(cuid())
+  postmortemId String
+  parentId     String?
+  type         PostmortemCauseType
+  category     PostmortemCauseCategory
+  statement    String                  @db.Text
+  evidence     String?                 @db.Text
+  order        Int                     @default(0)
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  postmortem   Postmortem              @relation(fields: [postmortemId], references: [id], onDelete: Cascade)
+  parent       PostmortemCause?        @relation("PostmortemCauseTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children     PostmortemCause[]       @relation("PostmortemCauseTree")
+
+  @@index([postmortemId, type])
+  @@index([parentId])
+}
+
+model PostmortemLesson {
+  id           String                   @id @default(cuid())
+  postmortemId String
+  type         PostmortemLessonType
+  title        String
+  description  String                   @db.Text
+  category     PostmortemCauseCategory?
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  postmortem   Postmortem               @relation(fields: [postmortemId], references: [id], onDelete: Cascade)
+
+  @@index([postmortemId, type])
+}
+
+model PostmortemActionItem {
+  id                String                 @id @default(cuid())
+  postmortemId      String
+  title             String
+  description       String?                @db.Text
+  priority          TaskPriority           @default(MEDIUM)
+  ownerUserId       String?
+  dueAt             DateTime?
+  status            PostmortemActionStatus @default(OPEN)
+  taskId            String?
+  createdById       String?
+  overdueNotifiedAt DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  postmortem        Postmortem             @relation(fields: [postmortemId], references: [id], onDelete: Cascade)
+  ownerUser         User?                  @relation("PostmortemActionOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  createdBy         User?                  @relation("PostmortemActionCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  task              Task?                  @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([postmortemId, status])
+  @@index([status, dueAt])
+  @@index([ownerUserId, status])
+  @@index([taskId])
+}
+
+model PostmortemReviewer {
+  id           String     @id @default(cuid())
+  postmortemId String
+  userId       String
+  createdAt    DateTime   @default(now())
+  postmortem   Postmortem @relation(fields: [postmortemId], references: [id], onDelete: Cascade)
+  user         User       @relation("PostmortemReviewerAssignee", fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([postmortemId, userId])
+  @@index([userId])
+}
+
+model PostmortemReview {
+  id           String                   @id @default(cuid())
+  postmortemId String
+  reviewerId   String
+  decision     PostmortemReviewDecision
+  comment      String?                  @db.Text
+  createdAt    DateTime                 @default(now())
+  postmortem   Postmortem               @relation(fields: [postmortemId], references: [id], onDelete: Cascade)
+  reviewer     User                     @relation("PostmortemReviewAuthor", fields: [reviewerId], references: [id], onDelete: Restrict)
+
+  @@index([postmortemId, createdAt])
+  @@index([reviewerId, createdAt])
 }

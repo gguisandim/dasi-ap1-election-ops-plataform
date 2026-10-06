@@ -1050,6 +1050,185 @@ export interface DomainEventMap {
     reason?: string;
     cancelledAt: string;
   };
+
+  "resource_request.created": {
+    entityId: string;
+    actorId: string;
+    code: string;
+    title: string;
+    electionId: string;
+    priority: string;
+    status: string;
+  };
+  "resource_request.submitted": {
+    entityId: string;
+    actorId: string;
+    code: string;
+    title: string;
+    electionId: string;
+    priority: string;
+    from: string;
+    to: string;
+    requestedById: string;
+    submittedAt: string;
+  };
+  "resource_request.triaged": {
+    entityId: string;
+    actorId: string;
+    code: string;
+    title: string;
+    electionId: string;
+    priority: string;
+    ownerId?: string | null;
+    ownerChanged: boolean;
+    priorityChanged: boolean;
+    from: string;
+    to: string;
+  };
+  "resource_request.approved": {
+    entityId: string;
+    actorId: string;
+    code: string;
+    title: string;
+    electionId: string;
+    requestedById: string;
+    from: string;
+    to: string;
+    approvedAt: string;
+  };
+  "resource_request.rejected": {
+    entityId: string;
+    actorId: string;
+    code: string;
+    title: string;
+    electionId: string;
+    requestedById: string;
+    from: string;
+    to: string;
+    reason?: string;
+    rejectedAt: string;
+  };
+  "resource_request.partially_fulfilled": {
+    entityId: string;
+    actorId: string;
+    code: string;
+    title: string;
+    electionId: string;
+    requestedById: string;
+    from: string;
+    to: string;
+    fulfilledQuantity: number;
+    requiredQuantity: number;
+  };
+  "resource_request.fulfilled": {
+    entityId: string;
+    actorId: string;
+    code: string;
+    title: string;
+    electionId: string;
+    requestedById: string;
+    from: string;
+    to: string;
+    fulfilledAt: string;
+  };
+  "resource_request.cancelled": {
+    entityId: string;
+    actorId: string;
+    code: string;
+    title: string;
+    electionId: string;
+    from: string;
+    to: string;
+    reason?: string;
+    cancelledAt: string;
+  };
+
+  "postmortem.created": {
+    entityId: string;
+    actorId: string;
+    code: string;
+    title: string;
+    primaryIncidentId: string;
+    status: string;
+  };
+  "postmortem.submitted": {
+    entityId: string;
+    actorId: string;
+    code: string;
+    title: string;
+    primaryIncidentId: string;
+    from: string;
+    to: string;
+    reviewerIds: string[];
+    submittedForReviewAt: string;
+  };
+  "postmortem.changes_requested": {
+    entityId: string;
+    actorId: string;
+    code: string;
+    title: string;
+    ownerId?: string | null;
+    reviewerId: string;
+    from: string;
+    to: string;
+    comment?: string;
+  };
+  "postmortem.approved": {
+    entityId: string;
+    actorId: string;
+    code: string;
+    title: string;
+    ownerId?: string | null;
+    from: string;
+    to: string;
+    approvedAt: string;
+  };
+  "postmortem.published": {
+    entityId: string;
+    actorId: string;
+    code: string;
+    title: string;
+    ownerId?: string | null;
+    reviewerIds: string[];
+    from: string;
+    to: string;
+    publishedAt: string;
+  };
+  "postmortem.archived": {
+    entityId: string;
+    actorId: string;
+    code: string;
+    title: string;
+    from: string;
+    to: string;
+    archivedAt: string;
+  };
+  "postmortem.action_overdue": {
+    entityId: string;
+    actorId: string;
+    actionItemId: string;
+    postmortemId: string;
+    code: string;
+    title: string;
+    ownerUserId?: string | null;
+    dueAt: string;
+    overdueAt: string;
+  };
+
+  "command_center.snapshot_created": {
+    entityId: string;
+    actorId: string;
+    name: string;
+    health: string;
+    electionId?: string | null;
+    electoralZoneId?: string | null;
+  };
+  "command_center.shared_view_created": {
+    entityId: string;
+    actorId: string;
+    name: string;
+    layoutMode: string;
+  };
 }
 
 export type DomainEventName = keyof DomainEventMap;
@@ -1255,6 +1434,76 @@ export const NOTIFICATION_EVENT_CATALOG = [
     description: "Equipe recusou a demanda operacional enviada.",
     requiredPermission: "field-teams.read",
   },
+  {
+    eventName: "resource_request.submitted",
+    domain: "Solicitações de recurso",
+    label: "Solicitação recebida",
+    description: "Uma solicitação operacional aguarda triagem ou aprovação.",
+    requiredPermission: "resource-requests.approve",
+  },
+  {
+    eventName: "resource_request.triaged",
+    domain: "Solicitações de recurso",
+    label: "Solicitação triada",
+    description: "A solicitação recebeu responsável ou nova prioridade.",
+    requiredPermission: "resource-requests.read",
+  },
+  {
+    eventName: "resource_request.approved",
+    domain: "Solicitações de recurso",
+    label: "Solicitação aprovada",
+    description: "A solicitação foi aprovada e aguarda atendimento.",
+    requiredPermission: "resource-requests.read",
+  },
+  {
+    eventName: "resource_request.rejected",
+    domain: "Solicitações de recurso",
+    label: "Solicitação rejeitada",
+    description: "A solicitação não foi aprovada.",
+    requiredPermission: "resource-requests.read",
+  },
+  {
+    eventName: "resource_request.fulfilled",
+    domain: "Solicitações de recurso",
+    label: "Solicitação atendida",
+    description: "Todos os itens solicitados foram atendidos.",
+    requiredPermission: "resource-requests.read",
+  },
+  {
+    eventName: "postmortem.submitted",
+    domain: "Postmortem",
+    label: "Postmortem para revisão",
+    description: "Uma análise pós-incidente aguarda sua revisão.",
+    requiredPermission: "postmortems.review",
+  },
+  {
+    eventName: "postmortem.changes_requested",
+    domain: "Postmortem",
+    label: "Mudanças solicitadas",
+    description: "A revisão pediu ajustes na análise.",
+    requiredPermission: "postmortems.read",
+  },
+  {
+    eventName: "postmortem.approved",
+    domain: "Postmortem",
+    label: "Postmortem aprovado",
+    description: "Todos os revisores aprovaram a análise.",
+    requiredPermission: "postmortems.read",
+  },
+  {
+    eventName: "postmortem.published",
+    domain: "Postmortem",
+    label: "Postmortem publicado",
+    description: "A análise foi publicada para consulta.",
+    requiredPermission: "postmortems.read",
+  },
+  {
+    eventName: "postmortem.action_overdue",
+    domain: "Postmortem",
+    label: "Ação corretiva vencida",
+    description: "Uma ação corretiva passou do prazo definido.",
+    requiredPermission: "postmortems.read",
+  },
 ] as const satisfies readonly NotificationEventDefinition[];
 
 export function requiredPermissionForEvent(
@@ -1282,6 +1531,9 @@ export function requiredPermissionForEvent(
   if (name.startsWith("risk.")) return "risks.read";
   if (name.startsWith("preparation_checklist."))
     return "preparation-checklists.read";
+  if (name.startsWith("resource_request.")) return "resource-requests.read";
+  if (name.startsWith("postmortem.")) return "postmortems.read";
+  if (name.startsWith("command_center.")) return "command-center.read";
   if (name.startsWith("user.")) return "users.read";
   if (name.startsWith("election.")) return "elections.read";
   return undefined;

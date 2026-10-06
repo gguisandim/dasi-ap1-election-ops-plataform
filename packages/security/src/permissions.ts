@@ -49,6 +49,23 @@ export const PERMISSIONS = {
     confirm: "shift-handovers.confirm",
   },
 
+  commandCenter: {
+    read: "command-center.read",
+    manage: "command-center.manage",
+  },
+  resourceRequests: {
+    read: "resource-requests.read",
+    manage: "resource-requests.manage",
+    approve: "resource-requests.approve",
+    fulfill: "resource-requests.fulfill",
+  },
+  postmortems: {
+    read: "postmortems.read",
+    manage: "postmortems.manage",
+    review: "postmortems.review",
+    publish: "postmortems.publish",
+  },
+
   preparationChecklists: {
     read: "preparation-checklists.read",
     manage: "preparation-checklists.manage",
@@ -117,6 +134,19 @@ export const PLATFORM_PERMISSION_KEYS = [
   PERMISSIONS.shiftHandovers.read,
   PERMISSIONS.shiftHandovers.manage,
   PERMISSIONS.shiftHandovers.confirm,
+
+  PERMISSIONS.commandCenter.read,
+  PERMISSIONS.commandCenter.manage,
+
+  PERMISSIONS.resourceRequests.read,
+  PERMISSIONS.resourceRequests.manage,
+  PERMISSIONS.resourceRequests.approve,
+  PERMISSIONS.resourceRequests.fulfill,
+
+  PERMISSIONS.postmortems.read,
+  PERMISSIONS.postmortems.manage,
+  PERMISSIONS.postmortems.review,
+  PERMISSIONS.postmortems.publish,
 
   PERMISSIONS.preparationChecklists.read,
   PERMISSIONS.preparationChecklists.manage,
