@@ -18,6 +18,7 @@ import { PollingSectionsModule } from "@eops/plugin-polling-sections/server";
 import { PreparationChecklistsModule } from "@eops/plugin-preparation-checklists/server";
 import { RiskManagementModule } from "@eops/plugin-risk-management/server";
 import { ShiftsModule } from "@eops/plugin-shifts/server";
+import { ShiftHandoversModule } from "@eops/plugin-shift-handovers/server";
 import { TasksModule } from "@eops/plugin-tasks/server";
 import { SimulatorModule } from "@eops/plugin-operational-simulator/server";
 import { OperationalMapModule } from "@eops/plugin-operational-map/server";
@@ -49,6 +50,7 @@ import { NotificationsModule } from "@eops/plugin-notifications/server";
     KnowledgeRunbooksModule,
     RiskManagementModule,
     ShiftsModule,
+    ShiftHandoversModule,
     PreparationChecklistsModule,
     TasksModule,
   ],
