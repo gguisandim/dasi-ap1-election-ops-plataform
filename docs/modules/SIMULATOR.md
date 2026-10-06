@@ -1,145 +1,130 @@
-# Simulador Operacional
+# Simulador Operacional 2.0
 
-Plugin: `plugins/simulation/operational-simulator`
+Plugin `@eops/plugin-simulator`, em `plugins/simulation/operational-simulator`, categoria `simulation`, rota `/simulator`.
 
-Documento descritivo. A SPEC `SPEC/2026-10-05-operational-intelligence-improvements.md` permanece normativa.
+Documentação descritiva. A fonte normativa é `SPEC/2026-10-06-platform-depth-integration.md` (Parte 1).
 
-## Objetivo
+## Papel
 
-Produzir eventos de treinamento claramente marcados como simulados e exercitar Incidentes, Inventário, mapa, Event Bus, notificações e auditoria.
+Treinamento e análise. O simulador injeta carga operacional controlada e mede a resposta do time. Ele **não** é o Command Center (estado atual), nem Reports (histórico analítico).
 
-## Entidades
-
-- `SimulationScenario`
-- `SimulationScenarioEvent`
-- `Simulation`
-- `SimulationEvent`
-
-## Estados
-
-```text
-DRAFT
-RUNNING
-PAUSED
-FINISHED
-CANCELLED
-```
-
-## Fluxo
-
-1. criar uma simulação para um pleito, opcionalmente vinculada a um cenário programado;
-2. escolher velocidade, probabilidade e tipos de falha;
-3. iniciar; cada `tick` executa os eventos de cenário vencidos ou, sem cenário, gera uma falha genérica;
-4. `Incident` é criado com `isSimulated=true` e `simulationId`;
-5. opcionalmente o ativo é colocado temporariamente em manutenção;
-6. ao encerrar, o score é calculado, incidentes simulados ativos são resolvidos e estados temporários de ativos são restaurados;
-7. `SimulationEvent` mantém a timeline usada pelo replay.
-
-## Scenario Builder
-
-Rotas (`simulation.read` para leitura, `simulation.manage` para escrita):
-
-```http
-GET    /api/simulations/scenarios
-GET    /api/simulations/scenarios/:id
-POST   /api/simulations/scenarios
-PATCH  /api/simulations/scenarios/:id
-DELETE /api/simulations/scenarios/:id            (somente sem simulações vinculadas)
-POST   /api/simulations/scenarios/:id/events
-POST   /api/simulations/scenarios/:id/events/:eventId/duplicate
-DELETE /api/simulations/scenarios/:id/events/:eventId
-```
-
-`SimulationScenario` possui `seed` e `durationSeconds`. `SimulationScenarioEvent` possui `offsetSeconds`, `type`, `severity`, `targetType`, `targetId`, `probability` (0..100) e `payload`.
-
-Tipos de evento (`SimulationScenarioEventType`) e alvo (`SimulationTargetType`):
-
-```text
-INCIDENT_CREATE        cria Incident simulado
-TRANSMISSION_FAILURE   registra falha simulada no replay
-TRANSMISSION_RECOVERY  registra recuperação simulada no replay
-ASSET_FAILURE          altera ativo somente se applyToOperations
-ASSET_RECOVERY         restaura ativo somente se applyToOperations
-
-targetType: NONE | POLLING_PLACE | ZONE | ASSET | TRANSMISSION
-```
-
-Validação (mensagens em português, HTTP 400): nome obrigatório; `offsetSeconds >= 0`; sem par `(offsetSeconds, type)` duplicado; `probability` entre 0 e 100; `targetType` obrigatório e diferente de `NONE` para `INCIDENT_CREATE`, `ASSET_FAILURE`, `ASSET_RECOVERY`, `TRANSMISSION_FAILURE` e `TRANSMISSION_RECOVERY`. A unicidade `(scenarioId, offsetSeconds, type)` também é garantida no banco.
-
-## Relógio lógico, velocidade e tick
-
-- o tempo é lógico: `elapsedSeconds += speed * TICK_SECONDS` (TICK_SECONDS = 180); não há timers reais longos;
-- velocidades aceitas: `1, 2, 5, 10, 20, 100`;
-- `tick` executa os eventos de cenário com `offsetSeconds <= elapsedSeconds` avançado que ainda não foram executados;
-- execução única garantida em código (conjunto de `scenarioEventId` já gravados) e no banco (`@@unique([simulationId, scenarioEventId])`);
-- lifecycle preservado: `start`, `pause`, `resume` (start a partir de `PAUSED`), `tick`, `finish`;
-- quando a simulação não possui cenário ou o cenário não possui eventos, o `tick` mantém o comportamento genérico legado;
-- `tick` não emite eventos de domínio.
-
-## Determinismo (seed)
-
-`createRng(seed)` é um PRNG determinístico exportado (mulberry32), usado nas rolagens de probabilidade. Com seed, mesma simulação/cenário e mesmos inputs produzem a mesma sequência; sem seed, o comportamento usa `Math.random` e não é determinístico.
-
-## Resultado de execução
-
-Cada `SimulationEvent` executa e grava `result`:
-
-```text
-APPLIED  evento executado
-SKIPPED  rolagem de probabilidade não atingida
-FAILED   erro de validação/execução (com mensagem); não aborta a simulação
-```
-
-## Score
-
-Calculado no `finish`, antes da resolução automática dos incidentes:
-
-```text
-coverage   = plannedEvents > 0 ? round(executedEvents / plannedEvents * 100) : 100
-penalties  = slaViolations*10 + unresolvedCritical*15 + failedEvents*5 + unrecoveredFailures*8
-skillScore = clamp(100 - penalties, 0, 100)
-score      = round(skillScore*0.7 + coverage*0.3)
-```
-
-`plannedEvents` = eventos de cenário com `offsetSeconds <= elapsedSeconds`; `executedEvents` = eventos `APPLIED`; `failedEvents` = eventos `FAILED`; `slaViolations` = incidentes simulados resolvidos após `slaDeadline`; `unresolvedCritical` = incidentes CRITICAL ainda abertos; `unrecoveredFailures` = `TRANSMISSION_FAILURE` sem `TRANSMISSION_RECOVERY` posterior para o mesmo alvo. O `score` é persistido; o detalhamento é derivado no relatório.
-
-## Relatório e replay
-
-```http
-GET /api/simulations/:id/report
-```
-
-Retorna `score, breakdown, plannedEvents, executedEvents, failedEvents, incidentsCreated, resolvedIncidents, transmissionFailures, transmissionRecoveries, averageRecoverySeconds, slaViolations, unresolved, timeline[]`.
-
-`GET /api/simulations/:id` expõe, por evento, `offsetSeconds`, `eventType`, alvo, `result`, entidade relacionada e mensagem.
-
-Eventos de domínio emitidos: `simulation.started`, `simulation.resumed`, `simulation.paused`, `simulation.finished`, `simulation.scored`.
-
-## Frontend
-
-```text
-/simulator                   lista e criação de simulações (velocidades atualizadas, seleção de cenário)
-/simulator/scenarios         lista de cenários
-/simulator/scenarios/new     builder
-/simulator/scenarios/:id     edição + eventos (adicionar, duplicar, remover)
-/simulator/:id               detalhe com score, relatório e replay
-```
-
-As rotas de cenário são declaradas antes de `/simulator/:id`.
+É dono de cenários, eventos de cenário, execuções (runs), snapshots de execução, decisões de operador, métricas e score. Nunca é dono de `Incident`, `Asset`, `TransmissionPoint`, `FieldShift`, `FieldTeam`, `Route`, `ResourceRequest` ou `Task`.
 
 ## Isolamento
 
-A simulação não corrompe estado operacional real:
+Todo artefato criado em domínio real é marcado como simulado: `Incident.isSimulated = true` e `Incident.simulationId` preenchido. Consultas operacionais reais excluem esses registros; Reports tem `includeSimulated` explícito (default `false`).
+
+Efeitos por tipo de evento, com limite de escrita explícito:
+
+| Tipo | Efeito real |
+| --- | --- |
+| `INCIDENT_CREATE`, `INCIDENT_CRITICAL` | cria `Incident` simulado |
+| `ASSET_FAILURE`, `ASSET_RECOVERY` | escreve `Asset` **somente** com `applyToOperations`, revertendo no encerramento |
+| transmissão, veículo, rota, equipe, turno, recurso, preparação, passagem | apenas estado simulado no run — nenhum domínio externo é tocado |
+
+O simulador nunca cria `ResourceRequest`, `Task`, `Postmortem` ou `TransmissionPoint` reais.
+
+## Lifecycle da execução
 
 ```text
-Incident          gravado com isSimulated = true e simulationId
-Asset             alterado somente quando applyToOperations = true, e restaurado no finish
-TransmissionPoint nunca é escrito pela simulação; TRANSMISSION_FAILURE/RECOVERY registram
-                  apenas estado simulado no payload do SimulationEvent e no replay
+DRAFT (CREATED) → RUNNING → PAUSED → RUNNING
+                 ↓            ↓
+              FINISHED     FAILED / CANCELLED
+              (COMPLETED)
 ```
 
-`applyToOperations=false` mantém a simulação isolada das condições dos ativos produtivos. Mesmo assim os incidentes criados continuam explicitamente marcados como simulados. Nenhum evento `transmission.*` é emitido pelo simulador.
+`FINISHED`, `FAILED` e `CANCELLED` são terminais. `FAILED` exige motivo. Transição fora da tabela devolve `409`.
 
-## Segurança
+A API expõe o vocabulário conceitual (`CREATED`, `COMPLETED`) e mantém `statusCode` com o valor persistido, porque o banco conserva `DRAFT`/`FINISHED` por compatibilidade histórica.
 
-Consulta exige `simulation.read`; criação e controles exigem `simulation.manage`. O criador é obtido da sessão autenticada.
+## Relógio lógico
+
+Velocidades: `1, 2, 5, 10, 20`. `step` avança um tick; `tick` avança `velocidade × tick`. A execução é determinística para `(cenário, seed, sequência de ticks)`: o gerador pseudoaleatório é semeado por `seed + offsetSeconds`, nunca por relógio de parede.
+
+## Cenário
+
+Possui status (`DRAFT`, `PUBLISHED`, `ARCHIVED`), `isTemplate`, versão, linhagem de clonagem, objetivos, critérios de sucesso e falha, pesos de score e condições iniciais validados no servidor. Eventos individuais podem ser desabilitados e não executam.
+
+`PUBLISHED` não aceita edição de eventos nem de configuração — só clonagem ou arquivamento. Clonar gera novo `DRAFT` com linhagem e versão incrementada.
+
+Critérios de falha **classificam** o resultado; não interrompem a execução automaticamente.
+
+## Score
+
+Score composto 0..100 sobre 11 dimensões (`responseTime`, `unresolvedIncidents`, `deadlineMisses`, `availability`, `recoveryTime`, `workforceCoverage`, `resourceFulfillment`, `transmission`, `readiness`, `accumulatedCriticality`, `decisionQuality`), normalizadas por fórmula explícita em `packages/shared/src/simulation.ts`:
+
+```text
+score = Σ(weight_i × dimension_i) / Σ(weight_i)
+```
+
+Pesos default em `DEFAULT_SIMULATION_WEIGHTS`, sobrescrevíveis por cenário; soma zero é rejeitada. `scoreBreakdown` guarda dimensões, pesos efetivos e a versão do cálculo.
+
+## Snapshots, replay e decisões
+
+Snapshot é gravado a cada tick que produza evento e no encerramento, com `health` no mesmo vocabulário do Command Center (`NORMAL`, `ATTENTION`, `CRITICAL`) calculado sobre o estado simulado — nunca lido do sistema real.
+
+O replay é derivado de snapshots + eventos: `GET /simulations/:id/replay` devolve os frames e `GET /simulations/:id/replay/frame?offsetSeconds=N` devolve o snapshot mais recente até `N` com os eventos ocorridos depois dele.
+
+Decisões do operador (`SimulationDecision`) têm tipo restrito, justificativa obrigatória e entram na dimensão `decisionQuality`.
+
+## Comparação
+
+`POST /simulations/compare` aceita de 2 a 6 execuções do mesmo pleito. Dimensão ausente em uma execução (score antigo sem breakdown) retorna `null`, nunca `0`. Mistura de seeds é permitida, sinalizada com `seedMismatch`.
+
+## Rotas
+
+```text
+/simulator
+/simulator/scenarios
+/simulator/scenarios/new
+/simulator/scenarios/:id
+/simulator/runs
+/simulator/runs/:id
+/simulator/runs/:id/replay
+/simulator/compare
+```
+
+## Endpoints
+
+Leitura com `simulation.read`; mutações com `simulation.manage`.
+
+```text
+GET    /simulations/runs
+GET    /simulations/scenarios
+GET    /simulations/scenarios/:id
+GET    /simulations/:id
+GET    /simulations/:id/report
+GET    /simulations/:id/replay
+GET    /simulations/:id/replay/frame
+GET    /simulations/:id/decisions
+POST   /simulations
+POST   /simulations/compare
+POST   /simulations/scenarios
+PATCH  /simulations/scenarios/:id
+DELETE /simulations/scenarios/:id
+POST   /simulations/scenarios/:id/clone
+POST   /simulations/scenarios/:id/publish
+POST   /simulations/scenarios/:id/archive
+POST   /simulations/scenarios/:id/events
+PATCH  /simulations/scenarios/:id/events/:eventId
+POST   /simulations/scenarios/:id/events/:eventId/duplicate
+DELETE /simulations/scenarios/:id/events/:eventId
+POST   /simulations/:id/start
+POST   /simulations/:id/pause
+POST   /simulations/:id/tick
+POST   /simulations/:id/step
+POST   /simulations/:id/decisions
+POST   /simulations/:id/finish
+POST   /simulations/:id/cancel
+POST   /simulations/:id/fail
+```
+
+## Eventos
+
+`simulation.started`, `simulation.paused`, `simulation.resumed`, `simulation.finished`, `simulation.scored`, `simulation.failed`, `simulation.cancelled`, `simulation.decision_recorded`, `simulated_incident.created`, além de `asset.status_changed` quando `applyToOperations` está ativo. Nenhum evento é emitido para navegação, filtro ou seleção de frame.
+
+## Limites conhecidos
+
+- Comparação entre execuções de pleitos diferentes é recusada com `400`.
+- A remoção de cenário exige status `DRAFT`; cenários publicados ou arquivados são protegidos.
+- O score depende do `scoreBreakdown` persistido; execuções antigas aparecem com lacunas na comparação.

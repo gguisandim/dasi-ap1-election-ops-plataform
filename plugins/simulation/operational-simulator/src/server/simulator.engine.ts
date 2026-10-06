@@ -1,25 +1,31 @@
-import { IncidentSeverity, IncidentStatus, SimulationScenarioEventType, SimulationTargetType } from "@prisma/client";
+import { IncidentSeverity, IncidentStatus } from "@prisma/client";
+import {
+  SIMULATION_EVENT_METADATA,
+  validateEventTarget,
+  type SimulationEventType,
+  type SimulationScoreInput,
+  type SimulationTargetType,
+} from "@eops/shared/simulation";
 
-/** Duração lógica de um tick, em segundos simulados. */
-export const TICK_SECONDS = 180;
+export { TICK_SECONDS } from "@eops/shared/simulation";
 
 export const ACTIVE_INCIDENT_STATUSES: IncidentStatus[] = [IncidentStatus.NEW, IncidentStatus.TRIAGED, IncidentStatus.ASSIGNED, IncidentStatus.IN_PROGRESS];
 
-const TARGET_REQUIRED_TYPES: SimulationScenarioEventType[] = [
-  SimulationScenarioEventType.INCIDENT_CREATE,
-  SimulationScenarioEventType.ASSET_FAILURE,
-  SimulationScenarioEventType.ASSET_RECOVERY,
-  SimulationScenarioEventType.TRANSMISSION_FAILURE,
-  SimulationScenarioEventType.TRANSMISSION_RECOVERY,
-];
+const TRANSMISSION_FAILURE_TYPES: SimulationEventType[] = ["TRANSMISSION_FAILURE", "TRANSMISSION_DEGRADATION", "CONNECTIVITY_LOSS"];
+const TRANSMISSION_RECOVERY_TYPES: SimulationEventType[] = ["TRANSMISSION_RECOVERY", "SERVICE_RECOVERY"];
+const WORKFORCE_TYPES: SimulationEventType[] = ["OPERATOR_ABSENCE", "TEAM_UNAVAILABLE", "WORKFORCE_SHORTAGE", "HANDOVER_PENDING", "OPERATIONAL_DELAY"];
+const WORKFORCE_SHORTAGE_TYPES: SimulationEventType[] = ["WORKFORCE_SHORTAGE", "OPERATOR_ABSENCE", "TEAM_UNAVAILABLE"];
+const PREPARATION_TYPES: SimulationEventType[] = ["PREPARATION_BLOCKER", "HANDOVER_PENDING", "SERVICE_RECOVERY"];
+const INCIDENT_TYPES: SimulationEventType[] = ["INCIDENT_CREATE", "INCIDENT_CRITICAL"];
 
 export interface ScenarioEventInput {
   offsetSeconds: number;
-  type: SimulationScenarioEventType;
+  type: SimulationEventType;
   severity?: IncidentSeverity | null;
   targetType?: SimulationTargetType | null;
   targetId?: string | null;
   probability: number;
+  enabled?: boolean | null;
   payload?: unknown;
 }
 
@@ -38,27 +44,42 @@ export function createRng(seed?: number | null): () => number {
   };
 }
 
-/** Valida os eventos de um cenário; retorna mensagens em português (vazio = ok). */
-export function validateScenarioEvents(events: ScenarioEventInput[]): string[] {
+/**
+ * RNG de um tick: semeado por `seed + offsetSeconds` (§1.4). Nunca usa relógio
+ * de parede, portanto a mesma sequência de ticks é reproduzível.
+ */
+export function createTickRng(seed: number | null, elapsedSeconds: number): () => number {
+  return createRng(seed === null ? null : seed + elapsedSeconds);
+}
+
+/**
+ * Valida os eventos de um cenário. Retorna mensagens em português (vazio = ok).
+ * `durationSeconds` restringe o offset máximo quando definido.
+ */
+export function validateScenarioEvents(events: ScenarioEventInput[], durationSeconds?: number | null): string[] {
   const errors: string[] = [];
   const seen = new Set<string>();
   events.forEach((event, index) => {
     const label = `Evento ${index + 1}`;
     if (!Number.isInteger(event.offsetSeconds) || event.offsetSeconds < 0) errors.push(`${label}: o deslocamento deve ser um inteiro maior ou igual a zero.`);
+    if (typeof durationSeconds === "number" && event.offsetSeconds > durationSeconds) errors.push(`${label}: o deslocamento excede a duração do cenário (${durationSeconds}s).`);
     if (!Number.isInteger(event.probability) || event.probability < 0 || event.probability > 100) errors.push(`${label}: a probabilidade deve estar entre 0 e 100.`);
     const key = `${event.offsetSeconds}:${event.type}`;
     if (seen.has(key)) errors.push(`${label}: já existe um evento ${event.type} em ${event.offsetSeconds}s.`);
     seen.add(key);
-    const targetType = event.targetType ?? SimulationTargetType.NONE;
-    if (TARGET_REQUIRED_TYPES.includes(event.type) && targetType === SimulationTargetType.NONE) errors.push(`${label}: informe o tipo de alvo para ${event.type}.`);
+    if (!(event.type in SIMULATION_EVENT_METADATA)) errors.push(`${label}: tipo de evento desconhecido (${event.type}).`);
+    else errors.push(...validateEventTarget(event.type, event.targetType, event.targetId).map((message) => `${label}: ${message}`));
   });
   return errors;
 }
 
-/** Eventos cujo offset lógico já foi alcançado e que ainda não executaram. */
-export function pendingScenarioEvents<T extends { id: string; offsetSeconds: number }>(events: T[], elapsedSeconds: number, executedIds: Set<string>): T[] {
+/**
+ * Eventos habilitados cujo offset lógico já foi alcançado e que ainda não
+ * executaram. Eventos `enabled = false` nunca executam (§1.6).
+ */
+export function pendingScenarioEvents<T extends { id: string; offsetSeconds: number; enabled?: boolean | null }>(events: T[], elapsedSeconds: number, executedIds: Set<string>): T[] {
   return events
-    .filter((event) => event.offsetSeconds <= elapsedSeconds && !executedIds.has(event.id))
+    .filter((event) => event.enabled !== false && event.offsetSeconds <= elapsedSeconds && !executedIds.has(event.id))
     .sort((a, b) => a.offsetSeconds - b.offsetSeconds || a.id.localeCompare(b.id));
 }
 
@@ -76,29 +97,9 @@ export interface IncidentLike {
   resolvedAt: Date | string | null;
 }
 
-export interface ScoreInput {
-  plannedEvents: number;
-  executedEvents: number;
-  failedEvents: number;
-  slaViolations: number;
-  unresolvedCritical: number;
-  unrecoveredFailures: number;
-}
-
-export interface ScoreResult {
-  score: number;
-  coverage: number;
-  skillScore: number;
-  penalties: number;
-}
-
-/** Fórmula explícita do score (§5.9 da SPEC). Pura e testável. */
-export function calculateScore(input: ScoreInput): ScoreResult {
-  const coverage = input.plannedEvents > 0 ? Math.round((input.executedEvents / input.plannedEvents) * 100) : 100;
-  const penalties = input.slaViolations * 10 + input.unresolvedCritical * 15 + input.failedEvents * 5 + input.unrecoveredFailures * 8;
-  const skillScore = Math.min(100, Math.max(0, 100 - penalties));
-  const score = Math.round(skillScore * 0.7 + coverage * 0.3);
-  return { score, coverage, skillScore, penalties };
+export interface DecisionLike {
+  kind: string;
+  offsetSeconds: number;
 }
 
 function targetOf(event: SimulationEventLike): string {
@@ -106,41 +107,108 @@ function targetOf(event: SimulationEventLike): string {
   return typeof payload?.targetId === "string" ? payload.targetId : "";
 }
 
-/** TRANSMISSION_FAILURE sem TRANSMISSION_RECOVERY posterior para o mesmo alvo. */
+function appliedByType(events: SimulationEventLike[], types: SimulationEventType[]): SimulationEventLike[] {
+  return events.filter((event) => event.result === "APPLIED" && (types as string[]).includes(event.eventType));
+}
+
+/** TRANSMISSION_FAILURE sem recuperação posterior para o mesmo alvo. */
 export function countUnrecoveredTransmissionFailures(events: SimulationEventLike[]): number {
-  const failures = events.filter((event) => event.eventType === SimulationScenarioEventType.TRANSMISSION_FAILURE);
-  const recoveries = events.filter((event) => event.eventType === SimulationScenarioEventType.TRANSMISSION_RECOVERY);
+  const failures = appliedByType(events, TRANSMISSION_FAILURE_TYPES);
+  const recoveries = appliedByType(events, TRANSMISSION_RECOVERY_TYPES);
   return failures.filter((failure) => !recoveries.some((recovery) => targetOf(recovery) === targetOf(failure) && recovery.offsetSeconds >= failure.offsetSeconds)).length;
 }
 
 /** Tempo médio (em segundos lógicos) entre falha e recuperação de transmissão. */
 export function averageRecoverySeconds(events: SimulationEventLike[]): number {
-  const recoveries = events.filter((event) => event.eventType === SimulationScenarioEventType.TRANSMISSION_RECOVERY);
-  const diffs = recoveries
-    .map((recovery) => {
-      const previous = events
-        .filter((event) => event.eventType === SimulationScenarioEventType.TRANSMISSION_FAILURE && targetOf(event) === targetOf(recovery) && event.offsetSeconds <= recovery.offsetSeconds)
-        .reduce<SimulationEventLike | null>((latest, event) => (!latest || event.offsetSeconds > latest.offsetSeconds ? event : latest), null);
-      return previous ? recovery.offsetSeconds - previous.offsetSeconds : null;
-    })
-    .filter((value): value is number => value !== null);
+  const diffs = recoveryDurations(events);
   return diffs.length ? Math.round(diffs.reduce((total, value) => total + value, 0) / diffs.length) : 0;
 }
 
-/** Deriva as entradas da fórmula de score a partir do estado persistido. */
-export function buildScoreInput(args: {
-  scenarioEvents?: { offsetSeconds: number }[] | null;
+function recoveryDurations(events: SimulationEventLike[]): number[] {
+  const failures = appliedByType(events, TRANSMISSION_FAILURE_TYPES);
+  const recoveries = appliedByType(events, TRANSMISSION_RECOVERY_TYPES);
+  return recoveries
+    .map((recovery) => {
+      const previous = failures
+        .filter((failure) => targetOf(failure) === targetOf(recovery) && failure.offsetSeconds <= recovery.offsetSeconds)
+        .reduce<SimulationEventLike | null>((latest, failure) => (!latest || failure.offsetSeconds > latest.offsetSeconds ? failure : latest), null);
+      return previous ? recovery.offsetSeconds - previous.offsetSeconds : null;
+    })
+    .filter((value): value is number => value !== null);
+}
+
+/**
+ * Deriva o estado bruto do score a partir do persistido. Função pura e
+ * determinística: depende só de offsets e resultados, nunca do relógio.
+ */
+export function buildSimulationScoreInput(args: {
+  scenarioEvents?: { offsetSeconds: number; enabled?: boolean | null }[] | null;
   events: SimulationEventLike[];
   incidents: IncidentLike[];
+  decisions?: DecisionLike[];
   elapsedSeconds: number;
-}): ScoreInput {
+}): SimulationScoreInput {
   const scenarioEvents = args.scenarioEvents ?? [];
+  const decisions = args.decisions ?? [];
+  const applied = (types: SimulationEventType[]) => appliedByType(args.events, types).length;
+
+  const incidentEvents = appliedByType(args.events, INCIDENT_TYPES);
+  const responseOffsets = incidentEvents
+    .map((incident) => {
+      const candidates = [
+        ...decisions.filter((decision) => decision.offsetSeconds >= incident.offsetSeconds).map((decision) => decision.offsetSeconds),
+        ...appliedByType(args.events, TRANSMISSION_RECOVERY_TYPES).filter((recovery) => recovery.offsetSeconds >= incident.offsetSeconds).map((recovery) => recovery.offsetSeconds),
+      ];
+      return candidates.length ? Math.min(...candidates) - incident.offsetSeconds : null;
+    })
+    .filter((value): value is number => value !== null);
+  const recoveryDiffs = recoveryDurations(args.events);
+
+  const incidentsCreated = args.incidents.length;
+  const incidentsResolved = args.incidents.filter((incident) => Boolean(incident.resolvedAt) || incident.status === IncidentStatus.RESOLVED || incident.status === IncidentStatus.CLOSED).length;
+  const incidentsUnresolved = args.incidents.filter((incident) => ACTIVE_INCIDENT_STATUSES.includes(incident.status)).length;
+  const deadlineMisses = args.incidents.filter((incident) => {
+    if (!incident.slaDeadline) return false;
+    if (incident.resolvedAt) return new Date(incident.resolvedAt).getTime() > new Date(incident.slaDeadline).getTime();
+    return ACTIVE_INCIDENT_STATUSES.includes(incident.status);
+  }).length;
+
+  const transmissionFailures = applied(TRANSMISSION_FAILURE_TYPES);
+  const transmissionRecoveries = applied(TRANSMISSION_RECOVERY_TYPES);
+  const workforceObservations = applied(WORKFORCE_TYPES);
+  const workforceShortages = applied(WORKFORCE_SHORTAGE_TYPES);
+  const preparationObservations = applied(PREPARATION_TYPES);
+  const preparationBlockers = applied(["PREPARATION_BLOCKER"]);
+  const resourceRequestsCreated = applied(["RESOURCE_REQUEST_CREATE"]);
+  const resourceRequestsFulfilled = Math.min(resourceRequestsCreated, decisions.filter((decision) => decision.kind === "REQUEST_RESOURCE").length);
+  const criticalEventsApplied = applied(["INCIDENT_CRITICAL"]);
+  const criticalEventsHandled = Math.min(criticalEventsApplied, decisions.filter((decision) => ["ESCALATE", "DISPATCH_TEAM", "RECLASSIFY_SEVERITY", "ABORT_OPERATION"].includes(decision.kind)).length);
+  const decisionOpportunities = criticalEventsApplied + transmissionFailures + workforceShortages + preparationBlockers;
+
   return {
-    plannedEvents: scenarioEvents.filter((event) => event.offsetSeconds <= args.elapsedSeconds).length,
-    executedEvents: args.events.filter((event) => event.result === "APPLIED").length,
-    failedEvents: args.events.filter((event) => event.result === "FAILED").length,
-    slaViolations: args.incidents.filter((incident) => incident.resolvedAt && incident.slaDeadline && new Date(incident.resolvedAt) > new Date(incident.slaDeadline)).length,
-    unresolvedCritical: args.incidents.filter((incident) => incident.severity === IncidentSeverity.CRITICAL && ACTIVE_INCIDENT_STATUSES.includes(incident.status)).length,
-    unrecoveredFailures: countUnrecoveredTransmissionFailures(args.events),
+    plannedEvents: scenarioEvents.filter((event) => event.enabled !== false).length,
+    appliedEvents: args.events.filter((event) => event.result === "APPLIED" && (event.eventType as SimulationEventType) in SIMULATION_EVENT_METADATA).length,
+    incidentsCreated,
+    incidentsResolved,
+    incidentsUnresolved,
+    incidentsWithDeadline: args.incidents.filter((incident) => Boolean(incident.slaDeadline)).length,
+    deadlineMisses,
+    respondedIncidents: responseOffsets.length,
+    meanResponseSeconds: responseOffsets.length ? Math.round(responseOffsets.reduce((total, value) => total + value, 0) / responseOffsets.length) : null,
+    transmissionObservations: transmissionFailures + transmissionRecoveries,
+    transmissionFailures,
+    transmissionRecoveries,
+    recoverySamples: recoveryDiffs.length,
+    meanRecoverySeconds: recoveryDiffs.length ? Math.round(recoveryDiffs.reduce((total, value) => total + value, 0) / recoveryDiffs.length) : null,
+    workforceObservations,
+    workforceShortages,
+    resourceRequestsCreated,
+    resourceRequestsFulfilled,
+    preparationObservations,
+    preparationBlockers,
+    criticalEventsApplied,
+    criticalEventsHandled,
+    decisionOpportunities,
+    decisionsRecorded: decisions.length,
   };
 }
