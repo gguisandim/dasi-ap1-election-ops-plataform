@@ -34,6 +34,11 @@ export function inferAuditAction(eventName: string): AuditAction {
 
 export function inferEntityType(eventName: string): string {
   if (eventName.startsWith("incident.category_")) return "IncidentCategory";
+  if (eventName === "command_center.snapshot_created")
+    return "CommandCenterSnapshot";
+  if (eventName === "command_center.shared_view_created")
+    return "CommandCenterSavedView";
+  if (eventName === "postmortem.action_overdue") return "PostmortemActionItem";
   const prefix = eventName.split(".")[0];
   const entities: Record<string, string> = {
     incident: "Incident",
@@ -52,6 +57,9 @@ export function inferEntityType(eventName: string): string {
     preparation_checklist: "PreparationChecklist",
     task: "Task",
     shift: "FieldShift",
+    resource_request: "ResourceRequest",
+    postmortem: "Postmortem",
+    command_center: "CommandCenterSnapshot",
   };
   return entities[prefix] ?? prefix;
 }

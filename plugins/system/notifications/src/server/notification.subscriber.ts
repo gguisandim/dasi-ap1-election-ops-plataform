@@ -68,6 +68,16 @@ const names = [
   "shift_handover.submitted",
   "shift_handover.confirmed",
   "shift_handover.cancelled",
+  "resource_request.submitted",
+  "resource_request.triaged",
+  "resource_request.approved",
+  "resource_request.rejected",
+  "resource_request.fulfilled",
+  "postmortem.submitted",
+  "postmortem.changes_requested",
+  "postmortem.approved",
+  "postmortem.published",
+  "postmortem.action_overdue",
 ] as const satisfies readonly DomainEventName[];
 
 type SubscribedEventName = (typeof names)[number];
@@ -89,6 +99,56 @@ export function handoverAudience(event: DomainEvent<SubscribedEventName>) {
     return counterpart === payload.actorId ? [] : [counterpart];
   }
   return undefined;
+}
+
+/**
+ * Audiências direcionadas da suíte de coordenação.
+ *
+ * `undefined` significa "todos os usuários ativos com a permissão exigida pelo
+ * evento" — usado apenas quando a permissão já restringe a audiência (por
+ * exemplo, aprovar uma solicitação exige `resource-requests.approve`).
+ * Array vazio significa que ninguém deve ser notificado.
+ */
+export function coordinationAudience(
+  event: DomainEvent<SubscribedEventName>,
+): string[] | undefined {
+  const payload = event.payload;
+  switch (event.name) {
+    case "resource_request.triaged":
+      return "ownerId" in payload &&
+        payload.ownerId &&
+        payload.ownerId !== payload.actorId
+        ? [payload.ownerId]
+        : [];
+    case "resource_request.approved":
+    case "resource_request.rejected":
+    case "resource_request.fulfilled":
+      return "requestedById" in payload &&
+        payload.requestedById !== payload.actorId
+        ? [payload.requestedById]
+        : [];
+    case "postmortem.submitted":
+      return "reviewerIds" in payload ? [...payload.reviewerIds] : [];
+    case "postmortem.changes_requested":
+    case "postmortem.approved":
+      return "ownerId" in payload && payload.ownerId && payload.ownerId !== payload.actorId
+        ? [payload.ownerId]
+        : [];
+    case "postmortem.published": {
+      const audience = new Set<string>();
+      if ("ownerId" in payload && payload.ownerId) audience.add(payload.ownerId);
+      if ("reviewerIds" in payload)
+        for (const reviewerId of payload.reviewerIds) audience.add(reviewerId);
+      if (payload.actorId) audience.delete(payload.actorId);
+      return [...audience];
+    }
+    case "postmortem.action_overdue":
+      return "ownerUserId" in payload && payload.ownerUserId
+        ? [payload.ownerUserId]
+        : [];
+    default:
+      return undefined;
+  }
 }
 
 function content(event: DomainEvent<SubscribedEventName>): {
@@ -622,6 +682,95 @@ function content(event: DomainEvent<SubscribedEventName>): {
         type: NotificationType.WARNING,
         entityType: "ShiftHandover",
       };
+    case "resource_request.submitted":
+      return {
+        title: "Solicitação de recurso recebida",
+        message: `${"code" in payload ? payload.code : "Solicitação"}: ${
+          "title" in payload ? payload.title : "aguardando triagem"
+        } (${"priority" in payload ? payload.priority : "prioridade não informada"}).`,
+        type:
+          "priority" in payload && payload.priority === "CRITICAL"
+            ? NotificationType.CRITICAL
+            : NotificationType.WARNING,
+        entityType: "ResourceRequest",
+      };
+    case "resource_request.triaged":
+      return {
+        title: "Solicitação de recurso triada",
+        message: `${"code" in payload ? payload.code : "Solicitação"}${
+          "ownerChanged" in payload && payload.ownerChanged
+            ? ": você foi designado responsável."
+            : " teve a triagem atualizada."
+        }`,
+        type: NotificationType.INFO,
+        entityType: "ResourceRequest",
+      };
+    case "resource_request.approved":
+      return {
+        title: "Solicitação de recurso aprovada",
+        message: `${"code" in payload ? payload.code : "Solicitação"} foi aprovada e aguarda atendimento.`,
+        type: NotificationType.SUCCESS,
+        entityType: "ResourceRequest",
+      };
+    case "resource_request.rejected":
+      return {
+        title: "Solicitação de recurso rejeitada",
+        message: `${"code" in payload ? payload.code : "Solicitação"}: ${
+          "reason" in payload && payload.reason
+            ? payload.reason
+            : "não aprovada"
+        }.`,
+        type: NotificationType.WARNING,
+        entityType: "ResourceRequest",
+      };
+    case "resource_request.fulfilled":
+      return {
+        title: "Solicitação de recurso atendida",
+        message: `${"code" in payload ? payload.code : "Solicitação"} foi integralmente atendida.`,
+        type: NotificationType.SUCCESS,
+        entityType: "ResourceRequest",
+      };
+    case "postmortem.submitted":
+      return {
+        title: "Postmortem para revisão",
+        message: `${"code" in payload ? payload.code : "Análise"} aguarda sua revisão.`,
+        type: NotificationType.WARNING,
+        entityType: "Postmortem",
+      };
+    case "postmortem.changes_requested":
+      return {
+        title: "Mudanças solicitadas no postmortem",
+        message: `${"code" in payload ? payload.code : "Análise"}: ${
+          "comment" in payload && payload.comment
+            ? payload.comment
+            : "ajustes necessários antes da aprovação"
+        }.`,
+        type: NotificationType.WARNING,
+        entityType: "Postmortem",
+      };
+    case "postmortem.approved":
+      return {
+        title: "Postmortem aprovado",
+        message: `${"code" in payload ? payload.code : "Análise"} foi aprovada pelos revisores.`,
+        type: NotificationType.SUCCESS,
+        entityType: "Postmortem",
+      };
+    case "postmortem.published":
+      return {
+        title: "Postmortem publicado",
+        message: `${"code" in payload ? payload.code : "Análise"}: ${
+          "title" in payload ? payload.title : "publicada"
+        }.`,
+        type: NotificationType.INFO,
+        entityType: "Postmortem",
+      };
+    case "postmortem.action_overdue":
+      return {
+        title: "Ação corretiva vencida",
+        message: `${"title" in payload ? payload.title : "Uma ação corretiva"} passou do prazo.`,
+        type: NotificationType.CRITICAL,
+        entityType: "PostmortemActionItem",
+      };
   }
 }
 
@@ -641,7 +790,7 @@ export class NotificationSubscriber implements OnModuleInit {
   private async handle(event: DomainEvent<SubscribedEventName>) {
     const requiredPermission = requiredPermissionForEvent(event.name);
     if (!requiredPermission) return;
-    const audience = handoverAudience(event);
+    const audience = handoverAudience(event) ?? coordinationAudience(event);
     if (audience?.length === 0) return;
     const users = await this.prisma.user.findMany({
       where: {
