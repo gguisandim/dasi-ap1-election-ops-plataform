@@ -13,10 +13,12 @@
 - [ ] Confirmar que ambos os integrantes aparecem como autores no Git.
 - [ ] Rodar o `cloc` oficial e colar a saída no README.
 - [ ] Verificar meta de 100.000 LOC válidas — **a estrutura documental não corrige esse requisito quantitativo**.
+- [ ] `npm run spec:check`.
 - [ ] `npm run check:boundaries`.
+- [ ] `npm run db:validate`.
 - [ ] `npm run typecheck`.
 - [ ] `npm run lint`.
 - [ ] `npm test`.
 - [ ] `npm run build`.
-- [ ] `npm run e2e`.
-- [ ] Revisar `git status` e confirmar ausência de `.env`, secrets, builds e backups.
+- [ ] `npm run e2e` — **PARTIAL/PENDENTE**: os fluxos cross-domain mais longos ficaram acima de 300 s contra banco remoto e não fecharam de forma conclusiva. Ver "Limitações conhecidas" no `README.md`.
+- [ ] Revisar `git status` e confirmar ausência de `.env`, secrets, builds, `test-results`, screenshots e backups.

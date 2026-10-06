@@ -92,6 +92,19 @@ DATABASE_CONNECT_RETRIES=8
 DATABASE_CONNECT_RETRY_BASE_MS=1000
 ```
 
+Variáveis opcionais com defaults sensatos, documentadas em [`.env.example`](.env.example):
+
+```text
+DATABASE_CONNECTION_LIMIT            limite de conexões do pool do Prisma (default 5)
+DATABASE_POOL_TIMEOUT_SECONDS        espera por conexão livre (default 20)
+DATABASE_TRANSACTION_MAX_WAIT_MS     espera da transação pela conexão (default 10000)
+DATABASE_TRANSACTION_TIMEOUT_MS      duração máxima da transação (default 15000)
+EVIDENCE_STORAGE_DRIVER / _ROOT      armazenamento de evidências
+PLAYWRIGHT_CHANNEL                   navegador do E2E (msedge local, chromium em CI)
+```
+
+O dimensionamento do pool existe porque o pool padrão do Prisma pode exceder o limite de sessões de um pooler e produzir `500` em endpoints de leitura comuns. A justificativa completa está em [`packages/database/README.md`](packages/database/README.md).
+
 O `.env` é ignorado pelo Git. Nunca versione URLs com senha ou `JWT_SECRET` real.
 
 O backend procura `.env` tanto no diretório atual quanto na raiz do monorepo, permitindo `npm run dev`, `npm run e2e` e os scripts dos workspaces sem exportar manualmente todas as variáveis.
@@ -143,13 +156,15 @@ Nunca mantenha a senha de demonstração padrão em um ambiente publicado.
 
 ## Plugins atuais
 
+26 plugins, agrupados por categoria do manifest.
+
 ### Operações
 
-- Gestão de Pleitos;
-- Zonas Eleitorais;
-- Locais de Votação;
-- Seções Eleitorais;
-- Equipes de Campo.
+- Gestão de Pleitos, Zonas Eleitorais, Locais de Votação, Seções Eleitorais;
+- Equipes de Campo, Escalas e Turnos, Passagem de Turno, Checklists de Preparação;
+- Tarefas, Comunicações, Documentos e Evidências, Conhecimento e Runbooks, Gestão de Riscos;
+- [Solicitações de Recurso](docs/modules/resource-requests.md);
+- [Postmortem e RCA](docs/modules/postmortems.md).
 
 ### Logística
 
@@ -160,21 +175,22 @@ Nunca mantenha a senha de demonstração padrão em um ambiente publicado.
 
 - Mapa Operacional;
 - Central de Incidentes;
-- Monitor de Transmissão.
+- [Monitor de Transmissão e NOC](docs/modules/transmission.md);
+- [Central de Comando](docs/modules/command-center.md).
 
 ### Analytics
 
-- Relatórios e BI.
+- [Relatórios e Analytics Operacional](docs/modules/reports.md).
 
 ### Sistema
 
 - Controle de Acesso;
-- Auditoria;
+- [Auditoria e Observabilidade](docs/modules/AUDIT.md);
 - Notificações.
 
 ### Simulação
 
-- Simulador Operacional.
+- [Simulador Operacional](docs/modules/SIMULATOR.md).
 
 ## Estrutura
 
@@ -249,22 +265,30 @@ Detalhes: [docs/architecture/EVENT_BUS.md](docs/architecture/EVENT_BUS.md).
 ## Qualidade
 
 ```bash
-npm run db:validate
+npm run spec:check        # valida a SPEC e os trailers de rastreabilidade
+npm run check:boundaries  # fronteiras entre workspaces
+npm run db:validate       # schema Prisma
 npm run typecheck
 npm run lint
-npm test
+npm test                  # unitários (Vitest)
 npm run build
-npm run count:loc
 ```
 
-O contador ignora `node_modules`, locks, builds, cobertura, binários e código gerado.
+`npm run spec:check` valida `HEAD` por padrão; para uma sequência de commits, use `npm run spec:check -- <base>..HEAD`. `check:boundaries` recusa import físico de `src/` de outro workspace e import relativo que escape do workspace produtor — a convenção está em [docs/PLUGIN_ARCHITECTURE.md](docs/PLUGIN_ARCHITECTURE.md).
+
+`npm install` na raiz já executa `postinstall: npm run db:generate`, porque o `postinstall` do `@prisma/client` não encontra o schema em um monorepo e grava um stub sem modelos — o que derruba `apps/api` com dezenas de erros de tipo. Com `--ignore-scripts`, rode `npm run db:generate` explicitamente. Detalhes em [`packages/database/README.md`](packages/database/README.md).
+
+### Contagem de LOC (uso interno)
+
+`npm run count:loc` é um contador interno e **não** substitui o comando oficial da atividade. O contador interno ignora `node_modules`, locks, builds, cobertura, binários e código gerado.
 
 ## E2E
 
-O E2E pressupõe que migrations e seed já tenham sido aplicados ao banco apontado por `DATABASE_URL`.
+O E2E pressupõe que migrations e seed já tenham sido aplicados ao banco apontado por `DATABASE_URL`. Ele cria os próprios dados via API (sufixo único por execução) e não depende de dados pré-existentes do seed além de usuários e catálogos básicos.
 
 ```bash
-npm run e2e
+npm run e2e                       # suíte completa
+npx playwright test tests/e2e/flows/coordination.spec.ts --reporter=line
 ```
 
 O Playwright:
@@ -272,12 +296,58 @@ O Playwright:
 - carrega o `.env` da raiz;
 - inicia a API em `127.0.0.1:3001`;
 - inicia `vite preview` em `127.0.0.1:4173`;
-- valida login;
-- percorre Pleito → Zona → Local → Seções → Mapa;
-- abre Incidentes, Inventário e Simulador;
-- testa RBAC de mutação com usuário `VIEWER`.
+- reutiliza servidores já ativos localmente (`reuseExistingServer`);
+- usa `PLAYWRIGHT_CHANNEL` para escolher o navegador (`msedge` local, `chromium` em CI).
+
+Os helpers ficam em `tests/e2e/helpers/`:
+
+- [`api.ts`](tests/e2e/helpers/api.ts) — sessões por perfil, wrappers HTTP e criação de dados;
+- [`ui.ts`](tests/e2e/helpers/ui.ts) — login e navegação.
+
+### Fluxos cross-domain
+
+`tests/e2e/` cobre o encadeamento entre domínios, não apenas telas isoladas:
+
+| Arquivo | Fluxo |
+| --- | --- |
+| `flows/coordination.spec.ts` | Incidente → solicitação de recurso → aprovação → cumprimento |
+| `flows/logistics-custody.spec.ts` | Inventário → rota → entrega → custódia |
+| `flows/transmission-analytics.spec.ts` | Transição de transmissão → failover → relatório |
+| `flows/postmortem-lifecycle.spec.ts` | Incidente encerrado → postmortem → revisões → aprovação |
+| `flows/workforce-continuity.spec.ts` | Turno → passagem → substituição → continuidade |
+| `rbac-matrix.spec.ts` | Matriz categoria → permissão por perfil |
+
+**Limitação conhecida:** os fluxos de maior duração (`workforce-continuity`, e em menor grau os demais fluxos cross-domain) foram validados contra banco remoto e medidos acima de 300 s por execução, com timeouts intermitentes. Eles estão registrados como **E2E PARTIAL/PENDENTE** — os cenários e asserções existem e a lógica é executável, mas a estabilidade contra banco remoto com latência alta não foi confirmada ponta a ponta. Em CI, com PostgreSQL como serviço local e `chromium`, a expectativa é de execução dentro do timeout.
 
 O Vite usa a raiz do monorepo como `envDir` e possui proxy `/api` tanto em desenvolvimento quanto em preview.
+
+## CI
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda em push para `main` e em pull request, com quatro jobs:
+
+| Job | Conteúdo |
+| --- | --- |
+| `static` | `spec:check`, `check:boundaries`, `db:validate`, `lint` |
+| `unit` | `npm test` |
+| `build` | `npm run build` |
+| `e2e` | PostgreSQL 16, `db:migrate:deploy`, `db:seed`, build, Playwright |
+
+O job `e2e` sobe um serviço PostgreSQL e usa `PLAYWRIGHT_CHANNEL=chromium`.
+
+## Deploy
+
+**Frontend (Vercel):** `apps/web` é publicado como site estático; `vercel.json` mantém o rewrite de `/api` para a API hospedada. Defina `VITE_API_URL` no projeto da Vercel.
+
+**API (Render):** serviço Node a partir da raiz do monorepo, com `npm run build` e start pela API publicada. Variáveis obrigatórias: `DATABASE_URL`, `JWT_SECRET`, `DEMO_ADMIN_PASSWORD`, `PORT`. As variáveis opcionais de pool (`DATABASE_CONNECTION_LIMIT`, `DATABASE_POOL_TIMEOUT_SECONDS`, `DATABASE_TRANSACTION_MAX_WAIT_MS`, `DATABASE_TRANSACTION_TIMEOUT_MS`) devem ser ajustadas ao limite de sessões do pooler em uso — sem isso, a API responde `500` em endpoints de leitura sob concorrência.
+
+O build da Vercel depende de todos os workspaces importados estarem declarados como dependência. Um `@eops/*` importado mas não declarado resolve localmente pelo link do workspace e **falha apenas no build remoto** com `TS2307`.
+
+## Limitações conhecidas
+
+- `workforce-continuity` e os fluxos cross-domain longos: E2E PARTIAL/PENDENTE contra banco remoto (ver acima);
+- o seed cobre pleitos, zonas, locais, seções, ativos, incidentes, usuários e permissões, mas não todas as entidades novas (rotas, veículos, tarefas, checklists, transmissão): os fluxos E2E criam o que precisam pela API;
+- arquivos de `@eops/shared` são executados em *strip-only* pelo Node: `enum`, `namespace` e property parameters quebram **em execução**, não em `typecheck`. Ver [`packages/shared/README.md`](packages/shared/README.md);
+- `npm run count:loc` é interno e não substitui o comando oficial do `cloc`.
 
 ## Desenvolver um plugin
 
