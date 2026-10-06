@@ -1,5 +1,48 @@
 # Passagem de Turno
 
+> Documento descritivo. O contrato normativo está em
+> `SPEC/2026-10-05-shift-handover.md`.
+
+## Estado implementado
+
+O plugin público `@eops/plugin-shift-handovers` é composto estaticamente no
+backend e no frontend. Ele é owner somente do conteúdo, participantes,
+referências, lifecycle e histórico da passagem. Shifts continua sendo owner do
+turno; Incidents, Tasks e Inventory continuam sendo owners das entidades
+referenciadas.
+
+Fluxo vigente:
+
+```text
+DRAFT -> PENDING_CONFIRMATION -> CONFIRMED
+  |              |
+  +-----------> CANCELLED
+```
+
+- o remetente é derivado da sessão;
+- somente o remetente edita e envia o rascunho;
+- somente o destinatário ativo confirma;
+- envio exige turno iniciado ou concluído, resumo e referências válidas;
+- cancelamento de uma passagem pendente exige motivo;
+- estados confirmados e cancelados são terminais;
+- sugestões de incidentes, tarefas e ativos são somente leitura até seleção
+  explícita;
+- `availableActions` vem calculado pelo backend.
+
+Rotas de interface:
+
+- `/shift-handovers`;
+- `/shift-handovers/list`;
+- `/shift-handovers/new`;
+- `/shift-handovers/:id`;
+- `/shift-handovers/:id/edit`.
+
+Eventos publicados: `shift_handover.created`, `shift_handover.updated`,
+`shift_handover.submitted`, `shift_handover.confirmed` e
+`shift_handover.cancelled`. Audit os observa via Event Bus global. Notifications
+usa audiência direcionada entre remetente e destinatário, além de RBAC,
+atividade do usuário e preferência persistida.
+
 ## 1. Objetivo
 
 O módulo Passagem de Turno deve permitir registrar formalmente a transferência de contexto operacional entre operadores ou equipes ao final de um turno.
