@@ -8,6 +8,8 @@ Plugin: `plugins/logistics/inventory`
 - `Asset`
 - `AssetMovement`
 - `AssetAssignment`
+- `AssetReservation`
+- `AssetMaintenance`
 
 ## Funcionalidades
 
@@ -20,6 +22,17 @@ Plugin: `plugins/logistics/inventory`
 - encerramento da alocação anterior ao mover;
 - vínculo de incidentes ao ativo;
 - dashboard de disponibilidade/manutenção/trânsito/alocação.
+- estado operacional derivado, sem duplicar o status físico/administrativo;
+- reservas com aprovação, cancelamento, validação de período e fulfillment na retirada;
+- check-out/check-in com custódia, condição de saída/retorno e devolução prevista;
+- manutenção preventiva/corretiva com lifecycle e bloqueio operacional;
+- rotas `/inventory/reservations` e `/inventory/maintenance`.
+
+## Ownership e integração com Routes
+
+Inventory é o único owner do ativo, de sua disponibilidade, reserva, custódia e manutenção. Routes referencia apenas o ID do ativo em `DeliveryItem` e consulta a API pública de Inventory no frontend. Não existe import de implementação entre plugins.
+
+O estado operacional segue a precedência: condição indisponível, manutenção ativa, custódia (incluindo atraso), reserva vigente e, por fim, o status persistido.
 
 ## Status
 
@@ -44,4 +57,4 @@ UNAVAILABLE
 
 ## Event Bus
 
-O módulo publica `asset.created`, `asset.moved` e `asset.status_changed`. O `actorId` desses eventos corresponde ao usuário autenticado que executou a operação; o responsável logístico continua sendo um dado separado da movimentação.
+Além dos eventos existentes, o módulo publica eventos tipados de reserva, retirada, devolução e manutenção. O `actorId` corresponde ao usuário autenticado; responsáveis logísticos permanecem dados separados da operação. Audit observa os eventos pela assinatura global, enquanto Notifications cataloga apenas abertura de manutenção como sinal de valor operacional.
