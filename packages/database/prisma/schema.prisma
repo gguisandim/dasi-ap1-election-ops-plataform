@@ -142,7 +142,37 @@ enum SimulationStatus {
   RUNNING
   PAUSED
   FINISHED
+  FAILED
   CANCELLED
+}
+
+enum SimulationScenarioStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SimulationDecisionKind {
+  ESCALATE
+  DISPATCH_TEAM
+  ACTIVATE_FAILOVER
+  REQUEST_RESOURCE
+  RECLASSIFY_SEVERITY
+  ACCEPT_DEGRADATION
+  ABORT_OPERATION
+}
+
+enum TransmissionFailoverStatus {
+  ACTIVE
+  RECOVERED
+  CANCELLED
+}
+
+enum AuditEventSeverity {
+  INFO
+  NOTICE
+  WARNING
+  CRITICAL
 }
 
 enum FailureProbability {
@@ -624,6 +654,7 @@ model Election {
   taskMilestones         TaskMilestone[]
   resourceRequests       ResourceRequest[]
   commandCenterSnapshots CommandCenterSnapshot[]
+  simulationScenarios    SimulationScenario[]
 
   @@index([year, status])
 }
@@ -1036,6 +1067,10 @@ model User {
   createdPostmortemActions             PostmortemActionItem[]         @relation("PostmortemActionCreator")
   postmortemReviews                    PostmortemReview[]             @relation("PostmortemReviewAuthor")
   postmortemReviewerAssignments        PostmortemReviewer[]           @relation("PostmortemReviewerAssignee")
+  simulationDecisions                  SimulationDecision[]           @relation("SimulationDecisionActor")
+  transmissionTransitions              TransmissionStateTransition[]  @relation("TransmissionTransitionActor")
+  transmissionFailoversRecovered       TransmissionFailover[]         @relation("TransmissionFailoverRecoverer")
+  reportSavedViews                     ReportSavedView[]              @relation("ReportSavedViewOwner")
 
   @@index([status, name])
 }
@@ -1086,39 +1121,51 @@ model RolePermission {
 }
 
 model AuditEvent {
-  id         String      @id @default(cuid())
-  actorId    String?
-  eventName  String?
-  action     AuditAction
-  entityType String
-  entityId   String?
-  oldData    Json?
-  newData    Json?
-  metadata   Json?
-  createdAt  DateTime    @default(now())
-  actor      User?       @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  id              String              @id @default(cuid())
+  actorId         String?
+  eventName       String?
+  action          AuditAction
+  entityType      String
+  entityId        String?
+  category        String?
+  severity        AuditEventSeverity?
+  correlationId   String?
+  electionId      String?
+  electoralZoneId String?
+  oldData         Json?
+  newData         Json?
+  metadata        Json?
+  createdAt       DateTime            @default(now())
+  actor           User?               @relation(fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([actorId, createdAt])
   @@index([action, createdAt])
   @@index([eventName, createdAt])
   @@index([entityType, entityId])
+  @@index([correlationId])
+  @@index([category, createdAt])
+  @@index([severity, createdAt])
+  @@index([electionId, createdAt])
+  @@index([electoralZoneId, createdAt])
 }
 
 model Notification {
-  id         String           @id @default(cuid())
-  userId     String
-  type       NotificationType @default(INFO)
-  title      String
-  message    String
-  eventName  String?
-  entityType String?
-  entityId   String?
-  readAt     DateTime?
-  createdAt  DateTime         @default(now())
-  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String           @id @default(cuid())
+  userId        String
+  type          NotificationType @default(INFO)
+  title         String
+  message       String
+  eventName     String?
+  entityType    String?
+  entityId      String?
+  correlationId String?
+  readAt        DateTime?
+  createdAt     DateTime         @default(now())
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt, createdAt])
   @@index([eventName, createdAt])
+  @@index([correlationId])
 }
 
 model NotificationPreference {
@@ -1134,19 +1181,36 @@ model NotificationPreference {
 }
 
 model SimulationScenario {
-  id              String                    @id @default(cuid())
-  name            String
-  description     String?
-  configuration   Json
-  active          Boolean                   @default(true)
-  seed            Int?
-  durationSeconds Int?
-  createdAt       DateTime                  @default(now())
-  updatedAt       DateTime                  @updatedAt
-  simulations     Simulation[]
-  events          SimulationScenarioEvent[]
+  id                String                    @id @default(cuid())
+  name              String
+  description       String?
+  configuration     Json
+  active            Boolean                   @default(true)
+  status            SimulationScenarioStatus  @default(DRAFT)
+  isTemplate        Boolean                   @default(false)
+  seed              Int?
+  durationSeconds   Int?
+  speed             Int                       @default(1)
+  version           Int                       @default(1)
+  electionId        String?
+  clonedFromId      String?
+  objectives        Json?
+  successCriteria   Json?
+  failureCriteria   Json?
+  scoreWeights      Json?
+  initialConditions Json?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  election          Election?                 @relation(fields: [electionId], references: [id], onDelete: SetNull)
+  clonedFrom        SimulationScenario?       @relation("ScenarioLineage", fields: [clonedFromId], references: [id], onDelete: SetNull)
+  clones            SimulationScenario[]      @relation("ScenarioLineage")
+  simulations       Simulation[]
+  events            SimulationScenarioEvent[]
 
   @@index([active, name])
+  @@index([status, name])
+  @@index([isTemplate, active])
+  @@index([electionId, status])
 }
 
 enum SimulationScenarioEventType {
@@ -1155,6 +1219,19 @@ enum SimulationScenarioEventType {
   TRANSMISSION_RECOVERY
   ASSET_FAILURE
   ASSET_RECOVERY
+  INCIDENT_CRITICAL
+  OPERATIONAL_DELAY
+  CONNECTIVITY_LOSS
+  TRANSMISSION_DEGRADATION
+  TEAM_UNAVAILABLE
+  OPERATOR_ABSENCE
+  VEHICLE_UNAVAILABLE
+  ROUTE_FAILURE
+  RESOURCE_REQUEST_CREATE
+  PREPARATION_BLOCKER
+  HANDOVER_PENDING
+  WORKFORCE_SHORTAGE
+  SERVICE_RECOVERY
 }
 
 enum SimulationTargetType {
@@ -1174,6 +1251,8 @@ model SimulationScenarioEvent {
   targetType       SimulationTargetType        @default(NONE)
   targetId         String?
   probability      Int                         @default(100)
+  enabled          Boolean                     @default(true)
+  impact           String?
   payload          Json?
   createdAt        DateTime                    @default(now())
   scenario         SimulationScenario          @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
@@ -1184,35 +1263,73 @@ model SimulationScenarioEvent {
 }
 
 model Simulation {
-  id                String              @id @default(cuid())
-  name              String
-  electionId        String
-  scenarioId        String?
-  status            SimulationStatus    @default(DRAFT)
-  speed             Int                 @default(1)
-  probability       FailureProbability  @default(LOW)
-  connectivity      Boolean             @default(true)
-  equipment         Boolean             @default(true)
-  transmission      Boolean             @default(true)
-  logistics         Boolean             @default(true)
-  applyToOperations Boolean             @default(false)
-  elapsedSeconds    Int                 @default(0)
-  seed              Int?
-  score             Int?
-  scoreBreakdown    Json?
-  startedAt         DateTime?
-  pausedAt          DateTime?
-  endedAt           DateTime?
-  createdById       String?
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  election          Election            @relation(fields: [electionId], references: [id], onDelete: Cascade)
-  scenario          SimulationScenario? @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
-  events            SimulationEvent[]
-  incidents         Incident[]
+  id                 String               @id @default(cuid())
+  name               String
+  electionId         String
+  scenarioId         String?
+  status             SimulationStatus     @default(DRAFT)
+  speed              Int                  @default(1)
+  probability        FailureProbability   @default(LOW)
+  connectivity       Boolean              @default(true)
+  equipment          Boolean              @default(true)
+  transmission       Boolean              @default(true)
+  logistics          Boolean              @default(true)
+  applyToOperations  Boolean              @default(false)
+  elapsedSeconds     Int                  @default(0)
+  seed               Int?
+  score              Int?
+  scoreBreakdown     Json?
+  metrics            Json?
+  failureReason      String?              @db.Text
+  startedAt          DateTime?
+  simulatedStartedAt DateTime?
+  pausedAt           DateTime?
+  endedAt            DateTime?
+  cancelledAt        DateTime?
+  createdById        String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  election           Election             @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  scenario           SimulationScenario?  @relation(fields: [scenarioId], references: [id], onDelete: SetNull)
+  events             SimulationEvent[]
+  incidents          Incident[]
+  snapshots          SimulationSnapshot[]
+  decisions          SimulationDecision[]
 
   @@index([electionId, status])
   @@index([createdAt])
+  @@index([scenarioId, status])
+}
+
+model SimulationSnapshot {
+  id            String     @id @default(cuid())
+  simulationId  String
+  offsetSeconds Int
+  health        String
+  metrics       Json
+  payload       Json?
+  createdAt     DateTime   @default(now())
+  simulation    Simulation @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+
+  @@unique([simulationId, offsetSeconds])
+  @@index([simulationId, offsetSeconds])
+}
+
+model SimulationDecision {
+  id            String                 @id @default(cuid())
+  simulationId  String
+  offsetSeconds Int
+  kind          SimulationDecisionKind
+  rationale     String                 @db.Text
+  actorId       String?
+  payload       Json?
+  createdAt     DateTime               @default(now())
+  simulation    Simulation             @relation(fields: [simulationId], references: [id], onDelete: Cascade)
+  actor         User?                  @relation("SimulationDecisionActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([simulationId, offsetSeconds])
+  @@index([kind, createdAt])
+  @@index([actorId, createdAt])
 }
 
 model SimulationEvent {
@@ -1410,32 +1527,120 @@ model RouteException {
   @@index([deliveryId])
 }
 
+model TransmissionProvider {
+  id                     String                @id @default(cuid())
+  code                   String                @unique
+  name                   String
+  contact                String?
+  slaTargetUptimePercent Decimal?              @db.Decimal(5, 2)
+  notes                  String?               @db.Text
+  active                 Boolean               @default(true)
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  circuits               TransmissionCircuit[]
+
+  @@index([active, name])
+}
+
+model TransmissionCircuit {
+  id            String                        @id @default(cuid())
+  pointId       String
+  providerId    String?
+  code          String                        @unique
+  name          String
+  technology    String?
+  bandwidthMbps Int?
+  isPrimary     Boolean                       @default(true)
+  status        ConnectivityStatus            @default(UNKNOWN)
+  lastSeenAt    DateTime?
+  activatedAt   DateTime                      @default(now())
+  deactivatedAt DateTime?
+  notes         String?                       @db.Text
+  createdAt     DateTime                      @default(now())
+  updatedAt     DateTime                      @updatedAt
+  point         TransmissionPoint             @relation(fields: [pointId], references: [id], onDelete: Cascade)
+  provider      TransmissionProvider?         @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  transitions   TransmissionStateTransition[]
+  failoversFrom TransmissionFailover[]        @relation("FailoverFromCircuit")
+  failoversTo   TransmissionFailover[]        @relation("FailoverToCircuit")
+
+  @@index([pointId, isPrimary])
+  @@index([providerId, status])
+  @@index([status])
+}
+
+model TransmissionStateTransition {
+  id              String               @id @default(cuid())
+  pointId         String
+  circuitId       String?
+  from            ConnectivityStatus
+  to              ConnectivityStatus
+  reason          String?
+  actorId         String?
+  durationSeconds Int?
+  occurredAt      DateTime             @default(now())
+  createdAt       DateTime             @default(now())
+  point           TransmissionPoint    @relation(fields: [pointId], references: [id], onDelete: Cascade)
+  circuit         TransmissionCircuit? @relation(fields: [circuitId], references: [id], onDelete: SetNull)
+  actor           User?                @relation("TransmissionTransitionActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([pointId, occurredAt])
+  @@index([to, occurredAt])
+  @@index([pointId, circuitId])
+  @@index([actorId, createdAt])
+}
+
+model TransmissionFailover {
+  id            String                     @id @default(cuid())
+  pointId       String
+  fromCircuitId String?
+  toCircuitId   String
+  reason        String                     @db.Text
+  status        TransmissionFailoverStatus @default(ACTIVE)
+  startedAt     DateTime                   @default(now())
+  recoveredAt   DateTime?
+  recoveredById String?
+  cancelledAt   DateTime?
+  notes         String?                    @db.Text
+  point         TransmissionPoint          @relation(fields: [pointId], references: [id], onDelete: Cascade)
+  fromCircuit   TransmissionCircuit?       @relation("FailoverFromCircuit", fields: [fromCircuitId], references: [id], onDelete: SetNull)
+  toCircuit     TransmissionCircuit        @relation("FailoverToCircuit", fields: [toCircuitId], references: [id], onDelete: Restrict)
+  recoveredBy   User?                      @relation("TransmissionFailoverRecoverer", fields: [recoveredById], references: [id], onDelete: SetNull)
+
+  @@index([pointId, startedAt])
+  @@index([status, startedAt])
+  @@index([toCircuitId])
+}
+
 model TransmissionPoint {
-  id                  String                      @id @default(cuid())
+  id                  String                        @id @default(cuid())
   electionId          String
   electoralZoneId     String
   pollingPlaceId      String
-  identification      String                      @unique
-  status              TransmissionStatus          @default(WAITING)
-  connectivity        ConnectivityStatus          @default(UNKNOWN)
+  identification      String                        @unique
+  status              TransmissionStatus            @default(WAITING)
+  connectivity        ConnectivityStatus            @default(UNKNOWN)
   lastActivity        DateTime?
   observations        String?
   latencyMs           Int?
   lastCheckedAt       DateTime?
   connectionMethod    String?
-  priority            Int                         @default(3)
+  priority            Int                           @default(3)
   queuedAt            DateTime?
   operationalDeadline DateTime?
-  attemptCount        Int                         @default(0)
+  attemptCount        Int                           @default(0)
   lastError           String?
-  createdAt           DateTime                    @default(now())
-  updatedAt           DateTime                    @updatedAt
-  election            Election                    @relation(fields: [electionId], references: [id], onDelete: Cascade)
-  electoralZone       ElectoralZone               @relation(fields: [electoralZoneId], references: [id], onDelete: Restrict)
-  pollingPlace        PollingPlace                @relation(fields: [pollingPlaceId], references: [id], onDelete: Restrict)
+  createdAt           DateTime                      @default(now())
+  updatedAt           DateTime                      @updatedAt
+  election            Election                      @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  electoralZone       ElectoralZone                 @relation(fields: [electoralZoneId], references: [id], onDelete: Restrict)
+  pollingPlace        PollingPlace                  @relation(fields: [pollingPlaceId], references: [id], onDelete: Restrict)
   attempts            TransmissionAttempt[]
   timeline            TransmissionTimelineEvent[]
   alerts              TransmissionAlert[]
+  circuits            TransmissionCircuit[]
+  stateTransitions    TransmissionStateTransition[]
+  failovers           TransmissionFailover[]
 
   @@index([electionId, status])
   @@index([electoralZoneId, status])
@@ -3168,4 +3373,28 @@ model PostmortemReview {
 
   @@index([postmortemId, createdAt])
   @@index([reviewerId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Platform Depth & Integration Phase — Reports analytics views.
+// Ver SPEC/2026-10-06-platform-depth-integration.md (secao 2.7).
+// ---------------------------------------------------------------------------
+
+model ReportSavedView {
+  id          String   @id @default(cuid())
+  ownerId     String
+  name        String
+  description String?
+  filters     Json
+  metricsJson Json
+  granularity String   @default("day")
+  isDefault   Boolean  @default(false)
+  shared      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  owner       User     @relation("ReportSavedViewOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, name])
+  @@index([ownerId, isDefault])
+  @@index([shared, updatedAt])
 }
