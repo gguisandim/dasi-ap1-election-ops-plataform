@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://dasi-ap1-election-ops-plataform.onrender.com"
+      "destination": "https://dasi-ap1-election-ops-plataform.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",
