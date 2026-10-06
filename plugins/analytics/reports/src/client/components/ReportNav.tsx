@@ -9,6 +9,11 @@ const items: Array<[string, string]> = [
   ["/reports/workforce", "Equipes"],
   ["/reports/logistics", "Logística"],
   ["/reports/assets", "Ativos"],
+  ["/reports/timeseries", "Séries"],
+  ["/reports/sla", "SLA"],
+  ["/reports/zones", "Zonas"],
+  ["/reports/views", "Visões"],
+  ["/reports/export", "Exportação"],
 ];
 
 export function ReportNav() {

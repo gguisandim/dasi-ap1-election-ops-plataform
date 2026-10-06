@@ -1,9 +1,65 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { AssetCondition, AssetStatus, IncidentSeverity, IncidentStatus, MonitoringStatus, RouteStatus, TaskStatus, TransmissionStatus } from "@prisma/client";
 import PDFDocument from "pdfkit";
 import { PrismaService } from "@eops/database";
+import {
+  REPORT_METRICS,
+  assertReportGranularity,
+  assertReportMetric,
+  assertWindowWithinLimit,
+  dispatchMeanMinutes,
+  escalationRatePercent,
+  fulfillmentMeanMinutes,
+  meanResolutionMinutes,
+  meanResponseMinutes,
+  mttrMinutes,
+  per1000Voters,
+  perPlace,
+  slaCompliancePercent,
+  deadlineMisses,
+  transmissionDowntimeMinutes,
+  transmissionUptimePercent,
+  type IncidentTimingRow,
+  type ReportGranularity,
+  type ReportMetric,
+  type SeriesPoint,
+  type TransmissionTransitionRow,
+} from "@eops/shared/reports";
 import { ReportQueryDto } from "./dto/report-query.dto";
 import { IncidentsReportQueryDto } from "./dto/incidents-report-query.dto";
+import {
+  DrilldownQueryDto,
+  ExportJsonQueryDto,
+  SlaQueryDto,
+  TimeseriesQueryDto,
+  ZonesQueryDto,
+} from "./dto/analytics.dto";
+import {
+  aggregateFor,
+  drilldownFor,
+  loadMetricRows,
+  metricZoneOf,
+  seriesFor,
+  type ReportsScope,
+} from "./reports-metrics";
+
+const DAY_MS = 86_400_000;
+
+function invalid(error: unknown): BadRequestException {
+  return new BadRequestException(
+    error instanceof Error ? error.message : "Parametros invalidos.",
+  );
+}
+
+function inWindow(at: Date | null, from: Date, to: Date): boolean {
+  return at !== null && at.getTime() >= from.getTime() && at.getTime() <= to.getTime();
+}
+
+/** Ranking de competição (1, 2, 2, 4) sobre valores decrescentes; null fica null. */
+function competitionRanks(values: ReadonlyArray<number | null>): Array<number | null> {
+  const distinct = [...new Set(values.filter((value): value is number => value !== null))].sort((a, b) => b - a);
+  return values.map((value) => (value === null ? null : distinct.indexOf(value) + 1));
+}
 
 function countBy<T>(items: T[], key: (item: T) => string) {
   return Object.entries(items.reduce<Record<string, number>>((result, item) => { const value = key(item); result[value] = (result[value] ?? 0) + 1; return result; }, {})).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
@@ -28,6 +84,11 @@ export class ReportsService {
   }
 
   private readonly openIncidentStatuses = new Set<IncidentStatus>([IncidentStatus.NEW, IncidentStatus.TRIAGED, IncidentStatus.ASSIGNED, IncidentStatus.IN_PROGRESS]);
+
+  /** Incidentes simulados ficam fora por padrão; isolamento explícito (I4). */
+  private simulationFilter(query: { includeSimulated?: boolean }) {
+    return query.includeSimulated ? {} : { isSimulated: false };
+  }
 
   private previousWindow(query: ReportQueryDto) {
     if (!query.from || !query.to) return null;
@@ -59,7 +120,7 @@ export class ReportsService {
     const { zones, places } = await this.geography(query);
     const scope = { electionId: query.electionId, electoralZoneId: query.zoneId, pollingPlaceId: query.pollingPlaceId };
     const [incidents, transmissions, teams, tasks, assets, routes, allocations] = await Promise.all([
-      this.prisma.incident.findMany({ where: { ...scope, categoryId: query.categoryId, status: incidentStatus, openedAt: period }, select: { id: true, electoralZoneId: true, pollingPlaceId: true, status: true, severity: true } }),
+      this.prisma.incident.findMany({ where: { ...scope, ...this.simulationFilter(query), categoryId: query.categoryId, status: incidentStatus, openedAt: period }, select: { id: true, electoralZoneId: true, pollingPlaceId: true, status: true, severity: true } }),
       this.prisma.transmissionPoint.findMany({ where: { ...scope, status: transmissionStatus, lastActivity: period }, select: { id: true, electoralZoneId: true, pollingPlaceId: true, status: true } }),
       this.prisma.fieldTeam.findMany({ where: { electionId: query.electionId, status: "ACTIVE" }, select: { id: true } }),
       this.prisma.task.findMany({ where: { ...scope, status: taskStatus, createdAt: period }, select: { id: true, electoralZoneId: true, pollingPlaceId: true, status: true, dueAt: true } }),
@@ -96,7 +157,7 @@ export class ReportsService {
     const byPlace = places.map((place) => ({ id: place.id, label: place.name, zoneId: place.electoralZoneId, incidents: incidents.filter((item) => item.pollingPlaceId === place.id).length, openIncidents: incidents.filter((item) => item.pollingPlaceId === place.id && this.openIncidentStatuses.has(item.status)).length, transmissionPoints: transmissions.filter((item) => item.pollingPlaceId === place.id).length, assets: assets.filter((item) => item.pollingPlaceId === place.id).length }));
     const comparison = await this.compare(query, { incidents: incidents.length, tasks: tasks.length, routes: routes.length }, async (window) => {
       const [previousIncidents, previousTasks, previousRoutes] = await Promise.all([
-        this.prisma.incident.count({ where: { ...scope, categoryId: query.categoryId, status: incidentStatus, openedAt: window } }),
+        this.prisma.incident.count({ where: { ...scope, ...this.simulationFilter(query), categoryId: query.categoryId, status: incidentStatus, openedAt: window } }),
         this.prisma.task.count({ where: { ...scope, status: taskStatus, createdAt: window } }),
         this.prisma.distributionRoute.count({ where: { electionId: query.electionId, electoralZoneId: query.zoneId, status: routeStatus, plannedDeparture: window } }),
       ]);
@@ -108,7 +169,7 @@ export class ReportsService {
   async executive(query: ReportQueryDto) {
     const { period, incidentStatus, assetStatus, routeStatus, transmissionStatus } = this.filters(query);
     const placeWhere = { id: query.pollingPlaceId, electoralZoneId: query.zoneId, electoralZone: { electionId: query.electionId } };
-    const incidentWhere = { electionId: query.electionId, electoralZoneId: query.zoneId, pollingPlaceId: query.pollingPlaceId, categoryId: query.categoryId, status: incidentStatus, openedAt: period };
+    const incidentWhere = { electionId: query.electionId, electoralZoneId: query.zoneId, pollingPlaceId: query.pollingPlaceId, ...this.simulationFilter(query), categoryId: query.categoryId, status: incidentStatus, openedAt: period };
     const assetWhere = { electoralZoneId: query.zoneId, pollingPlaceId: query.pollingPlaceId, status: assetStatus, electoralZone: query.electionId ? { electionId: query.electionId } : undefined };
     const routeWhere = { electionId: query.electionId, electoralZoneId: query.zoneId, status: routeStatus, plannedDeparture: period };
     const transmissionWhere = { electionId: query.electionId, electoralZoneId: query.zoneId, pollingPlaceId: query.pollingPlaceId, status: transmissionStatus, createdAt: period };
@@ -159,7 +220,7 @@ export class ReportsService {
     if (duration <= 0) return { available: false, current: { incidents: currentIncidents, transmissions: currentTransmissions }, previous: null };
     const previousFrom = new Date(from.getTime() - duration); const previousTo = from;
     const [incidents, transmissions] = await Promise.all([
-      this.prisma.incident.count({ where: { electionId: query.electionId, electoralZoneId: query.zoneId, pollingPlaceId: query.pollingPlaceId, openedAt: { gte: previousFrom, lt: previousTo } } }),
+      this.prisma.incident.count({ where: { electionId: query.electionId, electoralZoneId: query.zoneId, pollingPlaceId: query.pollingPlaceId, ...this.simulationFilter(query), openedAt: { gte: previousFrom, lt: previousTo } } }),
       this.prisma.transmissionPoint.count({ where: { electionId: query.electionId, electoralZoneId: query.zoneId, pollingPlaceId: query.pollingPlaceId, status: TransmissionStatus.SUCCESS, lastActivity: { gte: previousFrom, lt: previousTo } } }),
     ]);
     return { available: true, current: { incidents: currentIncidents, transmissions: currentTransmissions }, previous: { from: previousFrom.toISOString(), to: previousTo.toISOString(), incidents, transmissions } };
@@ -169,7 +230,7 @@ export class ReportsService {
     const { period, incidentStatus } = this.filters(query);
     const severity = Object.values(IncidentSeverity).includes(query.severity as IncidentSeverity) ? query.severity as IncidentSeverity : undefined;
     const { zones, places } = await this.geography(query);
-    const where = { electionId: query.electionId, electoralZoneId: query.zoneId, pollingPlaceId: query.pollingPlaceId, categoryId: query.categoryId, status: incidentStatus, severity, openedAt: period };
+    const where = { electionId: query.electionId, electoralZoneId: query.zoneId, pollingPlaceId: query.pollingPlaceId, ...this.simulationFilter(query), categoryId: query.categoryId, status: incidentStatus, severity, openedAt: period };
     const incidents = await this.prisma.incident.findMany({ where, select: { id: true, electoralZoneId: true, pollingPlaceId: true, severity: true, status: true, openedAt: true, resolvedAt: true, slaDeadline: true, category: { select: { name: true } } } });
     const resolved = incidents.filter((item) => item.resolvedAt);
     const eligible = resolved.filter((item) => item.slaDeadline);
@@ -183,7 +244,7 @@ export class ReportsService {
     const comparison = await this.compare(query, { total: incidents.length, resolved: resolved.length }, async (window) => {
       const [total, previousResolved] = await Promise.all([
         this.prisma.incident.count({ where: { ...where, openedAt: window } }),
-        this.prisma.incident.count({ where: { electionId: query.electionId, electoralZoneId: query.zoneId, pollingPlaceId: query.pollingPlaceId, categoryId: query.categoryId, status: incidentStatus, severity, resolvedAt: window } }),
+        this.prisma.incident.count({ where: { electionId: query.electionId, electoralZoneId: query.zoneId, pollingPlaceId: query.pollingPlaceId, ...this.simulationFilter(query), categoryId: query.categoryId, status: incidentStatus, severity, resolvedAt: window } }),
       ]);
       return { total, resolved: previousResolved };
     });
@@ -288,6 +349,249 @@ export class ReportsService {
     const breakdown = { byZone, byPlace, byStatus: countBy(assets, (asset) => asset.status), byCondition: countBy(assets, (asset) => asset.condition), byType: countBy(assets, (asset) => asset.type.name) };
     const comparison = await this.compare(query, { movements: movements.length }, async (window) => ({ movements: await this.prisma.assetMovement.count({ where: { movedAt: window, asset: assetWhere } }) }));
     return this.envelope(query, summary, breakdown, comparison);
+  }
+
+  private parseMetric(value: string): ReportMetric {
+    try {
+      return assertReportMetric(value);
+    } catch (error) {
+      throw invalid(error);
+    }
+  }
+
+  private parseGranularity(value: string): ReportGranularity {
+    try {
+      return assertReportGranularity(value);
+    } catch (error) {
+      throw invalid(error);
+    }
+  }
+
+  private parseScope(
+    query: { from?: string; to?: string; electionId?: string; electoralZoneId?: string; pollingPlaceId?: string; includeSimulated?: boolean },
+    fallbackDays: number,
+  ): ReportsScope {
+    const to = query.to ? new Date(query.to) : new Date();
+    const from = query.from ? new Date(query.from) : new Date(to.getTime() - fallbackDays * DAY_MS);
+    try {
+      assertWindowWithinLimit(from, to);
+    } catch (error) {
+      throw invalid(error);
+    }
+    return {
+      from,
+      to,
+      electionId: query.electionId,
+      electoralZoneId: query.electoralZoneId,
+      pollingPlaceId: query.pollingPlaceId,
+      includeSimulated: query.includeSimulated === true,
+    };
+  }
+
+  /** Série temporal contínua de uma métrica do vocabulário (SPEC 2.2/2.3). */
+  async timeseries(query: TimeseriesQueryDto) {
+    if (!query.from || !query.to)
+      throw new BadRequestException("Informe 'from' e 'to' para a série temporal.");
+    const metric = this.parseMetric(query.metric);
+    const granularity = this.parseGranularity(query.granularity ?? "day");
+    const scope = this.parseScope(query, 30);
+    return seriesFor(this.prisma, metric, scope, granularity);
+  }
+
+  /** SLA Analytics com todas as fórmulas normativas (SPEC 2.4). */
+  async sla(query: SlaQueryDto) {
+    const scope = this.parseScope(query, 30);
+    const incidents = (await loadMetricRows(this.prisma, "incidentsOpened", scope)) as unknown as IncidentTimingRow[];
+    const transitions = (await loadMetricRows(this.prisma, "transmissionOffline", scope)) as unknown as TransmissionTransitionRow[];
+    const requests = (await loadMetricRows(this.prisma, "resourceRequestsCreated", scope)) as unknown as Array<{ submittedAt: Date | null; fulfilledAt: Date | null }>;
+    const dispatches = (await loadMetricRows(this.prisma, "dispatchesActive", scope)) as unknown as Array<{ requestedAt: Date; completedAt: Date | null }>;
+
+    const openedInWindow = incidents.filter((row) => inWindow(row.openedAt, scope.from, scope.to));
+    const respondedInWindow = incidents.filter((row) => inWindow(row.acknowledgedAt, scope.from, scope.to));
+    const resolvedInWindow = incidents.filter((row) => inWindow(row.resolvedAt, scope.from, scope.to));
+    const complianceRows = incidents.filter(
+      (row) => row.slaDeadline !== null && inWindow(row.openedAt, scope.from, scope.to),
+    );
+    const fulfilledInWindow = requests.filter((row) => inWindow(row.fulfilledAt, scope.from, scope.to));
+    const completedInWindow = dispatches.filter((row) => inWindow(row.completedAt, scope.from, scope.to));
+
+    const now = new Date();
+    const windowMinutes = (scope.to.getTime() - scope.from.getTime()) / 60000;
+    const downtime = transmissionDowntimeMinutes(transitions, now);
+    return {
+      generatedAt: now.toISOString(),
+      scope: {
+        from: scope.from.toISOString(),
+        to: scope.to.toISOString(),
+        electionId: scope.electionId ?? null,
+        electoralZoneId: scope.electoralZoneId ?? null,
+        pollingPlaceId: scope.pollingPlaceId ?? null,
+        includeSimulated: scope.includeSimulated,
+      },
+      windowMinutes,
+      indicators: {
+        meanResponseMinutes: meanResponseMinutes(respondedInWindow),
+        meanResolutionMinutes: meanResolutionMinutes(resolvedInWindow),
+        mttrMinutes: mttrMinutes(resolvedInWindow),
+        slaCompliancePercent: slaCompliancePercent(complianceRows),
+        deadlineMisses: deadlineMisses(incidents, now),
+        escalationRatePercent: escalationRatePercent(openedInWindow),
+        transmissionDowntimeMinutes: downtime,
+        transmissionUptimePercent: transmissionUptimePercent(windowMinutes, downtime.value ?? 0),
+        fulfillmentMeanMinutes: fulfillmentMeanMinutes(fulfilledInWindow),
+        dispatchMeanMinutes: dispatchMeanMinutes(completedInWindow),
+      },
+    };
+  }
+
+  /** Comparação de zonas com denominador e ranking normalizado (SPEC 2.5). */
+  async zoneComparison(query: ZonesQueryDto) {
+    if (!query.electionId)
+      throw new BadRequestException("Informe 'electionId' para comparar zonas.");
+    const scope = this.parseScope({ ...query, electionId: query.electionId }, 30);
+    const metrics: ReportMetric[] = query.metrics
+      ? query.metrics.split(",").map((metric) => metric.trim()).filter(Boolean).map((metric) => this.parseMetric(metric))
+      : [...REPORT_METRICS];
+
+    const zones = await this.prisma.electoralZone.findMany({
+      where: { electionId: scope.electionId },
+      select: { id: true, number: true, name: true, municipality: true, state: true },
+      orderBy: { number: "asc" },
+    });
+    const zoneIds = zones.map((zone) => zone.id);
+    const [places, sections] = await Promise.all([
+      this.prisma.pollingPlace.findMany({ where: { electoralZoneId: { in: zoneIds } }, select: { electoralZoneId: true } }),
+      this.prisma.pollingSection.findMany({
+        where: { pollingPlace: { electoralZoneId: { in: zoneIds } } },
+        select: { registeredVoters: true, pollingPlace: { select: { electoralZoneId: true } } },
+      }),
+    ]);
+
+    const rowsByMetric = new Map<ReportMetric, readonly unknown[]>();
+    for (const metric of metrics) rowsByMetric.set(metric, await loadMetricRows(this.prisma, metric, scope));
+
+    const perZone = zones.map((zone) => {
+      const zonePlaces = places.filter((place) => place.electoralZoneId === zone.id).length;
+      const zoneSections = sections.filter((section) => section.pollingPlace.electoralZoneId === zone.id);
+      const registeredVoters = zoneSections.reduce((sum, section) => sum + section.registeredVoters, 0);
+      return { zone, pollingPlaceCount: zonePlaces, pollingSectionCount: zoneSections.length, registeredVoters };
+    });
+
+    const valuesByMetric = new Map<ReportMetric, Map<string, SeriesPoint>>();
+    const absoluteRanks = new Map<ReportMetric, Map<string, number | null>>();
+    const normalizedRanks = new Map<ReportMetric, Map<string, number | null>>();
+    for (const metric of metrics) {
+      const rows = rowsByMetric.get(metric) ?? [];
+      const values = new Map<string, SeriesPoint>();
+      for (const entry of perZone)
+        values.set(entry.zone.id, await aggregateFor(this.prisma, metric, scope, rows.filter((row) => metricZoneOf(metric, row) === entry.zone.id)));
+      valuesByMetric.set(metric, values);
+      const absolute = competitionRanks(perZone.map((entry) => values.get(entry.zone.id)?.value ?? 0));
+      const normalized = competitionRanks(
+        perZone.map((entry) => per1000Voters(values.get(entry.zone.id)?.value ?? 0, entry.registeredVoters)),
+      );
+      absoluteRanks.set(metric, new Map(perZone.map((entry, index) => [entry.zone.id, absolute[index]])));
+      normalizedRanks.set(metric, new Map(perZone.map((entry, index) => [entry.zone.id, normalized[index]])));
+    }
+
+    return {
+      generatedAt: new Date().toISOString(),
+      scope: {
+        from: scope.from.toISOString(),
+        to: scope.to.toISOString(),
+        electionId: scope.electionId ?? null,
+        includeSimulated: scope.includeSimulated,
+      },
+      zones: perZone.map((entry) => {
+        const metricsResult: Record<string, unknown> = {};
+        const rankings: Record<string, unknown> = {};
+        for (const metric of metrics) {
+          const point = valuesByMetric.get(metric)?.get(entry.zone.id) ?? { value: 0, sampleSize: 0 };
+          metricsResult[metric] = {
+            value: point.value,
+            sampleSize: point.sampleSize,
+            per1000Voters: per1000Voters(point.value, entry.registeredVoters),
+            perPlace: perPlace(point.value, entry.pollingPlaceCount),
+          };
+          rankings[metric] = {
+            byAbsolute: absoluteRanks.get(metric)?.get(entry.zone.id) ?? null,
+            byNormalized: normalizedRanks.get(metric)?.get(entry.zone.id) ?? null,
+          };
+        }
+        return {
+          zoneId: entry.zone.id,
+          zoneNumber: entry.zone.number,
+          zoneName: entry.zone.name,
+          municipality: entry.zone.municipality,
+          state: entry.zone.state,
+          pollingPlaceCount: entry.pollingPlaceCount,
+          pollingSectionCount: entry.pollingSectionCount,
+          registeredVoters: entry.registeredVoters,
+          metrics: metricsResult,
+          rankings,
+        };
+      }),
+    };
+  }
+
+  /** Entidades do bucket com deep link real e total não truncado (SPEC 2.6). */
+  async drilldown(query: DrilldownQueryDto) {
+    const metric = this.parseMetric(query.metric);
+    const scope = this.parseScope(
+      { from: query.from, to: query.to, electionId: query.electionId, electoralZoneId: query.zoneId, includeSimulated: query.includeSimulated },
+      30,
+    );
+    const start = new Date(query.bucketStart);
+    const end = new Date(query.bucketEnd);
+    if (!(end.getTime() > start.getTime()))
+      throw new BadRequestException("Bucket inválido: 'bucketEnd' deve ser posterior a 'bucketStart'.");
+    return drilldownFor(this.prisma, metric, scope, { start, end }, query.limit);
+  }
+
+  /** Export JSON estruturado, respeitando escopo (SPEC 2.8). */
+  async exportJson(query: ExportJsonQueryDto) {
+    const [executive, operations, incidents, transmission, workforce, logistics, assets] = await Promise.all([
+      this.executive(query),
+      this.operations(query),
+      this.incidents(query),
+      this.transmission(query),
+      this.workforce(query),
+      this.logistics(query),
+      this.assets(query),
+    ]);
+    const timeseries: Record<string, unknown> = {};
+    if (query.metrics) {
+      if (!query.from || !query.to)
+        throw new BadRequestException("Informe 'from' e 'to' para exportar séries temporais.");
+      for (const raw of query.metrics.split(",")) {
+        const metric = raw.trim();
+        if (!metric) continue;
+        const series = await this.timeseries({
+          metric,
+          from: query.from,
+          to: query.to,
+          granularity: "day",
+          electionId: query.electionId,
+          electoralZoneId: query.zoneId,
+          pollingPlaceId: query.pollingPlaceId,
+          includeSimulated: query.includeSimulated,
+        });
+        timeseries[metric] = series.buckets;
+      }
+    }
+    return {
+      generatedAt: new Date().toISOString(),
+      scope: {
+        electionId: query.electionId ?? null,
+        electoralZoneId: query.zoneId ?? null,
+        pollingPlaceId: query.pollingPlaceId ?? null,
+        from: query.from ?? null,
+        to: query.to ?? null,
+        includeSimulated: query.includeSimulated === true,
+      },
+      sections: { executive, operations, incidents, transmission, workforce, logistics, assets },
+      timeseries,
+    };
   }
 
   async csv(query: ReportQueryDto) {

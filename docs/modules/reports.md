@@ -1,153 +1,103 @@
-# Relatórios e BI
+# Reports e Analytics Operacional 2.0
 
-## 1. Objetivo
+Plugin `@eops/plugin-reports`, em `plugins/analytics/reports`, categoria `analytics`, rota `/reports`.
 
-O módulo Relatórios e BI tem como objetivo oferecer leitura analítica e histórica sobre os dados persistidos da plataforma, consolidando indicadores de operação, incidentes, transmissão, equipes, logística e ativos.
+Documentação descritiva. A fonte normativa é `SPEC/2026-10-06-platform-depth-integration.md` (Parte 2).
 
-O módulo é analítico, não é um centro de comando em tempo real: os números são derivados de registros já persistidos e podem estar sujeitos à latência natural de atualização dos domínios de origem. O módulo não possui entidades de domínio próprias; apenas lê e agrega dados dos owners (`Incidents`, `Field Teams`, `Routes`, `Inventory`, `Transmission`) por meio do schema compartilhado.
+## Papel
 
-Este documento é descritivo. A fonte normativa é a SPEC `SPEC/2026-10-05-operational-intelligence-improvements.md`.
+Reports responde "o que aconteceu e como se comportou ao longo do tempo". É análise histórica e agregada — não é o Command Center (estado atual) nem o Simulador (treinamento).
 
----
+O plugin não é dono de nenhum domínio de origem. Lê `Incident`, `TransmissionPoint`/`TransmissionStateTransition`/`TransmissionAttempt`, `ResourceRequest`, `FieldShift`, `FieldDispatch`, `DistributionRoute`/`Delivery`, `Asset`/`AssetMaintenance` e `PreparationChecklist` em modo somente-leitura, com `select` explícito.
 
-## 2. Estrutura
+## Isolamento
 
-- **Visão geral** (`/reports`): relatório executivo consolidado, preservado como contrato existente, com exportação CSV e PDF;
-- **Relatórios por domínio**: cada rota apresenta recortes analíticos específicos de um domínio;
-- **Navegação interna**: barra de abas do próprio plugin, sem alterar o shell global.
+- Artefatos simulados ficam fora das séries por default (`Incident.isSimulated = false`); `includeSimulated` é explícito e default `false`.
+- Consultas respeitam o pleito; quando o domínio não tem `electionId`, o filtro usa a entidade âncora (zona, local, ativo, time).
+- A comparação de zonas exige `electionId`, porque sem pleito não há denominador confiável.
 
-### 2.1 Rotas de frontend
+## Vocabulário de métricas
 
-```text
-/reports                 visão geral (executivo)
-/reports/operations      operações combinadas
-/reports/incidents       incidentes
-/reports/transmission    transmissão
-/reports/workforce       equipes de campo
-/reports/logistics       logística
-/reports/assets          ativos
-```
+Fechado, definido em `packages/shared/src/reports.ts` (`REPORT_METRICS`). Métrica fora do vocabulário é rejeitada com `400`. Cobre incidentes (abertos, críticos, resolvidos, escalados, vencidos, ativos), transmissão (falhas, offline, taxa de sucesso), solicitações de recurso (criadas, atendidas, vencidas), cobertura de turno, dispatches, rotas e entregas, preparação e ativos.
 
-### 2.2 Endpoints
+## Séries temporais
 
-```http
-GET /api/reports/executive
-GET /api/reports/operations
-GET /api/reports/incidents
-GET /api/reports/transmission
-GET /api/reports/workforce
-GET /api/reports/logistics
-GET /api/reports/assets
-GET /api/reports/export.csv
-GET /api/reports/export.pdf
-```
+`GET /reports/timeseries` aceita granularidade `hour`, `day` ou `week`, janela máxima de 366 dias e filtros de pleito, zona e local. O eixo temporal é contínuo: bucket sem dado retorna `0` com `sampleSize: 0`, e o `sampleSize` acompanha cada bucket porque séries com denominadores diferentes não são equivalentes.
 
----
+## Fórmulas de SLA
 
-## 3. Filtros compartilhados
-
-`ReportQueryDto` é o contrato comum de filtros, aplicado a todos os relatórios:
+Implementadas como funções puras em `packages/shared/src/reports.ts` e cobertas por teste:
 
 ```text
-from              data inicial do período
-to                data final do período
-electionId        pleito
-zoneId            zona eleitoral
-pollingPlaceId    local de votação
-status            status (interpretado por domínio, quando aplicável)
-categoryId        categoria de incidente
+meanResponseMinutes   média(acknowledgedAt − openedAt)
+meanResolutionMinutes média(resolvedAt − openedAt)
+mttrMinutes           média da resolução restrita a severity HIGH/CRITICAL
+slaCompliancePercent  100 × resolvidos no prazo / incidentes com slaDeadline
+deadlineMisses        não-terminais vencidos + terminais resolvidos após o prazo
+escalationRatePercent 100 × incidentes com escalationLevel > 0 / abertos no período
+transmissionDowntimeMinutes  Σ intervalos OFFLINE (TransmissionStateTransition)
+transmissionUptimePercent    100 × (janela − downtime) / janela
+fulfillmentMeanMinutes       média(fulfilledAt − submittedAt)
+dispatchMeanMinutes          média(completedAt − requestedAt)
 ```
 
-O `status` é mapeado apenas para o domínio compatível de cada relatório: o mesmo valor só é aplicado quando pertence ao enum correspondente (por exemplo, `SUCCESS` filtra pontos de transmissão, mas é ignorado em incidentes). Filtros específicos de domínio são adicionados somente quando há uso real — o relatório de incidentes aceita `severity` adicionalmente.
+Regra transversal: **nenhuma média usa denominador zero**. Sem amostra o valor é `null` com `sampleSize: 0`, e a interface mostra "sem dados" — nunca `0`.
 
-Cada resposta por domínio segue o envelope:
+## Comparação de zonas
+
+`GET /reports/zones` devolve, por zona, valor absoluto, `per1000Voters` e `perPlace`, sempre acompanhados do denominador. Zona sem denominador (`registeredVoters = 0` ou `pollingPlaceCount = 0`) recebe `null` no normalizado e no ranking normalizado — o objetivo é impedir ranking enganoso.
+
+## Drill-down
+
+Todo agregado tem caminho até a entidade real:
 
 ```text
-generatedAt     instante de geração
-period          { from, to }
-filters         filtros aplicados
-summary         indicadores consolidados
-breakdown       byZone e byPlace; distribuições adicionais quando aplicável
-comparison      comparação com o período anterior
+GET /reports/drilldown?metric=&from=&to=&bucketStart=&bucketEnd=&limit=
 ```
 
----
+Devolve as entidades do bucket com `deepLink` para a rota real do domínio (`INCIDENT`, `TRANSMISSION_POINT`, `RESOURCE_REQUEST`, `FIELD_SHIFT`, `FIELD_DISPATCH`, `ROUTE`, `ASSET`, `PREPARATION_CHECKLIST`). `truncated: true` quando o limite é atingido, mas `total` continua sendo o total real do bucket.
 
-## 4. Relatórios por domínio
+## Visões salvas
 
-### 4.1 Operações
+`ReportSavedView` com filtros validados por whitelist (`REPORT_VIEW_FILTER_KEYS`). Visão privada por default; compartilhar exige `reports.manage`; editar/remover exige ser owner ou ter `reports.manage`; `isDefault` é transacional por owner; máximo de 20 por owner.
 
-Combina incidentes, transmissão, equipes, tarefas, ativos e rotas: incidentes abertos e críticos, taxa de sucesso de transmissão, equipes ativas, tarefas atrasadas, ativos disponíveis e rotas ativas/atrasadas.
+O modelo é próprio do plugin, não uma cópia de `CommandCenterSavedView`: a fronteira entre plugins proíbe importar implementação interna de outro domínio, e as duas semânticas de filtro são distintas (o Command Center filtra itens de atenção; Reports filtra séries e métricas).
 
-### 4.2 Incidentes
+## Export
 
-Volume total, abertos, críticos e resolvidos, tempo médio de resolução, SLA, distribuição por severidade, categoria e status, e tendência diária por data de abertura.
+CSV e PDF mantidos; `GET /reports/export.json` devolve JSON estruturado com escopo, seções dos relatórios por domínio e séries quando solicitadas. Todos exigem `reports.export` e respeitam o escopo.
 
-### 4.3 Transmissão
-
-Taxa de sucesso e de falha, latência média, taxa de retentativa, pontos offline, violações de prazo e tentativas do dia, além de distribuição por status e conectividade.
-
-### 4.4 Equipes
-
-Cobertura de locais, alocações, despachos, tempo de resposta (a partir dos timestamps de `FieldDispatch`), utilização e disponibilidade das equipes.
-
-### 4.5 Logística
-
-Rotas, rotas concluídas e atrasadas, entregas, pontualidade, exceções e taxa de exceção apuradas sobre rotas e entregas persistidas.
-
-### 4.6 Ativos
-
-Status, condição, tipo, movimentações, distribuição por zona e local, disponibilidade e ativos em boa condição.
-
----
-
-## 5. Comparação de período
-
-Quando `from` e `to` estão presentes e formam um intervalo válido, cada relatório compara o período atual com o **período anterior de mesma duração**, terminando exatamente onde o período atual começa.
+## Rotas
 
 ```text
-current  = [from, to]
-previous = [from - (to - from), from)
+/reports
+/reports/timeseries
+/reports/sla
+/reports/zones
+/reports/views
+/reports/export
+/reports/operations
+/reports/incidents
+/reports/transmission
+/reports/workforce
+/reports/logistics
+/reports/assets
 ```
 
-Sem `from`/`to`, ou com intervalo inválido (duração não positiva), a comparação retorna `available: false` e `previous: null`. Nenhum período histórico é sintetizado.
-
-A comparação zona × zona não é um bloco separado: é apresentada como ranking, ordenando as linhas do `breakdown` pelo indicador relevante.
-
----
-
-## 6. Drill-down
-
-As linhas do `breakdown` carregam os identificadores necessários para navegação. Os links de frontend apontam apenas para rotas existentes:
+## Permissões
 
 ```text
-local de votação   /polling-places/:id
-incidentes         /incidents
-transmissão        /transmission
-ativo              /inventory/:id
-rota               /routes/:id
-equipes            /field-teams
+reports.read     dashboards, séries, SLA, zonas, drill-down, leitura de visões, export.json
+reports.manage   criar, editar, remover e compartilhar visões
+reports.export   CSV, PDF e JSON estruturado
 ```
 
-Linhas por local linkam para o local de votação correspondente. Nenhum link aponta para rota inexistente.
+## Eventos
 
----
+Somente mutações próprias: `report_view.created` e `report_view.shared`. Leitura analítica não emite evento.
 
-## 7. Exportação
+## Limites conhecidos
 
-A visão geral executa exportação CSV e PDF sobre o relatório executivo; ambos os formatos permanecem inalterados. Nenhum valor demonstrativo é injetado — os arquivos refletem somente dados persistidos.
-
----
-
-## 8. RBAC
-
-Toda leitura exige `reports.read`, validada no backend. Exportações exigem adicionalmente `reports.export`. Nenhuma permissão nova é criada para os relatórios por domínio.
-
----
-
-## 9. Limitações declaradas
-
-- os relatórios usam apenas dados persistidos disponíveis; períodos sem registros retornam zero, nunca valores fictícios;
-- não há infraestrutura de séries temporais nem agregação em tempo real;
-- a leitura é feita sobre o schema compartilhado, garantindo isolamento por leitura e nunca por import de implementação de outro plugin;
-- o módulo não assume propriedade das entidades lidas nem duplica regras de negócio dos domínios de origem.
+- A busca textual do explorer não cobre séries; o drill-down é o caminho para inspecionar um bucket.
+- Métricas ancoradas em `updatedAt` (ativos, preparação) refletem o último estado conhecido, não a data do fato original.
+- `transmissionUptimePercent` depende de `TransmissionStateTransition`; janela sem histórico de transição retorna `null` em vez de inventar disponibilidade.

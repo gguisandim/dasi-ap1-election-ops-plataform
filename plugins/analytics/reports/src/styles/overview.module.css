@@ -31,5 +31,25 @@
 .link { color: #38bdf8; text-decoration: none; }
 .link:hover { text-decoration: underline; }
 .period { color: #7f91a7; font-size: 12px; margin: 0; }
-@media (max-width: 1050px) { .filters, .metrics { grid-template-columns: repeat(2, 1fr); } .grid { grid-template-columns: 1fr; } .grid > :last-child { grid-column: auto; } }
-@media (max-width: 650px) { .header { flex-direction: column; } .filters, .metrics, .chartGrid { grid-template-columns: 1fr; } }
+.muted { color: #7f91a7; font-size: 12px; }
+.zeroValue { color: #7f91a7; font-style: italic; }
+.barButton { width: 100%; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: 6px; }
+.barButton:hover { background: #101d30; }
+.barSelected { background: #14243a; outline: 1px solid #38bdf8; }
+.indicatorGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.indicatorGrid span { display: block; color: #7f91a7; font-size: 12px; }
+.indicatorGrid strong { display: block; margin: 8px 0 6px; font-size: 22px; }
+.sectionTitle { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sectionTitle h2 { margin: 0; }
+.form { display: grid; gap: 12px; }
+.formGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.multiSelect { width: 100%; padding: 6px; border-radius: 8px; background: #0f1c2e; color: #eef6ff; border: 1px solid #1a2a41; }
+.checkboxRow { display: flex; align-items: center; gap: 8px; color: #a9b9c9; font-size: 13px; }
+.viewList { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.viewCard { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid #1a2a41; border-radius: 10px; }
+.viewCard h3 { margin: 0 0 6px; font-size: 15px; }
+.viewCard p { margin: 0 0 4px; color: #a9b9c9; font-size: 13px; }
+.viewCardActions { display: flex; flex-wrap: wrap; gap: 6px; }
+.codeBlock { max-height: 340px; overflow: auto; margin: 0; padding: 12px; border-radius: 10px; background: #0b1626; border: 1px solid #1a2a41; color: #c7d6e6; font-size: 12px; }
+@media (max-width: 1050px) { .filters, .metrics, .indicatorGrid { grid-template-columns: repeat(2, 1fr); } .grid { grid-template-columns: 1fr; } .grid > :last-child { grid-column: auto; } }
+@media (max-width: 650px) { .header { flex-direction: column; } .filters, .metrics, .chartGrid, .indicatorGrid { grid-template-columns: 1fr; } .viewCard { flex-direction: column; } }

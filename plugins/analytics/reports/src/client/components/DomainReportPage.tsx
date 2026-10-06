@@ -18,6 +18,7 @@ export interface DomainReportConfig {
   charts?: Array<{ title: string; data: (breakdown: ReportBreakdown) => SeriesItem[] }>;
   compareLabels?: Record<string, string>;
   link?: { label: string; to: string };
+  drilldown?: string;
 }
 
 function series(breakdown: ReportBreakdown, key: string) {
@@ -41,7 +42,7 @@ export function DomainReportPage({ config }: { config: DomainReportConfig }) {
   const comparison = data?.comparison;
   const placeColumns = config.placeColumns ?? config.columns;
   return <section className={styles.page}>
-    <header className={styles.header}><div><span className={styles.tag}>ANALYTICS</span><h1>{config.title}</h1><p>{config.description}</p></div>{config.link && <div className={styles.actions}><LinkButton to={config.link.to}>{config.link.label}</LinkButton></div>}</header>
+    <header className={styles.header}><div><span className={styles.tag}>ANALYTICS</span><h1>{config.title}</h1><p>{config.description}</p></div><div className={styles.actions}>{config.link && <LinkButton to={config.link.to}>{config.link.label}</LinkButton>}<LinkButton secondary to={config.drilldown ?? "/reports/timeseries"}>Séries e drill-down</LinkButton></div></header>
     <ReportNav />
     <div className={styles.filters}>
       <Input aria-label="Data inicial" type="date" value={filters.from ?? ""} onChange={(event) => change("from", event.target.value)} />
