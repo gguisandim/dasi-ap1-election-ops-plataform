@@ -41,3 +41,26 @@
 .timeline p { margin: 5px 0 0; }
 @media (max-width: 1000px) { .metrics, .filters, .formGrid { grid-template-columns: repeat(2, 1fr); } .columns { grid-template-columns: 1fr; } .pointGrid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 600px) { .header { flex-direction: column; } .metrics, .filters, .formGrid, .pointGrid { grid-template-columns: 1fr; } }
+
+/* NOC 2.0 — SLA, circuitos, provedores, failover e correlacao. */
+.slaBand { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.slaBand > div { padding: 14px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 10px; }
+.slaBand span { display: block; color: var(--text-secondary); font-size: 12px; }
+.slaBand strong { display: block; margin-top: 6px; font-size: 22px; }
+.slaBand .riskHigh { color: var(--status-danger); }
+.slaBand .riskOk { color: var(--status-success); }
+.muted { color: var(--text-secondary); }
+.infoValue { color: var(--status-info); }
+.warnValue { color: var(--status-warning); }
+.stack { display: grid; gap: 12px; }
+.grid2 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; align-items: start; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.correlationGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.correlationGrid article { display: grid; gap: 6px; padding: 12px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 10px; }
+.correlationGrid a { color: var(--status-info); text-decoration: none; }
+.correlationGrid small { color: var(--text-secondary); }
+.gateMessage { padding: 12px; color: var(--text-secondary); background: var(--bg-surface); border: 1px dashed var(--border-subtle); border-radius: 10px; }
+.rowActions { display: flex; flex-wrap: wrap; gap: 8px; }
+.mono { font-variant-numeric: tabular-nums; }
+@media (max-width: 1000px) { .slaBand { grid-template-columns: repeat(2, 1fr); } .grid2, .grid3, .correlationGrid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .slaBand { grid-template-columns: 1fr; } }

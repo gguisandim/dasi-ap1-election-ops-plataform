@@ -1,168 +1,110 @@
-# Monitor de Transmissão
+# Monitor de Transmissão e NOC 2.0
 
-## 1. Objetivo
+Plugin `@eops/plugin-transmission`, em `plugins/monitoring/transmission`, categoria `monitoring`, rota `/transmission`.
 
-O módulo Monitor de Transmissão acompanha, por pleito, zona e local de votação, os pontos de transmissão dos resultados: fila operacional, conectividade, tentativas, prazo de envio e alertas técnicos.
+Documentação descritiva. A fonte normativa é `SPEC/2026-10-06-platform-depth-integration.md` (Parte 3).
 
-Ele deve permitir responder rapidamente: o que ainda não transmitiu, onde, por qual motivo, o que está fora de prazo ou offline e o que exige ação imediata.
+## Papel
 
-Este documento é descritivo. A especificação normativa permanece em `SPEC/`.
+Monitoramento da malha de transmissão: como está cada ponto agora, o que aconteceu com ele ao longo do tempo e qual foi o desempenho medido. É dono de pontos de transmissão, circuitos, provedores, histórico de estado, failover, tentativas, alertas e SLA de transmissão.
 
----
+## Modelo de conectividade
 
-## 2. Estrutura
+`TransmissionPoint` é o local monitorado. `TransmissionCircuit` é o enlace: código, tecnologia (rótulo livre), banda, provedor e `isPrimary`. Regra: no máximo **um circuito primário ativo** por ponto; criar um segundo devolve `409`.
 
-```text
-plugins/monitoring/transmission/
-  src/manifest.ts                       registro do plugin
-  src/index.ts                          rotas de frontend
-  src/server/                           backend NestJS (controller, service, DTOs)
-  src/services/transmissionService.ts   cliente HTTP
-  src/client/pages/                     dashboard, NOC, detalhe e cadastro
-  src/client/hooks/usePermissions.ts    leitura de permissões do usuário
-  src/types/index.ts                    contratos e helpers do cliente
-  src/styles/overview.module.css        CSS Module do plugin
-```
+`TransmissionProvider` existe como catálogo separado (código, contato, alvo de uptime), porque o desempenho varia por provedor, não por ponto — e o mesmo provedor atende vários pontos.
 
-O backend é exposto ao composition root por `@eops/plugin-transmission/server`. O frontend não importa implementação interna de outro plugin: as permissões do usuário são lidas por `GET /auth/me`, e o backend continua sendo a autoridade final.
+## Histórico de estado
 
----
+`TransmissionStateTransition` registra cada mudança de conectividade do ponto ou do circuito. Ao registrar uma transição, o servidor fecha o intervalo anterior do mesmo escopo calculando `durationSeconds`, que é o que permite calcular uptime sem varrer logs de evento.
 
-## 3. Funcionalidades atuais
+Regras: `from = to` é recusado com `409` (não há histórico de não-mudança); duração é sempre calculada no servidor, nunca aceita do cliente.
 
-- cadastro e edição de pontos de transmissão, com prioridade, prazo operacional e conectividade;
-- fila operacional ordenada por prioridade e `queuedAt`;
-- registro de verificação de conectividade e de tentativas de transmissão;
-- timeline de eventos por ponto;
-- alertas técnicos com reconhecimento e resolução;
-- dashboard com progresso e indicadores;
-- visão NOC consolidada;
-- retry manual e em lote;
-- histórico de conectividade.
+Estados: `ONLINE`, `DEGRADED`, `OFFLINE`, `UNKNOWN`. `UNKNOWN` significa ausência de leitura recente, é **excluído do uptime** e reportado separadamente como `unknownMinutes` — nunca contabilizado como queda nem como disponibilidade.
 
-### Endpoints
+## SLA
 
-```http
-GET    /api/transmission
-GET    /api/transmission/dashboard
-GET    /api/transmission/queue
-GET    /api/transmission/noc
-GET    /api/transmission/alerts
-PATCH  /api/transmission/alerts/:id
-POST   /api/transmission
-GET    /api/transmission/:id
-GET    /api/transmission/:id/connectivity-history
-PATCH  /api/transmission/:id
-PATCH  /api/transmission/:id/connectivity
-POST   /api/transmission/:id/retry
-POST   /api/transmission/:id/attempts
-POST   /api/transmission/retry
-```
-
-As rotas estáticas (`dashboard`, `queue`, `noc`, `alerts`, `retry`) são declaradas antes das rotas com `:id` para não serem capturadas como identificador.
-
----
-
-## 4. Visão NOC
-
-`GET /api/transmission/noc` (filtros `electionId`, `zoneId`, `pollingPlaceId`) retorna uma visão derivada, sem persistência:
-
-- `totals`: total, sucesso, fila, transmitindo, falhas e offline;
-- `rates`: taxa de sucesso e de falha;
-- `latency.averageLatencyMs` e `volume.attemptsToday`;
-- `risk`: risco de prazo (`DUE_SOON + OVERDUE`), atrasados e próximos;
-- `byStatus`, `byDeadlineState`, `byZone`, `byPlace`;
-- `needsAttention`: até 12 pontos ordenados por risco (atrasado, prazo próximo, falho, offline).
-
-Todas as métricas são calculadas a partir de dados persistidos. `queued` agrega `WAITING`, `QUEUED` e `RETRYING`; `failed` agrega `FAILED` e `OFFLINE`; `offline` reflete a conectividade `OFFLINE`.
-
----
-
-## 5. Estado de prazo derivado
-
-O estado de prazo nunca é persistido. Ele é calculado por uma função pura `deriveDeadlineState(status, operationalDeadline, now)`:
-
-- status `SUCCESS` resulta em `COMPLETED`;
-- sem prazo definido resulta em `ON_TRACK`;
-- `now` após o prazo resulta em `OVERDUE`;
-- prazo restante de até 60 minutos resulta em `DUE_SOON`;
-- caso contrário, `ON_TRACK`.
-
-A janela de 60 minutos é uma constante exportada e coincide com o critério do alerta `DEADLINE_NEAR`, para que alerta e estado não divirjam.
-
----
-
-## 6. Ciclo de vida do alerta
-
-Os alertas nunca são excluídos. As transições permitidas são:
+Funções puras em `packages/shared/src/transmission.ts`:
 
 ```text
-OPEN          → ACKNOWLEDGED
-OPEN          → RESOLVED
-ACKNOWLEDGED  → RESOLVED
+observedMinutes  = janela − unknownMinutes
+uptimePercent    = 100 × onlineMs / observedMs
+downtimeMinutes  = Σ intervalos OFFLINE
+degradedMinutes  = Σ intervalos DEGRADED
+unknownMinutes   = Σ intervalos UNKNOWN
+recoverySeconds  = média da duração de intervalos OFFLINE até o primeiro não-OFFLINE
+deadlineRiskPercent   = 100 × pontos com deadline vencido e status ≠ SUCCESS / pontos com deadline
+providerPerformance   = uptime ponderado por minutos observados, contagem de incidentes e failovers
 ```
 
-Transições regressivas (por exemplo `RESOLVED → OPEN`) são rejeitadas com 400. O servidor grava `acknowledgedAt`/`acknowledgedById` na primeira passagem para `ACKNOWLEDGED` e `resolvedAt`/`resolvedById` na passagem para `RESOLVED`; o cliente nunca envia timestamps.
+Percentuais retornam `null` quando a janela observada é zero. Medidas em minutos retornam `0` para janela vazia, porque zero minuto de queda é uma medida real; a ausência de base fica registrada em `unknownMinutes`.
 
-`PATCH /api/transmission/alerts/:id` aceita `{ status, notes? }` e exige `transmission.manage`. `GET /api/transmission/alerts` aceita filtro opcional por `status` e, por padrão, exclui alertas `RESOLVED` (a menos que um status seja informado ou `includeResolved` seja usado).
+## Failover
 
----
+`TransmissionFailover` liga circuito de origem, circuito de destino e motivo. Regras: destino precisa pertencer ao ponto, estar ativo e ser diferente da origem; no máximo um failover `ACTIVE` por ponto; recuperar ou cancelar exige um failover `ACTIVE`. O failover registra transição do ponto para o estado do destino e não altera o circuito de origem além do que a mudança de status implica.
 
-## 7. Retry operacional
+## Correlação
 
-`POST /api/transmission/:id/retry` `{ reason? }` e `POST /api/transmission/retry` `{ ids, reason }` exigem `transmission.manage`.
+`GET /transmission/correlation` devolve, **sempre derivado e nunca persistido**: incidentes do mesmo local/zona na janela, solicitações de recurso, postmortems cujo incidente primário ou timeline referencia o incidente correlacionado, passagens de turno do local e uma referência ao feed do Command Center.
 
-São elegíveis os status `FAILED`, `OFFLINE`, `RETRYING` e `WAITING`. O retry recoloca o ponto em `QUEUED`, limpa `lastError` e registra um evento de timeline `RETRY` com o motivo.
+Nenhuma escrita em `Incident`, `ResourceRequest`, `Postmortem`, `ShiftHandover` ou no Command Center. Quando o ator não possui a permissão de leitura de um domínio correlacionado, aquela seção retorna `available: false` **sem expor contagem**.
 
-O retry em lote aceita de 1 a 100 identificadores e é atômico: todos os pontos são validados antes; se qualquer ponto não existir ou não for elegível, nada é aplicado. O histórico de tentativas (`TransmissionAttempt`) permanece intacto e continua exposto no detalhe. Não existe scheduler, daemon ou execução automática.
+## Rotas
 
----
+```text
+/transmission
+/transmission/noc
+/transmission/analytics
+/transmission/providers
+/transmission/new
+/transmission/:id
+```
 
-## 8. Histórico de conectividade
+## Endpoints
 
-`GET /api/transmission/:id/connectivity-history` é derivado de eventos de timeline `CONNECTIVITY_CHANGED` (com `metadata.latencyMs`) e das tentativas registradas:
+Leitura com `transmission.read`; mutações com `transmission.manage`.
 
-- `entries`: mudanças de conectividade em ordem cronológica;
-- `current`: conectividade e latência atuais;
-- `lastCheckedAt`: último registro de verificação;
-- `lastSuccessAt`: fim da última tentativa `SUCCESS`;
-- `failureStreak`: tentativas consecutivas não-`SUCCESS` a partir da mais recente, por `calculateFailureStreak(attempts)`.
+```text
+GET    /transmission
+GET    /transmission/dashboard
+GET    /transmission/queue
+GET    /transmission/noc
+GET    /transmission/alerts
+GET    /transmission/sla
+GET    /transmission/analytics
+GET    /transmission/providers
+GET    /transmission/correlation
+GET    /transmission/:id
+GET    /transmission/:id/state-history
+GET    /transmission/:id/connectivity-history
+GET    /transmission/:id/sla
+GET    /transmission/:id/circuits
+GET    /transmission/:id/failovers
+POST   /transmission
+PATCH  /transmission/:id
+PATCH  /transmission/:id/connectivity
+POST   /transmission/:id/recovery
+POST   /transmission/:id/attempts
+POST   /transmission/:id/retry
+POST   /transmission/retry
+PATCH  /transmission/alerts/:id
+POST   /transmission/providers
+PATCH  /transmission/providers/:id
+POST   /transmission/:id/circuits
+PATCH  /transmission/circuits/:circuitId
+POST   /transmission/:id/failover
+POST   /transmission/:id/failover/:failoverId/recover
+POST   /transmission/:id/failover/:failoverId/cancel
+```
 
-Nenhuma infraestrutura de séries temporais é criada.
+## Eventos
 
----
+`transmission.connectivity_changed`, `transmission.failed`, `transmission.alert_created`, `transmission.state_transition`, `transmission.circuit_created`, `transmission.circuit_status_changed`, `transmission.failover_started`, `transmission.failover_recovered`, `transmission.provider_updated`.
 
-## 9. Eventos emitidos
+Failover iniciado e recuperado geram notificação direcionada a quem possui `transmission.read`. Nenhum evento é emitido para polling, filtro ou abertura de página.
 
-O módulo publica no Event Bus existente:
+## Limites conhecidos
 
-- `transmission.alert_created`
-- `transmission.alert_acknowledged`
-- `transmission.alert_resolved`
-- `transmission.retry_requested` (uma vez por operação, com `count` e `reason`)
-- `transmission.connectivity_changed`
-- `transmission.completed`
-- `transmission.failed`
-
-Outros módulos reagem por meio do Event Bus; nenhum import interno entre plugins é utilizado.
-
----
-
-## 10. RBAC
-
-Nenhuma permissão nova é criada.
-
-- `transmission.read` permite consultar pontos, fila, dashboard, NOC, alertas e histórico.
-- `transmission.manage` permite cadastrar, editar, registrar conectividade e tentativas, reconhecer/resolver alertas e solicitar retry.
-
-Toda autorização é validada no backend. No frontend, ações de gestão são exibidas apenas quando o usuário possui `transmission.manage`.
-
----
-
-## 11. Limitações conhecidas
-
-- o módulo não executa transmissão nem agendamento; apenas registra e acompanha o estado operacional;
-- o estado de prazo é derivado em memória e não é persistido;
-- a média de latência considera apenas pontos com valor registrado;
-- `attemptsToday` conta tentativas iniciadas a partir da meia-noite do dia corrente;
-- o histórico de conectividade depende dos eventos de timeline efetivamente gravados, sem inferência de períodos não registrados.
+- `UNKNOWN` degrada a confiança do SLA: uma janela com muito tempo sem leitura tem base observada pequena, e o percentual passa a refletir apenas o que foi observado.
+- A janela default de SLA e analytics é de 7 dias quando `from`/`to` não são informados; janela inválida devolve `400`.
+- Não há sonda de rede real nem integração com topologia externa: o domínio registra o que a operação reporta.

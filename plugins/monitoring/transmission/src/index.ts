@@ -4,6 +4,8 @@ import { TransmissionDashboardPage } from './client/pages/TransmissionDashboardP
 import { TransmissionNocPage } from './client/pages/TransmissionNocPage';
 import { TransmissionPointDetailPage } from './client/pages/TransmissionPointDetailPage';
 import { TransmissionPointFormPage } from './client/pages/TransmissionPointFormPage';
+import { TransmissionProvidersPage } from './client/pages/TransmissionProvidersPage';
+import { TransmissionAnalyticsPage } from './client/pages/TransmissionAnalyticsPage';
 
 export const transmissionPlugin: PlatformPlugin = {
   manifest,
@@ -12,6 +14,8 @@ export const transmissionPlugin: PlatformPlugin = {
     { path: '/transmission', Component: TransmissionDashboardPage },
     { path: '/transmission/new', Component: TransmissionPointFormPage },
     { path: '/transmission/noc', Component: TransmissionNocPage },
+    { path: '/transmission/analytics', Component: TransmissionAnalyticsPage },
+    { path: '/transmission/providers', Component: TransmissionProvidersPage },
     { path: '/transmission/:id', Component: TransmissionPointDetailPage },
   ],
 };
