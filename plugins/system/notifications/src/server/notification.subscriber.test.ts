@@ -47,4 +47,39 @@ describe("NotificationSubscriber", () => {
     await bus.emit("incident.escalated", { entityId: "incident-1", actorId: "actor-1", code: "INC-1", from: 0, to: 1, reason: "SLA" });
     expect(prisma.notification.createMany).not.toHaveBeenCalled();
   });
+
+  it("applies the directed handover audience together with RBAC and preferences", async () => {
+    const bus = new EventBus();
+    const prisma = {
+      user: { findMany: vi.fn().mockResolvedValue([{ id: "recipient-1" }]) },
+      notification: { createMany: vi.fn().mockResolvedValue({ count: 1 }) },
+    } as unknown as PrismaService;
+    const subscriber = new NotificationSubscriber(bus, prisma);
+    subscriber.onModuleInit();
+
+    await bus.emit("shift_handover.submitted", {
+      entityId: "handover-1",
+      actorId: "sender-1",
+      shiftId: "shift-1",
+      shiftName: "Turno central",
+      senderUserId: "sender-1",
+      recipientUserId: "recipient-1",
+      from: "DRAFT",
+      to: "PENDING_CONFIRMATION",
+      submittedAt: "2026-10-05T12:00:00.000Z",
+    });
+
+    expect(prisma.user.findMany).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        id: { in: ["recipient-1"] },
+        status: UserStatus.ACTIVE,
+        roles: { some: { role: { permissions: { some: { permission: { key: "shift-handovers.read" } } } } } },
+        notificationPreferences: { none: { eventName: "shift_handover.submitted", enabled: false } },
+      }),
+      select: { id: true },
+    });
+    expect(prisma.notification.createMany).toHaveBeenCalledWith({
+      data: [expect.objectContaining({ userId: "recipient-1", entityType: "ShiftHandover" })],
+    });
+  });
 });

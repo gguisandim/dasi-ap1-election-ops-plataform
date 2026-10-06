@@ -65,9 +65,31 @@ const names = [
   "shift.replacement_created",
   "shift.replacement_registered",
   "shift.coverage_insufficient",
+  "shift_handover.submitted",
+  "shift_handover.confirmed",
+  "shift_handover.cancelled",
 ] as const satisfies readonly DomainEventName[];
 
 type SubscribedEventName = (typeof names)[number];
+
+export function handoverAudience(event: DomainEvent<SubscribedEventName>) {
+  const payload = event.payload;
+  if (event.name === "shift_handover.submitted" && "recipientUserId" in payload)
+    return [payload.recipientUserId];
+  if (event.name === "shift_handover.confirmed" && "senderUserId" in payload)
+    return [payload.senderUserId];
+  if (
+    event.name === "shift_handover.cancelled" &&
+    "senderUserId" in payload &&
+    "recipientUserId" in payload
+  ) {
+    const counterpart = payload.actorId === payload.senderUserId
+      ? payload.recipientUserId
+      : payload.senderUserId;
+    return counterpart === payload.actorId ? [] : [counterpart];
+  }
+  return undefined;
+}
 
 function content(event: DomainEvent<SubscribedEventName>): {
   title: string;
@@ -579,6 +601,27 @@ function content(event: DomainEvent<SubscribedEventName>): {
         type: NotificationType.CRITICAL,
         entityType: "FieldShift",
       };
+    case "shift_handover.submitted":
+      return {
+        title: "Passagem de turno recebida",
+        message: `${"shiftName" in payload ? payload.shiftName : "Um turno"} aguarda sua confirmação.`,
+        type: NotificationType.WARNING,
+        entityType: "ShiftHandover",
+      };
+    case "shift_handover.confirmed":
+      return {
+        title: "Passagem de turno confirmada",
+        message: `${"shiftName" in payload ? payload.shiftName : "Um turno"} foi recebida e confirmada.`,
+        type: NotificationType.SUCCESS,
+        entityType: "ShiftHandover",
+      };
+    case "shift_handover.cancelled":
+      return {
+        title: "Passagem de turno cancelada",
+        message: `${"shiftName" in payload ? payload.shiftName : "Um turno"} teve a passagem cancelada.`,
+        type: NotificationType.WARNING,
+        entityType: "ShiftHandover",
+      };
   }
 }
 
@@ -598,8 +641,11 @@ export class NotificationSubscriber implements OnModuleInit {
   private async handle(event: DomainEvent<SubscribedEventName>) {
     const requiredPermission = requiredPermissionForEvent(event.name);
     if (!requiredPermission) return;
+    const audience = handoverAudience(event);
+    if (audience?.length === 0) return;
     const users = await this.prisma.user.findMany({
       where: {
+        id: audience ? { in: audience } : undefined,
         status: UserStatus.ACTIVE,
         roles: {
           some: {
