@@ -12,6 +12,7 @@
     "dev": "concurrently -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
     "dev:web": "npm run dev -w @eops/web",
     "dev:api": "npm run build:security && npm run start:dev -w @eops/api",
+    "postinstall": "npm run db:generate",
     "build": "npm run build:api && npm run build:web",
     "build:web": "npm run build -w @eops/web",
     "build:api": "npm run build:security && npm run build:event-bus && npm run build -w @eops/api && npm run build:server-exports",
