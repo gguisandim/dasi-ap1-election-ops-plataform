@@ -19,10 +19,25 @@ test('autentica e consulta módulos persistidos no PostgreSQL', async ({ request
   expect(inventory.status()).toBe(200);
   expect((await inventory.json() as { total: number }).total).toBeGreaterThanOrEqual(12);
 
-  for (const endpoint of ['notifications', 'audit', 'simulations']) {
+  for (const endpoint of ['notifications', 'simulations']) {
     const response = await request.get(`http://127.0.0.1:3001/api/${endpoint}`, { headers });
     expect(response.status()).toBe(200);
   }
+
+  // A auditoria exige janela explícita: consultar sem período não é uma leitura
+  // válida do domínio.
+  const auditWindow = new URLSearchParams({
+    from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    to: new Date(Date.now() + 60_000).toISOString(),
+  });
+  const audit = await request.get(
+    `http://127.0.0.1:3001/api/audit?${auditWindow.toString()}`,
+    { headers },
+  );
+  expect(audit.status()).toBe(200);
+
+  const auditWithoutWindow = await request.get('http://127.0.0.1:3001/api/audit', { headers });
+  expect(auditWithoutWindow.status()).toBe(400);
 });
 
 test('RBAC bloqueia mutação sem permissão', async ({ request }) => {

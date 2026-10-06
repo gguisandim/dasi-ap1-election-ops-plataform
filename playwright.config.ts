@@ -8,7 +8,10 @@ if (existsSync(rootEnv)) loadEnvFile(rootEnv);
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  timeout: 90_000,
+  // Os fluxos cross-domain falam com um banco remoto atrás de pooler, com pool
+  // de conexões limitado: a sequência completa de um fluxo leva mais do que o
+  // padrão de 90s. Testes individuais podem elevar o próprio teto.
+  timeout: 150_000,
   expect: { timeout: 20_000 },
   fullyParallel: false,
   workers: 1,
