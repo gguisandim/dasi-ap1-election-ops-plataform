@@ -142,6 +142,78 @@ export interface DomainEventMap {
     to: string;
   };
 
+  "asset.reservation_requested": {
+    entityId: string;
+    actorId?: string;
+    assetId: string;
+    assetTag: string;
+    requesterName: string;
+    startsAt: string;
+    endsAt: string;
+  };
+
+  "asset.reservation_approved": {
+    entityId: string;
+    actorId?: string;
+    assetId: string;
+    assetTag: string;
+  };
+
+  "asset.reservation_cancelled": {
+    entityId: string;
+    actorId?: string;
+    assetId: string;
+    assetTag: string;
+    reason?: string;
+  };
+
+  "asset.checked_out": {
+    entityId: string;
+    actorId?: string;
+    assetTag: string;
+    responsibleId?: string;
+    responsibleName: string;
+    expectedReturnAt?: string;
+  };
+
+  "asset.checked_in": {
+    entityId: string;
+    actorId?: string;
+    assetTag: string;
+    condition: string;
+    problemDetected: boolean;
+  };
+
+  "asset.maintenance_opened": {
+    entityId: string;
+    actorId?: string;
+    assetId: string;
+    assetTag: string;
+    type: string;
+  };
+
+  "asset.maintenance_started": {
+    entityId: string;
+    actorId?: string;
+    assetId: string;
+    assetTag: string;
+  };
+
+  "asset.maintenance_completed": {
+    entityId: string;
+    actorId?: string;
+    assetId: string;
+    assetTag: string;
+    returnToService: boolean;
+  };
+
+  "asset.maintenance_cancelled": {
+    entityId: string;
+    actorId?: string;
+    assetId: string;
+    assetTag: string;
+  };
+
   "user.created": {
     entityId: string;
     actorId?: string;
@@ -204,6 +276,19 @@ export interface DomainEventMap {
     electoralZoneId: string;
   };
 
+  "route.ready": {
+    entityId: string;
+    actorId?: string;
+    code: string;
+  };
+
+  "route.dispatched": {
+    entityId: string;
+    actorId?: string;
+    code: string;
+    dispatchedAt: string;
+  };
+
   "route.started": {
     entityId: string;
     actorId?: string;
@@ -216,6 +301,65 @@ export interface DomainEventMap {
     actorId?: string;
     code: string;
     arrivedAt: string;
+  };
+
+  "route.cancelled": {
+    entityId: string;
+    actorId?: string;
+    code: string;
+    reason: string;
+  };
+
+  "route.stop_arrived": {
+    entityId: string;
+    actorId?: string;
+    routeId: string;
+    pollingPlaceId: string;
+  };
+
+  "route.stop_completed": {
+    entityId: string;
+    actorId?: string;
+    routeId: string;
+    pollingPlaceId: string;
+  };
+
+  "route.stop_failed": {
+    entityId: string;
+    actorId?: string;
+    routeId: string;
+    pollingPlaceId: string;
+    reason: string;
+  };
+
+  "route.stop_skipped": {
+    entityId: string;
+    actorId?: string;
+    routeId: string;
+    pollingPlaceId: string;
+    reason: string;
+  };
+
+  "route.stops_reordered": {
+    entityId: string;
+    actorId?: string;
+    code: string;
+    stopIds: string[];
+  };
+
+  "route.exception_created": {
+    entityId: string;
+    actorId?: string;
+    routeId: string;
+    reason: string;
+    description: string;
+  };
+
+  "route.exception_resolved": {
+    entityId: string;
+    actorId?: string;
+    routeId: string;
+    resolution: string;
   };
 
   "delivery.completed": {
@@ -942,6 +1086,27 @@ export const NOTIFICATION_EVENT_CATALOG = [
     label: "Status de ativo alterado",
     description: "Ativo mudou de estado operacional.",
     requiredPermission: "inventory.read",
+  },
+  {
+    eventName: "asset.maintenance_opened",
+    domain: "Inventário",
+    label: "Manutenção de ativo aberta",
+    description: "Ativo foi bloqueado para manutenção preventiva ou corretiva.",
+    requiredPermission: "inventory.read",
+  },
+  {
+    eventName: "route.exception_created",
+    domain: "Rotas",
+    label: "Exceção logística registrada",
+    description: "Uma ocorrência exige atenção durante a execução da rota.",
+    requiredPermission: "routes.read",
+  },
+  {
+    eventName: "delivery.failed",
+    domain: "Rotas",
+    label: "Falha de entrega",
+    description: "Uma entrega não pôde ser concluída.",
+    requiredPermission: "routes.read",
   },
   {
     eventName: "transmission.failed",
