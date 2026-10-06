@@ -22,6 +22,9 @@ import { shiftsPlugin } from "@eops/plugin-shifts";
 import { shiftHandoversPlugin } from "@eops/plugin-shift-handovers";
 import { preparationChecklistsPlugin } from "@eops/plugin-preparation-checklists";
 import { tasksPlugin } from "@eops/plugin-tasks";
+import { commandCenterPlugin } from "@eops/plugin-command-center";
+import { resourceRequestsPlugin } from "@eops/plugin-resource-requests";
+import { postmortemsPlugin } from "@eops/plugin-postmortems";
 
 export const plugins: PlatformPlugin[] = [
   electionsPlugin,
@@ -37,9 +40,12 @@ export const plugins: PlatformPlugin[] = [
   shiftHandoversPlugin,
   preparationChecklistsPlugin,
   tasksPlugin,
+  resourceRequestsPlugin,
+  postmortemsPlugin,
   routesPlugin,
   inventoryPlugin,
   incidentsPlugin,
+  commandCenterPlugin,
   transmissionPlugin,
   operationalMapPlugin,
   reportsPlugin,

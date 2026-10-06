@@ -25,6 +25,9 @@ import { OperationalMapModule } from "@eops/plugin-operational-map/server";
 import { AccessControlModule } from "@eops/plugin-access-control/server";
 import { AuditModule } from "@eops/plugin-audit/server";
 import { NotificationsModule } from "@eops/plugin-notifications/server";
+import { CommandCenterModule } from "@eops/plugin-command-center/server";
+import { ResourceRequestsModule } from "@eops/plugin-resource-requests/server";
+import { PostmortemsModule } from "@eops/plugin-postmortems/server";
 
 @Module({
   imports: [
@@ -53,6 +56,9 @@ import { NotificationsModule } from "@eops/plugin-notifications/server";
     ShiftHandoversModule,
     PreparationChecklistsModule,
     TasksModule,
+    CommandCenterModule,
+    ResourceRequestsModule,
+    PostmortemsModule,
   ],
   controllers: [HealthController],
 })
