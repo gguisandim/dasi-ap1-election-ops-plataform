@@ -845,16 +845,27 @@ export class ShiftsService {
       shiftId,
       assignmentId,
     );
-    const plan = planReplacement(
-      {
-        id: assignment.id,
-        memberId: assignment.memberId,
-        startsAt: assignment.startsAt,
-        endsAt: assignment.endsAt,
-        status: assignment.status,
-      },
-      dto.substituteMemberId,
-    );
+    let plan: ReturnType<typeof planReplacement>;
+    try {
+      plan = planReplacement(
+        {
+          id: assignment.id,
+          memberId: assignment.memberId,
+          startsAt: assignment.startsAt,
+          endsAt: assignment.endsAt,
+          status: assignment.status,
+        },
+        dto.substituteMemberId,
+      );
+    } catch (error) {
+      // Violação de regra de domínio é conflito com o estado atual, não falha
+      // interna: sem esta tradução o cliente recebia 500 em vez de 409.
+      throw new ConflictException(
+        error instanceof Error
+          ? error.message
+          : "Substituição não permitida para esta alocação.",
+      );
+    }
     const substitute = await this.requireTeamMember(
       dto.substituteMemberId,
       shift.teamId,
