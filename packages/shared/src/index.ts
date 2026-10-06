@@ -1,6 +1,7 @@
 export * from "./auth";
 export * from "./command-center";
 export * from "./common";
+export * from "./correlation";
 export * from "./communications";
 export * from "./elections";
 export * from "./evidence";
@@ -9,7 +10,9 @@ export * from "./incidents";
 export * from "./inventory";
 export * from "./knowledge";
 export * from "./postmortems";
+export * from "./reports";
 export * from "./resource-requests";
 export * from "./risks";
 export * from "./simulation";
+export * from "./transmission";
 export * from "./workforce";

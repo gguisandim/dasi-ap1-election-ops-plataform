@@ -9,6 +9,7 @@
     "./auth": "./src/auth.ts",
     "./command-center": "./src/command-center.ts",
     "./common": "./src/common.ts",
+    "./correlation": "./src/correlation.ts",
     "./communications": "./src/communications.ts",
     "./elections": "./src/elections.ts",
     "./evidence": "./src/evidence.ts",
@@ -17,9 +18,69 @@
     "./inventory": "./src/inventory.ts",
     "./knowledge": "./src/knowledge.ts",
     "./postmortems": "./src/postmortems.ts",
+    "./reports": "./src/reports.ts",
     "./resource-requests": "./src/resource-requests.ts",
     "./risks": "./src/risks.ts",
     "./simulation": "./src/simulation.ts",
+    "./transmission": "./src/transmission.ts",
     "./workforce": "./src/workforce.ts"
+  },
+  "typesVersions": {
+    "*": {
+      "auth": [
+        "src/auth.ts"
+      ],
+      "command-center": [
+        "src/command-center.ts"
+      ],
+      "common": [
+        "src/common.ts"
+      ],
+      "correlation": [
+        "src/correlation.ts"
+      ],
+      "communications": [
+        "src/communications.ts"
+      ],
+      "elections": [
+        "src/elections.ts"
+      ],
+      "evidence": [
+        "src/evidence.ts"
+      ],
+      "format": [
+        "src/format.ts"
+      ],
+      "incidents": [
+        "src/incidents.ts"
+      ],
+      "inventory": [
+        "src/inventory.ts"
+      ],
+      "knowledge": [
+        "src/knowledge.ts"
+      ],
+      "postmortems": [
+        "src/postmortems.ts"
+      ],
+      "reports": [
+        "src/reports.ts"
+      ],
+      "resource-requests": [
+        "src/resource-requests.ts"
+      ],
+      "risks": [
+        "src/risks.ts"
+      ],
+      "simulation": [
+        "src/simulation.ts"
+      ],
+      "transmission": [
+        "src/transmission.ts"
+      ],
+      "workforce": [
+        "src/workforce.ts"
+      ]
+    }
   }
 }
