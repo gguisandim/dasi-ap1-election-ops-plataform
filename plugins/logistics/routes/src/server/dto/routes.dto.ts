@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { DeliveryStatus, RouteStatus, RouteStopStatus, VehicleStatus } from "@prisma/client";
+import { DeliveryStatus, RouteExceptionReason, RouteStatus, RouteStopStatus, VehicleStatus } from "@prisma/client";
 import { IsArray, IsDateString, IsEnum, IsInt, IsNumber, IsOptional, IsString, Length, Max, Min, ValidateNested } from "class-validator";
 
 export class RouteQueryDto {
@@ -39,7 +39,6 @@ export class CreateRouteDto {
   @IsString() @IsOptional() driverName?: string;
   @IsString() @IsOptional() vehicleId?: string;
   @IsString() @IsOptional() notes?: string;
-  @IsEnum(RouteStatus) @IsOptional() status?: RouteStatus;
   @IsArray() @ValidateNested({ each: true }) @Type(() => RouteStopInputDto) @IsOptional() stops?: RouteStopInputDto[];
 }
 
@@ -52,9 +51,6 @@ export class UpdateRouteDto {
   @IsString() @IsOptional() driverName?: string;
   @IsString() @IsOptional() vehicleId?: string;
   @IsString() @IsOptional() notes?: string;
-  @IsEnum(RouteStatus) @IsOptional() status?: RouteStatus;
-  @IsDateString() @IsOptional() actualDeparture?: string;
-  @IsDateString() @IsOptional() actualArrival?: string;
 }
 
 export class UpdateStopDto {
@@ -92,7 +88,6 @@ export class CreateDeliveryDto {
 export class UpdateDeliveryDto {
   @IsEnum(DeliveryStatus) status!: DeliveryStatus;
   @IsString() @IsOptional() receiverName?: string;
-  @IsDateString() @IsOptional() deliveredAt?: string;
   @IsString() @IsOptional() notes?: string;
   @IsString() @IsOptional() proofUrl?: string;
   @IsString() @IsOptional() failureReason?: string;
@@ -102,4 +97,30 @@ export class CreateBatchDto {
   @IsString() routeId!: string;
   @IsString() @Length(2, 60) code!: string;
   @IsString() @IsOptional() description?: string;
+}
+
+export class TransitionRouteDto {
+  @IsEnum(RouteStatus) status!: RouteStatus;
+  @IsString() @Length(3, 500) @IsOptional() reason?: string;
+}
+
+export class StopActionDto {
+  @IsEnum(RouteStopStatus) status!: RouteStopStatus;
+  @IsString() @Length(3, 500) @IsOptional() reason?: string;
+  @IsString() @IsOptional() notes?: string;
+}
+
+export class ReorderStopsDto {
+  @IsArray() @IsString({ each: true }) stopIds!: string[];
+}
+
+export class CreateRouteExceptionDto {
+  @IsString() @IsOptional() stopId?: string;
+  @IsString() @IsOptional() deliveryId?: string;
+  @IsEnum(RouteExceptionReason) reason!: RouteExceptionReason;
+  @IsString() @Length(3, 1000) @IsOptional() notes?: string;
+}
+
+export class ResolveRouteExceptionDto {
+  @IsString() @Length(3, 1000) resolution!: string;
 }
