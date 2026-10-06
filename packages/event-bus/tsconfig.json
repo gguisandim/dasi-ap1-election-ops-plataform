@@ -3,6 +3,7 @@
     "target": "ES2021",
     "module": "CommonJS",
     "moduleResolution": "Node",
+    "types": ["node"],
     "ignoreDeprecations": "6.0",
     "declaration": true,
     "declarationMap": false,

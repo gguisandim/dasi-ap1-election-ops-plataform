@@ -15,6 +15,7 @@
   "dependencies": {
     "@eops/api-client": "0.1.0",
     "@eops/database": "0.1.0",
+    "@eops/event-bus": "0.1.0",
     "@eops/plugin-sdk": "0.1.0",
     "@eops/security": "0.1.0",
     "@eops/shared": "0.1.0",
