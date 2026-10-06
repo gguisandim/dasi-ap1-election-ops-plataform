@@ -7,6 +7,7 @@ import {
   OnModuleInit,
 } from "@nestjs/common";
 import { Prisma, PrismaClient } from "@prisma/client";
+import { prismaClientOptions } from "./pool";
 
 const delay = (milliseconds: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
@@ -22,6 +23,10 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   private readonly logger = new Logger(PrismaService.name);
+
+  constructor() {
+    super(prismaClientOptions());
+  }
 
   async onModuleInit() {
     const attempts = positiveInteger(process.env.DATABASE_CONNECT_RETRIES, 8);
