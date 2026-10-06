@@ -1,0 +1,25 @@
+{
+  "name": "@eops/plugin-shift-handovers",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": {
+      "types": "./src/server/index.ts",
+      "require": "./dist/server/index.js",
+      "default": "./dist/server/index.js"
+    }
+  },
+  "dependencies": {
+    "@eops/api-client": "0.1.0",
+    "@eops/database": "0.1.0",
+    "@eops/event-bus": "0.1.0",
+    "@eops/plugin-sdk": "0.1.0",
+    "@eops/security": "0.1.0",
+    "@eops/ui": "0.1.0",
+    "react": "19.3.0",
+    "react-router-dom": "7.18.4"
+  }
+}

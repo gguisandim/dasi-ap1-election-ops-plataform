@@ -1001,6 +1001,55 @@ export interface DomainEventMap {
     requiredOperators: number;
     availableOperators: number;
   };
+  "shift_handover.created": {
+    entityId: string;
+    actorId: string;
+    shiftId: string;
+    senderUserId: string;
+    recipientUserId: string;
+  };
+  "shift_handover.updated": {
+    entityId: string;
+    actorId: string;
+    shiftId: string;
+    senderUserId: string;
+    recipientUserId: string;
+    changes: string[];
+  };
+  "shift_handover.submitted": {
+    entityId: string;
+    actorId: string;
+    shiftId: string;
+    shiftName: string;
+    senderUserId: string;
+    recipientUserId: string;
+    from: string;
+    to: string;
+    submittedAt: string;
+  };
+  "shift_handover.confirmed": {
+    entityId: string;
+    actorId: string;
+    shiftId: string;
+    shiftName: string;
+    senderUserId: string;
+    recipientUserId: string;
+    from: string;
+    to: string;
+    confirmedAt: string;
+  };
+  "shift_handover.cancelled": {
+    entityId: string;
+    actorId: string;
+    shiftId: string;
+    shiftName: string;
+    senderUserId: string;
+    recipientUserId: string;
+    from: string;
+    to: string;
+    reason?: string;
+    cancelledAt: string;
+  };
 }
 
 export type DomainEventName = keyof DomainEventMap;
@@ -1165,6 +1214,27 @@ export const NOTIFICATION_EVENT_CATALOG = [
     requiredPermission: "shifts.read",
   },
   {
+    eventName: "shift_handover.submitted",
+    domain: "Passagem de turno",
+    label: "Passagem recebida",
+    description: "Uma passagem de turno aguarda sua confirmação.",
+    requiredPermission: "shift-handovers.read",
+  },
+  {
+    eventName: "shift_handover.confirmed",
+    domain: "Passagem de turno",
+    label: "Passagem confirmada",
+    description: "O destinatário confirmou uma passagem de turno.",
+    requiredPermission: "shift-handovers.read",
+  },
+  {
+    eventName: "shift_handover.cancelled",
+    domain: "Passagem de turno",
+    label: "Passagem cancelada",
+    description: "Uma passagem de turno foi cancelada.",
+    requiredPermission: "shift-handovers.read",
+  },
+  {
     eventName: "field_dispatch.created",
     domain: "Operação de campo",
     label: "Dispatch solicitado",
@@ -1199,6 +1269,7 @@ export function requiredPermissionForEvent(
   if (name.startsWith("transmission.")) return "transmission.read";
   if (name.startsWith("simulation.")) return "simulation.read";
   if (name.startsWith("task.")) return "tasks.read";
+  if (name.startsWith("shift_handover.")) return "shift-handovers.read";
   if (name.startsWith("shift.")) return "shifts.read";
   if (name.startsWith("route.") || name.startsWith("delivery."))
     return "routes.read";

@@ -43,6 +43,11 @@ export const PERMISSIONS = {
   },
 
   shifts: { read: "shifts.read", manage: "shifts.manage" },
+  shiftHandovers: {
+    read: "shift-handovers.read",
+    manage: "shift-handovers.manage",
+    confirm: "shift-handovers.confirm",
+  },
 
   preparationChecklists: {
     read: "preparation-checklists.read",
@@ -108,6 +113,10 @@ export const PLATFORM_PERMISSION_KEYS = [
 
   PERMISSIONS.shifts.read,
   PERMISSIONS.shifts.manage,
+
+  PERMISSIONS.shiftHandovers.read,
+  PERMISSIONS.shiftHandovers.manage,
+  PERMISSIONS.shiftHandovers.confirm,
 
   PERMISSIONS.preparationChecklists.read,
   PERMISSIONS.preparationChecklists.manage,

@@ -293,6 +293,27 @@ enum FieldShiftStatus {
   CANCELLED
 }
 
+enum ShiftHandoverStatus {
+  DRAFT
+  PENDING_CONFIRMATION
+  CONFIRMED
+  CANCELLED
+}
+
+enum ShiftHandoverHistoryAction {
+  CREATED
+  UPDATED
+  INCIDENT_ADDED
+  INCIDENT_REMOVED
+  TASK_ADDED
+  TASK_REMOVED
+  ASSET_ADDED
+  ASSET_REMOVED
+  SUBMITTED
+  CONFIRMED
+  CANCELLED
+}
+
 enum FieldShiftAssignmentStatus {
   SCHEDULED
   PRESENT
@@ -757,6 +778,7 @@ model Incident {
   assignments      IncidentAssignment[]
   simulationEvents SimulationEvent[]
   fieldDispatches  FieldDispatch[]
+  handoverReferences ShiftHandoverIncident[]
 
   @@index([electionId, status])
   @@index([electoralZoneId, status])
@@ -833,6 +855,7 @@ model Asset {
   incidents        Incident[]
   simulationEvents SimulationEvent[]
   deliveryItems    DeliveryItem[]
+  handoverReferences ShiftHandoverAsset[]
 
   @@index([typeId, status])
   @@index([electoralZoneId, status])
@@ -982,6 +1005,11 @@ model User {
   fieldDispatchEvents                  FieldDispatchEvent[]           @relation("FieldDispatchEventActor")
   acknowledgedTransmissionAlerts       TransmissionAlert[]            @relation("TransmissionAlertAcknowledger")
   resolvedTransmissionAlerts           TransmissionAlert[]            @relation("TransmissionAlertResolver")
+  sentShiftHandovers                    ShiftHandover[]                 @relation("ShiftHandoverSender")
+  receivedShiftHandovers                ShiftHandover[]                 @relation("ShiftHandoverRecipient")
+  confirmedShiftHandovers               ShiftHandover[]                 @relation("ShiftHandoverConfirmer")
+  cancelledShiftHandovers               ShiftHandover[]                 @relation("ShiftHandoverCanceller")
+  shiftHandoverHistory                  ShiftHandoverHistory[]          @relation("ShiftHandoverHistoryActor")
 
   @@index([status, name])
 }
@@ -1566,6 +1594,7 @@ model FieldShift {
   replacements          FieldShiftReplacement[]
   history               FieldShiftHistory[]
   specialtyRequirements FieldShiftSpecialtyRequirement[]
+  handovers             ShiftHandover[]
 
   @@index([startsAt, endsAt])
   @@index([teamId, startsAt])
@@ -1573,6 +1602,88 @@ model FieldShift {
   @@index([status, startsAt])
   @@index([electoralZoneId, startsAt])
   @@index([pollingPlaceId, startsAt])
+}
+
+model ShiftHandover {
+  id                 String                      @id @default(cuid())
+  shiftId            String
+  senderUserId       String
+  recipientUserId    String
+  summary            String                      @db.Text
+  pendingNotes       String?                     @db.Text
+  observations       String?                     @db.Text
+  status             ShiftHandoverStatus         @default(DRAFT)
+  submittedAt        DateTime?
+  confirmedAt        DateTime?
+  confirmedById      String?
+  cancelledAt        DateTime?
+  cancelledById      String?
+  cancellationReason String?                     @db.Text
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+  shift              FieldShift                  @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+  sender             User                        @relation("ShiftHandoverSender", fields: [senderUserId], references: [id], onDelete: Restrict)
+  recipient          User                        @relation("ShiftHandoverRecipient", fields: [recipientUserId], references: [id], onDelete: Restrict)
+  confirmedBy        User?                       @relation("ShiftHandoverConfirmer", fields: [confirmedById], references: [id], onDelete: SetNull)
+  cancelledBy        User?                       @relation("ShiftHandoverCanceller", fields: [cancelledById], references: [id], onDelete: SetNull)
+  incidents          ShiftHandoverIncident[]
+  tasks              ShiftHandoverTask[]
+  assets             ShiftHandoverAsset[]
+  history            ShiftHandoverHistory[]
+
+  @@index([status, createdAt])
+  @@index([recipientUserId, status])
+  @@index([senderUserId, createdAt])
+  @@index([shiftId, createdAt])
+  @@index([submittedAt])
+}
+
+model ShiftHandoverIncident {
+  handoverId String
+  incidentId String
+  createdAt  DateTime      @default(now())
+  handover   ShiftHandover @relation(fields: [handoverId], references: [id], onDelete: Cascade)
+  incident   Incident      @relation(fields: [incidentId], references: [id], onDelete: Restrict)
+
+  @@id([handoverId, incidentId])
+  @@index([incidentId])
+}
+
+model ShiftHandoverTask {
+  handoverId String
+  taskId     String
+  createdAt  DateTime      @default(now())
+  handover   ShiftHandover @relation(fields: [handoverId], references: [id], onDelete: Cascade)
+  task       Task          @relation(fields: [taskId], references: [id], onDelete: Restrict)
+
+  @@id([handoverId, taskId])
+  @@index([taskId])
+}
+
+model ShiftHandoverAsset {
+  handoverId String
+  assetId    String
+  createdAt  DateTime      @default(now())
+  handover   ShiftHandover @relation(fields: [handoverId], references: [id], onDelete: Cascade)
+  asset      Asset         @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  @@id([handoverId, assetId])
+  @@index([assetId])
+}
+
+model ShiftHandoverHistory {
+  id         String                         @id @default(cuid())
+  handoverId String
+  actorId    String?
+  action     ShiftHandoverHistoryAction
+  description String
+  metadata   Json?
+  createdAt  DateTime                       @default(now())
+  handover   ShiftHandover                  @relation(fields: [handoverId], references: [id], onDelete: Cascade)
+  actor      User?                          @relation("ShiftHandoverHistoryActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([handoverId, createdAt])
+  @@index([actorId, createdAt])
 }
 
 model FieldShiftSpecialtyRequirement {
@@ -2463,6 +2574,7 @@ model Task {
   history               TaskHistory[]
   specialtyRequirements TaskSpecialtyRequirement[]
   dispatches            FieldDispatch[]
+  handoverReferences    ShiftHandoverTask[]
 
   @@index([electionId, status])
   @@index([electoralZoneId, status])
