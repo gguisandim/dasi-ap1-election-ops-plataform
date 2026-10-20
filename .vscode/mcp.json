@@ -1,0 +1,13 @@
+{
+  "servers": {
+    "election-ops-tasks": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "--env-file=${workspaceFolder}/.env.mcp",
+        "${workspaceFolder}/packages/mcp-task-server/dist/index.js"
+      ],
+      "cwd": "${workspaceFolder}"
+    }
+  }
+}

@@ -3,6 +3,7 @@ dist/
 .env
 .env.*
 !.env.example
+!.env.mcp.example
 .DS_Store
 coverage/
 *.tsbuildinfo
