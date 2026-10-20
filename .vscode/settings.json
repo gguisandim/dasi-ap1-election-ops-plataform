@@ -1,0 +1,8 @@
+{
+  "chat.tools.eligibleForAutoApproval": {
+    "mcp_eops_tasks_listar_tarefas": true,
+    "mcp_eops_tasks_consultar_tarefa": true,
+    "mcp_eops_tasks_criar_tarefa": false,
+    "mcp_eops_tasks_atualizar_tarefa": false
+  }
+}

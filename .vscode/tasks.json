@@ -1,0 +1,39 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Read election records",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"-e",
+				"require('dotenv').config({ path: '.env' }); const url = process.env.DATABASE_URL; if (!url || decodeURIComponent(new URL(url).pathname).replace(/^\\/+/, '') !== 'eops_local') { console.error('DATABASE_URL não aponta para o banco local esperado.'); process.exit(2); } const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); prisma.election.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } }).then(rows => { for (const row of rows) console.log(JSON.stringify(row)); }).catch(() => { console.error('Falha na consulta Prisma.'); process.exitCode = 1; }).finally(() => prisma.$disconnect());"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "Query election with Prisma",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				".tmp-election-read.cjs"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "Query first election",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				".tmp-election-query.cjs"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		}
+	]
+}

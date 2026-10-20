@@ -31,6 +31,8 @@ jobs:
         run: npm run check:boundaries
       - name: Prisma schema
         run: npm run db:validate
+        env:
+          DATABASE_URL: postgresql://eops:eops@localhost:5432/eops?schema=public
       - name: Typecheck
         run: npm run typecheck
       - name: Lint
