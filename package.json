@@ -24,7 +24,7 @@
     "lint": "eslint apps packages plugins",
     "check:boundaries": "node scripts/check-plugin-boundaries.mjs",
     "spec:check": "node scripts/check-spec-traceability.mjs",
-    "test": "vitest run --exclude tests/e2e/**",
+    "test": "vitest run --exclude \"tests/e2e/**\"",
     "e2e": "npm run build && playwright test",
     "db:generate": "prisma generate --schema packages/database/prisma/schema.prisma",
     "db:migrate": "prisma migrate dev --schema packages/database/prisma/schema.prisma",
